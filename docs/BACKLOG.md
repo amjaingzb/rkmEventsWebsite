@@ -12,11 +12,11 @@ Update this whenever something is skipped for time — don't let it get lost.
 ## Go-Live Checklist (2026-09-08)
 
 > [!warning] Must fix before any real public registrations open
-> - **Not deployed anywhere** — the site only runs locally in this sandbox
->   (`scripts/server.sh`); there's no public URL yet. [[architecture.md]] has
->   said "Hosting (planned)" since Phase A but it was never actually done.
->   Deploy is in progress now (2026-09-08) on **Netlify**, not Vercel — see
->   [[nextSteps.md]] "Next action" for the switch and why.
+> - ~~**Not deployed anywhere**~~ — **done (2026-09-08).** Live at
+>   https://rkm-halasuru-registration.netlify.app (Netlify, not the
+>   originally planned Vercel — see [[nextSteps.md]] "Recently completed"
+>   for why). Not git-linked yet, so deploys are manual via the Netlify CLI;
+>   pushing to `main` does not auto-deploy.
 > - **Resend domain not verified** — `TICKET_FROM_EMAIL` is still the shared
 >   `onboarding@resend.dev` sandbox sender, which only delivers to the Resend
 >   account owner's own email (see item 7 below). Blocks ticket delivery to

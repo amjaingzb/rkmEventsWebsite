@@ -13,3 +13,6 @@ delme-clipboard/
 *.swp
 .run/
 supabase/.temp/
+
+# Local Netlify folder
+.netlify

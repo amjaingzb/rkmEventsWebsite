@@ -15,49 +15,27 @@ updated: 2026-09-08
 
 ## Next action
 
-**Deploy to Netlify (switched from Vercel) — biggest open gap, in progress
-(2026-09-08).** [[architecture.md]] had said "Hosting (planned): Vercel"
-since Phase A, but nothing ever turned that into an actionable step and it
-was never done. The site only exists locally (`scripts/server.sh`,
-host-reachable via the container port mapping) — there's no public URL
-anyone outside this sandbox can register through yet.
+**Site is now deployed and live** — https://rkm-halasuru-registration.netlify.app
+(deployed 2026-09-08). Smoke-tested: homepage renders (title confirmed),
+`/admin/login` loads, `/api/admin/registrations` correctly returns `401
+Unauthenticated` (not a 500, so all Supabase/Resend env vars are wired
+correctly in Netlify). See "Recently completed" below for the full
+Vercel→Netlify decision writeup.
 
-**Why Netlify and not Vercel:** while signing up for Vercel, the project
-owner flagged (via a second opinion from Gemini) that Vercel's Hobby plan
-ToS restricts free-tier use to "personal or non-commercial use," and its own
-fair-use guidelines list "any method of requesting or processing payment
-from visitors of the site" as commercial usage — confirmed by reading
-Vercel's actual terms pages directly, not just the secondhand claim. This
-site collects a payment reference from registrants (even though the money
-itself moves off-site via UPI/bank transfer), so it's a real risk, not a
-false alarm. Cloudflare Pages was evaluated as an alternative and ruled
-out for a different reason: its Workers Free plan caps **CPU time at 10ms
-per request** (not wall-clock time — waiting on Supabase/Resend doesn't
-count, but rendering a page does), which is a hard, non-negotiable
-structural limit for an SSR-heavy Next.js app like this one (registration
-form, admin dashboard, QR PNG generation), not something avoidable by
-"not using bleeding-edge features." Netlify has neither restriction: no
-commercial-use clause in its ToS/Acceptable Use Policy (verified directly),
-and a 60-second synchronous function timeout fixed across all plans
-including Free (not the 10-second figure initially assumed — checked
-Netlify's current docs directly).
+**Not yet git-linked — deploys are manual for now.** The site was created
+and deployed via the Netlify CLI (`netlify sites:create` +
+`netlify deploy --build --prod`), not by connecting the GitHub repo through
+Netlify's dashboard. That means **pushing to `main` does NOT auto-deploy**;
+any future code change needs an explicit `netlify deploy --build --prod`
+(or `netlify link` + deploy) to go live. Optional follow-up: link
+`github.com/amjaingzb/rkmEventsWebsite` for auto-deploy-on-push via the
+Netlify dashboard (Site settings → Build & deploy → Link repository) —
+requires authorizing the Netlify GitHub App in a browser, not done yet, not
+a demo blocker.
 
-**How much this changes the plan: very little.** This is a hosting-provider
-swap only — Next.js/Supabase/Resend/the payment module boundary are all
-unaffected, since none of that is Vercel-specific. Netlify has first-class
-Next.js support (its build system auto-detects and configures the Next.js
-runtime), so no application code changes are expected; if the actual deploy
-surfaces something Netlify-specific, it'll be noted here.
-
-**Status:** Netlify login in progress in this session (device-auth ticket
-flow via the Netlify CLI) — the project owner is completing sign-in. Once
-logged in, remaining steps: create/link a Netlify site to the
-`github.com/amjaingzb/rkmEventsWebsite` repo, port all `.env.local` vars
-(Supabase URL/keys, Resend key, `TICKET_FROM_EMAIL`, `EVENT_SLUG`, QR
-signing secret) into Netlify's environment variables, and trigger a
-production deploy off `main`. Can proceed on the current
-`onboarding@resend.dev` sender in the meantime (see below) — hosting and
-email deliverability are independent blockers.
+**Push local commits to `origin/main`** — local `main` is 2 commits ahead
+(`2ca044d`, `25fdd96`). Same situation as before: push from your own
+machine, or set up credentials in-session if you want Claude to do it.
 
 **Resend domain verification is blocked on an external person**, not an
 open task for Claude — project owner (2026-09-08) is waiting on someone
@@ -71,20 +49,10 @@ available for dev testing meanwhile: `amjain.gzb@gmail.com`,
 `sairam_197518@yahoo.in`.
 
 The admin dashboard is now feature-complete (round 2 polish pass) — see
-"Recently completed" below. All of that work is now committed
-(`6215f23`, 2026-09-08) — previously it sat uncommitted in the working tree.
+"Recently completed" below. All of that work is committed and deployed.
 **Other open items:**
 
-1. ~~Run `supabase/migrations/0003_null_seat_number_on_reject.sql`~~ — done,
-   confirmed 2026-09-08 by querying `registrations` directly (the one
-   rejected row has `seat_number: null`).
-2. **Push commit `6215f23` to `origin/main`** — local `main` is 1 commit
-   ahead of `origin/main` (the commit above wasn't there when `main` was
-   last pushed). Same push-credentials situation as before: push from your
-   own machine, or set up credentials in-session if you want Claude to do it.
-   (Also a prerequisite for the Netlify deploy above, since it deploys off
-   the GitHub repo.)
-3. Run [[setup.md]]'s concurrency load test against a test event to confirm
+1. Run [[setup.md]]'s concurrency load test against a test event to confirm
    the atomic seat-cap RPC behaves correctly under concurrent requests.
 
 Smaller open item: the live Supabase project now has a handful of test
@@ -122,6 +90,30 @@ Full rationale and the complete deferred-items list: [[BACKLOG.md]].
 
 ## Recently completed
 
+- **2026-09-08 (deployed to Netlify, switched from planned Vercel)** — site
+  is now live at https://rkm-halasuru-registration.netlify.app, smoke-tested
+  (homepage, `/admin/login`, and an auth-gated API route all responding
+  correctly). Originally planned to deploy to Vercel per [[architecture.md]],
+  but the project owner flagged (a second opinion from Gemini, verified
+  directly against Vercel's own terms pages) that Vercel's Hobby plan
+  restricts free-tier use to "personal or non-commercial use" and explicitly
+  lists "requesting or processing payment from visitors" as commercial
+  usage — a real risk for this site, which collects a payment reference from
+  registrants even though actual money moves off-site via UPI/bank transfer.
+  Cloudflare Pages was evaluated next and ruled out for a different, more
+  fundamental reason: its Workers Free plan caps CPU time at 10ms/request
+  (rendering time counts, network waits don't) — a structural mismatch for
+  an SSR-heavy Next.js app like this one (registration form, admin
+  dashboard, QR PNG generation), not something fixable by avoiding
+  bleeding-edge features. Netlify has neither restriction (verified
+  directly: no commercial-use clause in its ToS/AUP, 60s synchronous
+  function timeout fixed across all plans including Free — not the 10s
+  originally assumed). Setup: `netlify sites:create` (site name
+  `rkm-halasuru-registration`, team "15 Commandments"), `netlify env:import
+  .env.local` to port all secrets, `netlify deploy --build --prod`. **Not
+  git-linked** — deploys are manual via the CLI for now; pushing to `main`
+  does not auto-deploy. See "Next action" for the optional GitHub-link
+  follow-up.
 - **2026-09-08 (email fixes + contact info)** — 4 issues reported by the
   project owner after live testing:
   1. Rejected-registration email was bland compared to the WhatsApp message
