@@ -15,44 +15,51 @@ updated: 2026-09-08
 
 ## Next action
 
-**Site is now deployed and live** — https://rkm-halasuru-registration.netlify.app
-(deployed 2026-09-08). Smoke-tested: homepage renders (title confirmed),
-`/admin/login` loads, `/api/admin/registrations` correctly returns `401
-Unauthenticated` (not a 500, so all Supabase/Resend env vars are wired
-correctly in Netlify). See "Recently completed" below for the full
-Vercel→Netlify decision writeup.
+> [!note] Working mode, confirmed 2026-09-08
+> Back to local-only development (`npm run dev` / `scripts/server.sh`).
+> Claude deploys to Netlify — draft or production — **only when explicitly
+> asked**, never automatically as part of finishing a task. See
+> [[netlify.md]] for the full deploy workflow (draft deploys are free and
+> fully functional, even demo-able, via a stable alias URL; production
+> costs 15 credits and is reserved for deliberate publishes).
 
-**Not git-linked, and deliberately not deploying to production on every
-change** — see [[netlify.md]] for the full reasoning and the safe-deploy
-workflow (production deploys cost 15 credits each against a 300/month free
-cap that does not roll over; draft deploys via `netlify deploy --build`,
-no `--prod`, are free and used for iteration instead). Pushing to `main`
-does NOT auto-deploy today. Optional follow-up, not a demo blocker: link
-`github.com/amjaingzb/rkmEventsWebsite` for auto-deploy-on-push — only
-worth doing with a branch-based workflow so routine pushes don't silently
-burn production-deploy credits, see [[netlify.md]].
+**Site is live** — https://rkm-halasuru-registration.netlify.app, currently
+serving commit `25fdd96` (see [[netlify.md]] "Deployment log" for what's
+actually deployed vs. what's in git — they can drift now that deploys are
+manual/on-request).
 
-**Push local commits to `origin/main`** — local `main` is 2 commits ahead
-(`2ca044d`, `25fdd96`). Same situation as before: push from your own
-machine, or set up credentials in-session if you want Claude to do it.
+**Open to-dos:**
 
-**Resend domain verification is blocked on an external person**, not an
-open task for Claude — project owner (2026-09-08) is waiting on someone
-else to hand over access to a subdomain to verify at resend.com/domains.
-Until that lands, `TICKET_FROM_EMAIL` stays `onboarding@resend.dev`
-(Resend's shared test sender, restricted to delivering only to the API-key
-owner's own address — confirmed live: sending elsewhere returns `403
-validation_error`, see [[BACKLOG.md]] item 7). Four real inboxes are
-available for dev testing meanwhile: `amjain.gzb@gmail.com`,
-`bhikajicama09@gmail.com`, `ruchisai197518@gmail.com`,
-`sairam_197518@yahoo.in`.
-
-The admin dashboard is now feature-complete (round 2 polish pass) — see
-"Recently completed" below. All of that work is committed and deployed.
-**Other open items:**
-
-1. Run [[setup.md]]'s concurrency load test against a test event to confirm
+1. **Update the DNS instructions sent to the admin (Bluehost)** — the
+   message already sent
+   (`Type: CNAME, Host: events, Points To: cname.vercel-dns.com`) was
+   written for Vercel and is wrong for Netlify. Netlify doesn't have one
+   universal CNAME target like Vercel does — the exact record only appears
+   after adding the custom domain in Netlify's dashboard (Domain management
+   → Add a domain you already own → enter `events.<yourdomain>`), and it's
+   generated specific to this site (likely a CNAME to
+   `rkm-halasuru-registration.netlify.app`, but needs confirming there, not
+   guessed). The Resend TXT/CNAME part of that same message is unaffected
+   and can stay as originally planned. Not yet done — needs the project
+   owner to either do the "Add domain" step or ask Claude to (dashboard
+   action, not blocked on CLI access).
+2. **Push local commits to `origin/main`** — local `main` is currently
+   ahead of `origin/main` (check `git status -sb` for the exact count, it
+   shifts each session). Push from your own machine, or ask Claude to set
+   up credentials in-session.
+3. **Resend domain verification is blocked on an external person**, not an
+   open task for Claude — waiting on someone else to hand over subdomain
+   access to verify at resend.com/domains. Until that lands,
+   `TICKET_FROM_EMAIL` stays `onboarding@resend.dev` (only delivers to the
+   API-key owner's own address — confirmed live, `403 validation_error`
+   otherwise, see [[BACKLOG.md]] item 7). Four real inboxes for dev testing
+   meanwhile: `amjain.gzb@gmail.com`, `bhikajicama09@gmail.com`,
+   `ruchisai197518@gmail.com`, `sairam_197518@yahoo.in`.
+4. Run [[setup.md]]'s concurrency load test against a test event to confirm
    the atomic seat-cap RPC behaves correctly under concurrent requests.
+
+The admin dashboard is feature-complete (round 2 polish pass) — see
+"Recently completed" below. All of that work is committed and deployed.
 
 Smaller open item: the live Supabase project now has a handful of test
 registrations from dev-flow verification (`TEST-TXN-002`, `TEST-TXN-003`,

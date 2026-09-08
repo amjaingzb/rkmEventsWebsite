@@ -43,15 +43,29 @@ an outage risk, not just a soft limit — worth being deliberate about.
 >   to deploy credits — the real discipline is around *how often you hit
 >   production*, not raw traffic.
 
-## The safe deploy workflow (adopt this)
+## The workflow (adopt this — confirmed with project owner 2026-09-08)
 
-- **Iterate with draft deploys, not production.** `netlify deploy --build`
-  (no `--prod` flag) builds and uploads to a unique preview URL without
-  touching the live site — confirmed via the CLI's own help text ("Creates
-  a draft deploy by default"). Use this for every test/verification cycle.
-- **Only `netlify deploy --build --prod` when a change is confirmed ready**
-  to go live — treat it as a deliberate, infrequent action, not a routine
-  step after every edit.
+**Default is local-only development**, same as before hosting existed:
+`npm run dev` / `scripts/server.sh`. **Claude deploys to Netlify — draft or
+production — only when explicitly asked**, never as a routine part of
+finishing a task. This replaces any earlier assumption that a working
+change should get pushed to Netlify automatically.
+
+When a deploy IS requested:
+
+- **Draft deploys are fully working, not just a diff-check tool** — same
+  functions, same Supabase/Resend connection (env vars apply to all deploy
+  contexts, not just production), just served from a non-primary URL.
+  **You can demo from a draft deploy.** Default choice for
+  everything: `netlify deploy --build` (no `--prod`) — 0 credits, unlimited.
+- **For a stable, reusable demo link** (so repeated free draft deploys land
+  on the same URL instead of a new random one each time), use an alias:
+  `netlify deploy --build --alias demo` → always
+  `https://demo--rkm-halasuru-registration.netlify.app`. Free every time,
+  no matter how many times it's redeployed.
+- **`netlify deploy --build --prod` only when the project owner explicitly
+  wants the real, permanent production URL updated** — this is the one
+  that costs 15 credits and is the deliberate, infrequent action.
 - **Not git-linked, and don't link it without discussing first.** The site
   was created and deployed via the Netlify CLI directly
   (`netlify sites:create` + `netlify env:import` + `netlify deploy --build
@@ -65,6 +79,24 @@ an outage risk, not just a soft limit — worth being deliberate about.
 - **Check remaining balance** anytime at
   `https://app.netlify.com/teams/amjain-gzb/billing` before a deploy-heavy
   session, especially close to a live event.
+
+## Deployment log
+
+> [!note] What's actually live right now
+> Tracks which git commit the **production** URL is currently serving, so
+> "is the live site up to date with the code" is always answerable without
+> guessing. Update this on every `--prod` deploy (draft/alias deploys don't
+> need an entry — they're disposable).
+
+| Date | Commit | Type | URL |
+|------|--------|------|-----|
+| 2026-09-08 | `25fdd96` "Switch hosting plan from Vercel to Netlify, document why" | production | https://rkm-halasuru-registration.netlify.app |
+
+Note: commits after `25fdd96` (doc-only changes) are **not yet reflected**
+in the live production deploy — they don't affect app behavior since
+`docs/` isn't part of the build, but if any future commit touches actual
+app code, remember production is pinned to `25fdd96` until the next
+explicitly-requested `--prod` deploy.
 
 ## Other things to know
 
