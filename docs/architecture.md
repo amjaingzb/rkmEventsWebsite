@@ -51,7 +51,14 @@ verification) → `verified` (ticket sent) or `rejected` (Phase B, releases the
 seat). `waitlisted` is a separate branch (no seat, cap was full), not a stage
 in that lifecycle — see [[nextSteps.md]] for the not-yet-built re-invite flow.
 
-Full column definitions: `supabase/migrations/0001_init.sql`.
+Full column definitions: `supabase/migrations/0001_init.sql`. New columns
+added 2026-09-08 in `supabase/migrations/0004_phonepe_and_payment_mode.sql`:
+`events.payment_mode`, and on `registrations` —
+`phonepe_merchant_txn_id` (our own dash-stripped-uuid correlation id,
+uniquely indexed), `phonepe_transaction_id` (PhonePe's own), and
+`phonepe_raw_response` (jsonb, for debugging). **Not yet applied to the
+live Supabase project** — needs to be run in the SQL editor, same process
+as `0002`/`0003` before it.
 
 ## The Core Invariant: Atomic Seat Cap
 
@@ -76,15 +83,57 @@ call, no read-then-write gap there either.
 ## Payment Module Boundary
 
 `src/lib/payment/types.ts` defines one interface (`PaymentModule.verifyPayment`)
-implemented by:
-- `src/lib/payment/manual.ts` — production path today (admin clicks Verify).
-- `src/lib/payment/phonepe.ts` — Phase B sandbox-only demo, webhook-driven,
-  not wired into the real registration flow.
+for **synchronous** verification, implemented by `src/lib/payment/manual.ts`
+(production path today — admin clicks Verify).
 
-Both call the same downstream seam, `markVerifiedAndIssueTicket()` in
-`src/lib/ticket/issue.ts`, which is payment-method-agnostic. **This is the
-isolation point** — adding or changing a payment method should only touch
-`src/lib/payment/**` and the API route that invokes it.
+`src/lib/payment/phonepe.ts` (built 2026-09-08) is a real, working PhonePe
+PG v1 sandbox integration — **not** a synchronous `PaymentModule`
+implementation, since PhonePe is two-phase/webhook-driven with no shared
+request context between initiate and verify. It exports
+`initiatePhonePePayment` (called by `POST api/phonepe/initiate`),
+`verifyPhonePeWebhookSignature` + `decodePhonePeWebhookBody` (called by
+`POST api/phonepe/webhook`, the S2S callback), `checkPhonePeStatus` (called
+by `GET api/phonepe/status`, a reconciliation fallback for when the
+browser's redirect lands before the webhook does), and
+`applyConfirmedPhonePeSuccess` — the one function both the webhook and
+status routes call, which checks the confirmed amount matches
+`num_attendees × PRICE_PER_ATTENDEE_INR` before doing anything else.
+
+Both `manual.ts` and `phonepe.ts` funnel every success path through the
+same downstream seam, `markVerifiedAndIssueTicket()` in
+`src/lib/ticket/issue.ts`, which stays payment-method-agnostic and
+untouched. **This is the isolation point that actually matters** — nothing
+outside `src/lib/payment/**` and the two `api/phonepe/*` routes knows
+PhonePe's request/checksum shapes.
+
+Uses PhonePe's public sandbox test credentials (merchant id `PGTESTPAYUAT`)
+as the built-in fallback default — no merchant account needed, sandbox
+demo only, never treat as a real payment guarantee. See the loud comment
+atop `phonepe.ts`.
+
+### Payment mode switch
+
+`events.payment_mode` (`'manual'` | `'phonepe_sandbox'`, default `'manual'`)
+is admin-toggleable at runtime from `/admin/dashboard`
+(`AdminPaymentModeToggle.tsx` → `POST api/admin/payment-mode`) — no
+redeploy needed, so both flows can be demoed live in one sitting. `/` is
+`force-dynamic` specifically so this takes effect immediately (a
+statically-prerendered homepage would otherwise bake in whatever mode was
+active at build time).
+
+### Static UPI display
+
+The Math's UPI VPA (`ramakri13482@kbl`, `src/lib/payment/upi.ts`) plus a
+QR code (`GET api/upi/qr`, `src/lib/payment/upiQr.ts`, same `qrcode`
+pattern as `ticket/qr.ts`) and a `upi://pay?...` mobile deep-link
+(`UpiPaymentInfo.tsx`) always render on the registration page and on the
+confirmation page (while `pending`), regardless of payment mode — no
+user-agent sniffing; mobile OSes intercept the `upi://` scheme natively,
+desktop just shows the QR as the always-working fallback. The registration
+fee is a single fixed constant, `PRICE_PER_ATTENDEE_INR` in
+`src/lib/payment/pricing.ts` (currently ₹500/attendee) — not yet
+admin-editable; a future generalization for reuse by other events is
+tracked in [[BACKLOG.md]], not built now.
 
 ## Auth
 
@@ -133,7 +182,11 @@ but must never feed the ticket email again.
 | `POST api/admin/resend` | resend ticket email (verified) or a plain status email (pending/waitlisted/rejected) | admin session |
 | `GET api/admin/export` | CSV export of all registrations | admin session |
 | `POST api/admin/manual-register` | admin-entered walk-in/cash registration; auto-verifies + issues ticket immediately | admin session |
-| `api/phonepe/initiate` / `webhook` (Phase B) | sandbox demo only | public / webhook signature |
+| `POST api/phonepe/initiate` | start a PhonePe sandbox checkout for a `pending` registration | public |
+| `POST api/phonepe/webhook` | PhonePe's S2S callback; signature-verified, auto-verifies + issues ticket | public, webhook signature |
+| `GET api/phonepe/status` | reconciliation fallback (redirect-vs-webhook race) + local-dev testing path | public |
+| `GET api/upi/qr` | static UPI payment QR (PNG), always shown regardless of mode | public |
+| `POST api/admin/payment-mode` | flips `events.payment_mode`, no redeploy needed | admin session |
 
 ## Pages
 

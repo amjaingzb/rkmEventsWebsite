@@ -7,8 +7,27 @@ import FaqSection from "@/components/static/FaqSection";
 import Footer from "@/components/static/Footer";
 import RegistrationForm from "@/components/RegistrationForm";
 import Ornament from "@/components/static/Ornament";
+import { createServiceClient } from "@/lib/supabase/server";
 
-export default function HomePage() {
+const EVENT_SLUG = process.env.EVENT_SLUG ?? "halasuru-sarvapriyananda-2026";
+
+// Must render per-request, not be statically prerendered at build time —
+// otherwise the admin payment-mode toggle (src/lib/registration/register.ts,
+// the whole point of which is switching live with no redeploy) would only
+// take effect on the next deploy, since the fetched payment_mode would be
+// baked into a static shell instead.
+export const dynamic = "force-dynamic";
+
+export default async function HomePage() {
+  const supabase = createServiceClient();
+  const { data: event } = await supabase
+    .from("events")
+    .select("payment_mode")
+    .eq("slug", EVENT_SLUG)
+    .single();
+
+  const paymentMode = event?.payment_mode ?? "manual";
+
   return (
     <>
       <Navbar />
@@ -25,7 +44,7 @@ export default function HomePage() {
             </h2>
             <Ornament />
             <div className="mt-8 bg-white/70 border border-gold/30 rounded-xl p-6 sm:p-8">
-              <RegistrationForm />
+              <RegistrationForm paymentMode={paymentMode} />
             </div>
           </div>
         </section>

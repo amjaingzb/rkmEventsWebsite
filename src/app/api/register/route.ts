@@ -3,11 +3,11 @@ import { registerAttendee } from "@/lib/registration/register";
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { fullName, email, phone, numAttendees, paymentReference, paymentAmount } = body;
+  const { fullName, email, phone, numAttendees, paymentReference } = body;
 
-  if (!fullName || !email || !phone || !paymentReference) {
+  if (!fullName || !email || !phone) {
     return NextResponse.json(
-      { error: "fullName, email, phone, and paymentReference are required" },
+      { error: "fullName, email, and phone are required" },
       { status: 400 }
     );
   }
@@ -19,7 +19,6 @@ export async function POST(req: NextRequest) {
       phone,
       numAttendees,
       paymentReference,
-      paymentAmount,
     });
     return NextResponse.json({ id: reg.id, status: reg.status });
   } catch (err) {

@@ -93,11 +93,18 @@ Update this whenever something is skipped for time — don't let it get lost.
       (`supabase/migrations/0002_reject_and_release_seat.sql`), same
       single-UPDATE-with-guard shape as `register_attendee` — see
       [[architecture.md]].
-6. **PhonePe production integration** — merchant account not set up yet.
-   Only a *sandbox* demo module is planned (`src/lib/payment/phonepe.ts`),
-   isolated from the real registration flow, to show stakeholders technical
-   feasibility. See [[../problemStatement.txt]] and the payment module
-   boundary in `src/lib/payment/types.ts`.
+6. **PhonePe sandbox integration — built (2026-09-08)**, wired into the
+   real registration flow (not an isolated demo page) and gated behind an
+   admin-toggleable `events.payment_mode` switch — see
+   [[architecture.md]] "Payment Module Boundary" for the full design.
+   Uses PhonePe's public sandbox test credentials (no merchant account
+   needed). **Not yet applied to the live Supabase project** — needs
+   `supabase/migrations/0004_phonepe_and_payment_mode.sql` run in the SQL
+   editor first (same process as items 4/5a's migrations), then a Netlify
+   draft deploy to test the real inbound webhook (can't reach `localhost`).
+   **Production PhonePe integration remains out of scope** — merchant
+   account not set up, sandbox test credentials are public/shared and
+   must never be treated as a real payment guarantee.
 7. **Email deliverability** — no bounce handling or retry on send failure;
    a failed `sendTicketEmail`/`sendStatusEmail` call throws inside the
    calling route without a retry path (as of 2026-09-08 both now check the

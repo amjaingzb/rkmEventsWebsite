@@ -31,7 +31,11 @@ export async function GET(req: NextRequest) {
 
   const [{ data, error }, { data: event }] = await Promise.all([
     query,
-    supabase.from("events").select("title, event_date").eq("slug", EVENT_SLUG).single(),
+    supabase
+      .from("events")
+      .select("title, event_date, payment_mode")
+      .eq("slug", EVENT_SLUG)
+      .single(),
   ]);
 
   if (error) {

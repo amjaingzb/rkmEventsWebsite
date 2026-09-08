@@ -1,6 +1,9 @@
 import { createServiceClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import { CONTACT_EMAIL } from "@/lib/contact";
+import { computeAmountInr } from "@/lib/payment/pricing";
+import UpiPaymentInfo from "@/components/UpiPaymentInfo";
+import ConfirmationPhonePeReconciler from "@/components/ConfirmationPhonePeReconciler";
 
 const STATUS_COPY: Record<string, { title: string; body: string }> = {
   pending: {
@@ -31,13 +34,17 @@ export default async function ConfirmationPage({
 
   const { data: reg } = await supabase
     .from("registrations")
-    .select("id, full_name, status, seat_number")
+    .select("id, full_name, status, seat_number, num_attendees, events(payment_mode)")
     .eq("id", id)
     .single();
 
   if (!reg) notFound();
 
+  const paymentMode =
+    (reg as unknown as { events: { payment_mode: string } | null }).events
+      ?.payment_mode ?? "manual";
   const copy = STATUS_COPY[reg.status] ?? STATUS_COPY.pending;
+  const isPending = reg.status === "pending";
 
   return (
     <main className="max-w-md mx-auto px-4 py-16 text-center">
@@ -56,6 +63,15 @@ export default async function ConfirmationPage({
           <strong>Registration ID:</strong> {reg.id}
         </p>
       </div>
+
+      {isPending && (
+        <div className="mt-6 text-left">
+          <UpiPaymentInfo amountInr={computeAmountInr(reg.num_attendees)} />
+        </div>
+      )}
+      {isPending && paymentMode === "phonepe_sandbox" && (
+        <ConfirmationPhonePeReconciler registrationId={reg.id} />
+      )}
     </main>
   );
 }

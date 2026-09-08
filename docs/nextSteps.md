@@ -30,6 +30,18 @@ manual/on-request).
 
 **Open to-dos:**
 
+0. **Run the new migration, then draft-deploy to test PhonePe end to end**
+   — `supabase/migrations/0004_phonepe_and_payment_mode.sql` (adds
+   `events.payment_mode` + PhonePe correlation columns on `registrations`)
+   needs to be run in the Supabase SQL editor before the new PhonePe
+   sandbox integration / UPI display / payment-mode toggle work at all —
+   confirmed blocking live 2026-09-08 (`registerAttendee` now selects
+   `payment_mode`, so registration itself 500s until this runs). After
+   that: everything works from `npm run dev` except the real inbound
+   PhonePe webhook (can't reach `localhost`) — one
+   `netlify deploy --build --alias demo` gets a stable public URL to test
+   the actual scan-QR → "Simulate Success" → webhook-fires loop. See
+   [[architecture.md]] "Payment Module Boundary" and [[BACKLOG.md]] item 6.
 1. **Update the DNS instructions sent to the admin (Bluehost)** — the
    message already sent
    (`Type: CNAME, Host: events, Points To: cname.vercel-dns.com`) was
@@ -96,6 +108,42 @@ Full rationale and the complete deferred-items list: [[BACKLOG.md]].
 
 ## Recently completed
 
+- **2026-09-08 (PhonePe sandbox integration + always-on UPI display)** —
+  built while waiting on the Resend domain handover, so the project owner
+  can demo both a manual and an automated payment flow to Adhyaksha
+  Swamiji before he decides which to keep:
+  - The registration page (and the confirmation page, while `pending`)
+    now always shows the Math's UPI ID (`ramakri13482@kbl`), a scannable
+    QR (`GET api/upi/qr`), and a `upi://pay?...` mobile deep-link
+    (`UpiPaymentInfo.tsx`) — regardless of payment mode. Closes a real gap:
+    the FAQ already promised "you will see our bank transfer details and
+    UPI QR code" during registration, but nothing rendered it before this.
+  - Registration fee is now a single fixed constant, ₹500/attendee
+    (`PRICE_PER_ATTENDEE_INR` in `src/lib/payment/pricing.ts`) — the old
+    free-text "Amount paid" input (self-reported, never checked against
+    attendee count) is gone; the amount is computed and shown read-only
+    everywhere.
+  - New `src/lib/payment/phonepe.ts` — a real, working PhonePe PG v1
+    sandbox client (public test credentials, no merchant account needed):
+    initiate + webhook signature verification + a status-check
+    reconciliation fallback, all funneling through the existing
+    `markVerifiedAndIssueTicket` seam unchanged. Not a synchronous
+    `PaymentModule` implementation (PhonePe is webhook-driven) — see
+    [[architecture.md]] for why that's still the right isolation boundary.
+  - New `events.payment_mode` column (`'manual'` | `'phonepe_sandbox'`),
+    toggleable live from `/admin/dashboard` with **no redeploy** —
+    explicitly needed because the project owner will be demoing from a
+    venue without dev-environment access.
+  - Caught and fixed a real bug during build verification: `/` had gotten
+    statically prerendered at build time (Next.js's static-generation
+    heuristic), which would have baked in whatever `payment_mode` was set
+    at build time and made the "no redeploy" toggle silently not work.
+    Fixed with `export const dynamic = "force-dynamic"` on `src/app/page.tsx`.
+  - Build/lint verified clean; homepage and the new UPI QR endpoint
+    live-tested against the running dev server. **Not yet fully
+    live-tested** — see item 0 above, blocked on running the new
+    migration against the live Supabase project, then a Netlify draft
+    deploy to test the real inbound webhook (can't reach `localhost`).
 - **2026-09-08 (deployed to Netlify, switched from planned Vercel)** — site
   is now live at https://rkm-halasuru-registration.netlify.app, smoke-tested
   (homepage, `/admin/login`, and an auth-gated API route all responding
