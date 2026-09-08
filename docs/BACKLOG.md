@@ -29,6 +29,24 @@ Update this whenever something is skipped for time — don't let it get lost.
 5. **Waitlist re-invite tooling** — no CSV export or bulk-notify mechanism;
    organizers currently would need to query Supabase directly to re-engage
    the waitlist if a bigger venue is arranged.
+5a. **Admin dashboard is pending-only today** (2026-09-08) — `/admin/dashboard`
+    (`src/components/AdminTable.tsx`) lists only `status = 'pending'` rows with
+    a single Verify action. Project owner expects, and this is not yet built:
+    - Full registrations view across all statuses (pending/verified/waitlisted/
+      rejected), not just pending — with filtering.
+    - Resend ticket email button (re-run just the email step of
+      `markVerifiedAndIssueTicket` for an already-verified row, for a lost
+      email / bounce).
+    - CSV/Excel export of **all** registrations (this is broader than item 5's
+      waitlist-specific export — organizers want a full export for
+      offline reporting/reconciliation, not just re-invite lists).
+    - Send-by-WhatsApp — no design yet (could be a `wa.me` deep link
+      pre-filled per registrant as a first cut, or a real API integration
+      later; needs a decision before building).
+    - Reject action ties into item 4 above (currently no UI even once
+      `api/admin/reject` exists).
+    Scope this properly (probably its own doc section or a design pass) before
+    building — it's more than a one-off addition to the existing table.
 6. **PhonePe production integration** — merchant account not set up yet.
    Only a *sandbox* demo module is planned (`src/lib/payment/phonepe.ts`),
    isolated from the real registration flow, to show stakeholders technical
@@ -43,7 +61,12 @@ Update this whenever something is skipped for time — don't let it get lost.
    `supabase/migrations/0001_init.sql`, revisit if it causes user complaints.
 9. **Mobile app QR-scanning integration** — see [[QR_PAYLOAD_SPEC.md]]; no
    online verify endpoint (`api/ticket/verify`) built yet, and the
-   offline-scan secret-distribution tradeoff is unresolved.
+   offline-scan secret-distribution tradeoff is unresolved. **Confirmed
+   deferred (2026-09-08)** by the project owner: the companion scanning app
+   is only in scope after the prototype demo to Adhyaksha Swamiji; manual
+   ticket/QR visual check at the door is fine for now. Not a launch blocker —
+   don't prioritize the QR anti-forgery test (BACKLOG-adjacent, was in
+   [[nextSteps.md]]'s queue) ahead of this being actually needed.
 10. **Admin audit log** — only `verified_by`/`verified_at` columns exist on
     `registrations`; no separate append-only audit trail of admin actions.
 11. **Rate limiting / abuse protection** — `api/register` has no rate limit;

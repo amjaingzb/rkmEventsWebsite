@@ -49,3 +49,17 @@ export async function buildQrDataUrl(
   const payload = buildQrPayload(regId, eventSlug);
   return QRCode.toDataURL(payload, { errorCorrectionLevel: "M", margin: 1 });
 }
+
+/**
+ * Returns a PNG buffer for the QR code, for use as an email attachment.
+ * Prefer this over buildQrDataUrl for email HTML: most clients (Gmail
+ * included) strip inline `data:` URI images from HTML emails, so the QR
+ * must be sent as a real attachment and referenced via `cid:` instead.
+ */
+export async function buildQrBuffer(
+  regId: string,
+  eventSlug: string
+): Promise<Buffer> {
+  const payload = buildQrPayload(regId, eventSlug);
+  return QRCode.toBuffer(payload, { errorCorrectionLevel: "M", margin: 1 });
+}

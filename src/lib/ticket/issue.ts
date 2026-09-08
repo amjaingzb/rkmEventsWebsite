@@ -52,6 +52,9 @@ export async function markVerifiedAndIssueTicket(
     endTime: event.end_time,
     venueName: event.venue_name,
     seatNumber: reg.seat_number,
+    numAttendees: reg.num_attendees,
+    paymentAmount: reg.payment_amount,
+    verifiedAt: reg.verified_at,
   });
 
   await supabase

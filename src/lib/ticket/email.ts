@@ -1,5 +1,5 @@
 import { Resend } from "resend";
-import { buildQrDataUrl } from "./qr";
+import { buildQrBuffer } from "./qr";
 
 interface TicketEmailInput {
   toEmail: string;
@@ -12,6 +12,9 @@ interface TicketEmailInput {
   endTime: string;
   venueName: string;
   seatNumber: number | null;
+  numAttendees: number;
+  paymentAmount: number | null;
+  verifiedAt: string;
 }
 
 export async function sendTicketEmail(input: TicketEmailInput) {
@@ -22,7 +25,8 @@ export async function sendTicketEmail(input: TicketEmailInput) {
   }
 
   const resend = new Resend(apiKey);
-  const qrDataUrl = await buildQrDataUrl(input.regId, input.eventSlug);
+  const qrBuffer = await buildQrBuffer(input.regId, input.eventSlug);
+  const qrContentId = "ticket-qr";
 
   const html = `
     <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto;">
@@ -38,9 +42,16 @@ export async function sendTicketEmail(input: TicketEmailInput) {
             ? `<strong>Seat No:</strong> ${input.seatNumber}<br/>`
             : ""
         }
+        <strong>Number of attendees:</strong> ${input.numAttendees}<br/>
+        ${
+          input.paymentAmount != null
+            ? `<strong>Payment amount:</strong> ₹${input.paymentAmount}<br/>`
+            : ""
+        }
+        <strong>Confirmed on:</strong> ${new Date(input.verifiedAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}<br/>
         <strong>Registration ID:</strong> ${input.regId}
       </p>
-      <img src="${qrDataUrl}" alt="Ticket QR code" width="220" height="220" />
+      <img src="cid:${qrContentId}" alt="Ticket QR code" width="220" height="220" />
     </div>
   `;
 
@@ -49,5 +60,15 @@ export async function sendTicketEmail(input: TicketEmailInput) {
     to: input.toEmail,
     subject: `Your ticket: ${input.eventTitle}`,
     html,
+    attachments: [
+      {
+        filename: "ticket-qr.png",
+        content: qrBuffer,
+        contentType: "image/png",
+        // Not in the SDK's Attachment type, but passed through untouched to
+        // the API, which does support it — required for `cid:` embedding.
+        content_id: qrContentId,
+      } as unknown as { filename: string; content: Buffer; contentType: string },
+    ],
   });
 }

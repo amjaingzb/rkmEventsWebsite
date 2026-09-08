@@ -4,6 +4,7 @@ out/
 .env
 .env.local
 .env*.local
+0_SECRETS/
 npm-debug.log*
 .DS_Store
 *.tsbuildinfo

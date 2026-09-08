@@ -92,7 +92,16 @@ client to check auth, never use the session client for data reads/writes.
 
 Pipe-delimited, HMAC-signed payload — frozen contract in [[QR_PAYLOAD_SPEC.md]],
 meant to be scanned later by an existing mobile app the project owner already
-has for another math center.
+has for another math center. **Confirmed deferred to post-prototype** — the
+scanning app is out of scope until after the demo to Adhyaksha Swamiji; manual
+visual QR/ticket check at the door is acceptable for the prototype.
+
+The ticket email embeds the QR as a real CID attachment (`src/lib/ticket/email.ts`,
+`buildQrBuffer` in `src/lib/ticket/qr.ts`), not an inline `data:` URI — Gmail and
+most clients strip inline data-URI images from HTML mail, which silently broke
+the QR in testing (2026-09-08). Don't revert to `buildQrDataUrl`/`toDataURL` for
+the email path; that helper still exists for other uses (e.g. admin preview UI)
+but must never feed the ticket email again.
 
 ## API Routes
 
@@ -102,7 +111,10 @@ has for another math center.
 | `GET api/admin/pending` | list pending registrations | admin session |
 | `POST api/admin/verify` | mark verified, issue ticket | admin session |
 | `POST api/admin/reject` (Phase B) | reject + release seat | admin session |
-| `GET api/admin/waitlist-export` (Phase B) | CSV export | admin session |
+| `GET api/admin/waitlist-export` (Phase B) | CSV export (waitlist only) | admin session |
+| `GET api/admin/registrations` (Phase B) | full list, all statuses | admin session |
+| `POST api/admin/resend` (Phase B) | resend ticket email for a verified row | admin session |
+| `GET api/admin/export` (Phase B) | CSV/Excel export of all registrations | admin session |
 | `api/phonepe/initiate` / `webhook` (Phase B) | sandbox demo only | public / webhook signature |
 
 ## Pages
