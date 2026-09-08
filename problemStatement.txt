@@ -1,0 +1,24 @@
+See i have to build a solution for event planning for swami sarvapriyananda
+visit to ramakrishna math halasuru Bangalore on visitDate= 31.10.2026 ,
+visitTime = 6 to 7:30 pm basically we can use google form or design a web-page..
+which ever is more elegant.
+
+challenges. first N (say 500) seats should be reserved and payment should be
+accepted. Its not sure whether payment gateway integration will be done. so
+payment can be done and detaiks will be recorded as given by user. payment
+verification against those details can be done manually. Upon verification
+(manual or automated via payment gateway) users will be sent digital tickets .
+
+After 500 reservations , guaranteed reservations should close but expression of
+interest could still eb recorded. the idea is that if there are enough interest
+say anopther 200 then a larger venue can be chosen and the people who have
+expressed interest can be reached out to rebook again..
+
+Similar event is hosted by chennai math and their sample is at
+https://events.chennaimath.org/irk2026#/?lang=en 
+We have to build something on similar lines ...
+
+ofcourse it will not be 1 to 1. like halasuru math will have a different guidelines on say car parking etc . different faqs, different speakers etc. 
+
+
+Look at proposed architecture.

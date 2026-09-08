@@ -1,0 +1,60 @@
+### The Recommended Architecture
+
+**1. The Database: Supabase**
+
+* **Role:** Stores registrant details, ticket statuses, and payment metadata safely.
+* **Why Supabase:** Google Sheets works for basic contact forms, but handling logic like *preventing double-registrations*, *securing sensitive data*, or *triggering payment events* requires a true database. Supabase provides a managed Postgres database on a generous free tier.
+* **How it talks to others:** Exposes a secure REST API automatically.
+
+**2. The Backend: Serverless Functions (Built into Hosting)**
+
+* **Role:** Processes form submissions, executes secure tasks (like confirming a payment status with Payment Gateway), and writes data to the database.
+* **Why Serverless:** In the 2000s, you needed a constantly running server (like Apache/PHP). Today, backends run as "Serverless Functions"—stateless scripts stored inside your frontend repository that execute in seconds *only* when requested.
+* **How it talks to others:**
+* Receives HTTPS requests from your Frontend.
+* Sends an API request to a payment platform (e.g., PhonePe) to verify payment.
+* Writes the verified output into Supabase.
+
+
+
+**3. The Frontend: Next.js or React (Static HTML Output)**
+
+* **Role:** Renders the 3–4 pages, schedule, and forms.
+* **Why Modern Frontend:** Claude Code excels at writing modern React component code. It compiles down into super-fast HTML and JavaScript files.
+* **How it talks to others:** Sends the user’s input directly to your Backend functions via standard browser HTTP requests (`fetch`).
+
+**4. The Domain / Subdomain: Cloudflare DNS or Host Defaults**
+
+* **Role:** Maps your custom domain (e.g., `myevent.com`) or provides a free default subdomain (e.g., `myevent.vercel.app`).
+* **Why Free:** Every modern host provides a free subdomain out of the box. If you buy a custom domain ($10), you can plug it into Cloudflare DNS for free to handle security, SSL, and DNS management.
+
+**5. The Hosting: Vercel**
+
+* **Role:** Hosts the compiled frontend pages and serves the backend serverless functions globally on a CDN.
+* **Why Vercel:** Integrates seamlessly with GitHub and offers a free "Hobby" tier designed for side projects.
+* **How it talks to others:** Every time you push code updates to GitHub, Vercel automatically deploys the frontend and hooks up the backend endpoints.
+
+
+
+**6. UPI Payment Gateway & Webhooks (PhonePe PG)**
+
+* **Role:** Processes zero-fee UPI payments (PhonePe, Google Pay, Paytm) and instantly notifies your backend when a transaction succeeds.
+* **How it works:**
+
+1. The **Frontend** initiates a PhonePe checkout flow (opening the attendee's UPI app on mobile or showing a dynamic QR code on desktop).
+2. The user enters their UPI PIN to complete the bank-to-bank payment.
+3. Once successful, PhonePe sends an automated server-to-server notification (a **Webhook**) directly to your **Backend**.
+4. Your **Backend** verifies the cryptographic signature of the webhook and automatically saves the confirmed registration into **Supabase**.
+
+### Missing Element to Consider
+
+---
+### Data Flow Overview
+
+1. User fills out the form on the **Frontend** hosted on **Vercel** (`myevent.com`).
+2. The **Frontend** initiates a payment transaction.
+3. The Payment Provider processes the payment and sends a notification to your **Backend** (Serverless Function on Vercel).
+4. The **Backend** receives the notification and saves the attendee record into the **Supabase Database**.
+5. The **Backend** returns a success status back to the **Frontend**, which redirects the user to the Confirmation Page.
+
+---
