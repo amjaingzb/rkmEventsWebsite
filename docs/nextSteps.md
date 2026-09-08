@@ -22,16 +22,15 @@ Unauthenticated` (not a 500, so all Supabase/Resend env vars are wired
 correctly in Netlify). See "Recently completed" below for the full
 Vercel→Netlify decision writeup.
 
-**Not yet git-linked — deploys are manual for now.** The site was created
-and deployed via the Netlify CLI (`netlify sites:create` +
-`netlify deploy --build --prod`), not by connecting the GitHub repo through
-Netlify's dashboard. That means **pushing to `main` does NOT auto-deploy**;
-any future code change needs an explicit `netlify deploy --build --prod`
-(or `netlify link` + deploy) to go live. Optional follow-up: link
-`github.com/amjaingzb/rkmEventsWebsite` for auto-deploy-on-push via the
-Netlify dashboard (Site settings → Build & deploy → Link repository) —
-requires authorizing the Netlify GitHub App in a browser, not done yet, not
-a demo blocker.
+**Not git-linked, and deliberately not deploying to production on every
+change** — see [[netlify.md]] for the full reasoning and the safe-deploy
+workflow (production deploys cost 15 credits each against a 300/month free
+cap that does not roll over; draft deploys via `netlify deploy --build`,
+no `--prod`, are free and used for iteration instead). Pushing to `main`
+does NOT auto-deploy today. Optional follow-up, not a demo blocker: link
+`github.com/amjaingzb/rkmEventsWebsite` for auto-deploy-on-push — only
+worth doing with a branch-based workflow so routine pushes don't silently
+burn production-deploy credits, see [[netlify.md]].
 
 **Push local commits to `origin/main`** — local `main` is 2 commits ahead
 (`2ca044d`, `25fdd96`). Same situation as before: push from your own

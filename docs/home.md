@@ -22,6 +22,8 @@ updated: 2026-09-08
 - [[setup.md]] — how to get a working local environment running
 - [[QR_PAYLOAD_SPEC.md]] — the frozen QR ticket payload format/contract
 - [[BACKLOG.md]] — full list of deferred/TBD items with rationale
+- [[netlify.md]] — hosting: credit system, safe-deploy workflow, restrictions
+  to keep in mind
 
 ## Where things live in the repo
 
