@@ -48,17 +48,22 @@ Update this whenever something is skipped for time — don't let it get lost.
     `registrations`; no separate append-only audit trail of admin actions.
 11. **Rate limiting / abuse protection** — `api/register` has no rate limit;
     a scripted flood could exhaust the 500-seat cap with junk entries.
-12. **Content** — static sections (Hero, SpeakerSection, VenueParkingSection,
-    FaqSection, Footer — `src/components/static/`) were scaffolded on
-    2026-09-08 with Lorem Ipsum and `[PLACEHOLDER: ...]` comments marking
-    exactly what to replace: speaker bio/photo, venue address/map, parking
-    rules, FAQ copy, contact info. `events.faq_json`/`parking_info` in
-    `supabase/seed.sql` are still unused placeholders — these static
-    sections are hardcoded JSX, not yet wired to read from the `events`
-    table. Real content still needed before real users see the site.
-13. **Styling** — static sections now exist with basic Tailwind layout
-    (see item 12), but no visual design pass toward the Chennai Math
-    reference site's polish yet — current look is functional, not elegant.
+12. **Content** — real content is now in place (as of 2026-09-08) for
+    speaker bio, agenda, venue address/map, parking/transit rules, and all
+    FAQs — sourced from the project owner via `delme-clipboard/input-data.txt`
+    and hardcoded into `src/components/static/*.tsx`. Only the **footer
+    contact email/phone** remains a `[PLACEHOLDER: ...]`. Note:
+    `events.faq_json`/`parking_info` in `supabase/seed.sql` are still
+    unused — the static sections are hardcoded JSX, not wired to read
+    from the `events` table. Revisit only if multi-event reuse becomes a
+    real near-term need (see the "Multi-tenancy" note in the root
+    `CLAUDE.md` — deliberately minimal for now).
+13. **Styling** — done for the first pass: nav bar (Home/Agenda/Speakers/
+    Venue/FAQ/Register), saffron/maroon/gold/cream "spiritual" theme, serif
+    display font, section structure modeled on the Chennai Math reference
+    site. Landed 2026-09-08. Future polish (animations, richer imagery
+    beyond the one banner/speaker photo, mobile QA beyond a quick check)
+    is still open-ended but no longer blocking.
 14. **npm audit: postcss (via Next.js 15.5.25)** — 1 moderate + 1 high
     advisory remain, fixed only by upgrading to Next 16 (breaking change).
     Deferred given the timeline; re-run `npm audit` and consider the Next 16

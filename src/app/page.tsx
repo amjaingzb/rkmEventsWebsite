@@ -6,6 +6,7 @@ import VenueParkingSection from "@/components/static/VenueParkingSection";
 import FaqSection from "@/components/static/FaqSection";
 import Footer from "@/components/static/Footer";
 import RegistrationForm from "@/components/RegistrationForm";
+import Ornament from "@/components/static/Ornament";
 
 export default function HomePage() {
   return (
@@ -17,11 +18,16 @@ export default function HomePage() {
         <SpeakerSection />
         <VenueParkingSection />
         <FaqSection />
-        <section id="register" className="max-w-2xl mx-auto px-4 py-16">
-          <h2 className="font-display text-3xl font-semibold text-maroon text-center mb-8">
-            Register
-          </h2>
-          <RegistrationForm />
+        <section id="register" className="bg-maroon/5 border-t border-gold/30">
+          <div className="max-w-2xl mx-auto px-4 py-12">
+            <h2 className="font-display text-3xl font-semibold text-maroon text-center mb-2">
+              Register
+            </h2>
+            <Ornament />
+            <div className="mt-8 bg-white/70 border border-gold/30 rounded-xl p-6 sm:p-8">
+              <RegistrationForm />
+            </div>
+          </div>
         </section>
         <Footer />
       </main>

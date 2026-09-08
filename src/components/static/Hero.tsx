@@ -18,12 +18,13 @@ export default function Hero() {
       </svg>
 
       <div className="relative max-w-4xl mx-auto px-4 py-20 text-center">
-        <div className="relative w-full h-48 sm:h-64 rounded-lg mb-8 overflow-hidden border border-gold/30">
+        <div className="relative w-full h-56 sm:h-72 rounded-lg mb-8 overflow-hidden border border-gold/30 bg-white/50">
           <Image
             src="/images/rkm-halasuru.png"
             alt="Ramakrishna Math, Halasuru"
             fill
-            className="object-cover"
+            sizes="(max-width: 896px) 100vw, 896px"
+            className="object-contain"
             priority
           />
         </div>

@@ -11,9 +11,10 @@ export default function SpeakerSection() {
       <div className="mt-8 flex flex-col sm:flex-row gap-8 items-start justify-center">
         <div className="relative w-32 h-32 shrink-0 rounded-full overflow-hidden border border-gold/30 mx-auto sm:mx-0">
           <Image
-            src="/images/rkm-halasuru.png"
+            src="/images/swami-sarvapriyananda.jpg"
             alt="Swami Sarvapriyananda"
             fill
+            sizes="128px"
             className="object-cover"
           />
         </div>
