@@ -35,7 +35,8 @@ reuse is fine, a multi-tenant admin UI is explicitly not.
 - **Backend:** Next.js serverless API routes (same repo) — `src/app/api/**`
 - **Database + Auth:** Supabase (Postgres + Supabase Auth for admin login)
 - **Email:** Resend (ticket delivery)
-- **Hosting (planned):** Vercel
+- **Hosting (planned):** Netlify — switched from the originally planned
+  Vercel (2026-09-08), see [[nextSteps.md]] "Next action" for why
 - **Payment (Phase B, sandbox only):** PhonePe
 
 ## Data Model

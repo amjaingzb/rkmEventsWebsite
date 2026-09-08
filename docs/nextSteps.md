@@ -15,18 +15,49 @@ updated: 2026-09-08
 
 ## Next action
 
-**Deploy to Vercel — biggest open gap, not yet actually tracked as a task
-before now (2026-09-08).** [[architecture.md]] has said "Hosting (planned):
-Vercel" since Phase A, but nothing in this file or [[BACKLOG.md]] ever
-turned that into an actionable step, and it was never done. The site only
-exists locally (`scripts/server.sh`, host-reachable via the container port
-mapping) — there's no public URL anyone outside this sandbox can register
-through yet. Needs: a Vercel project linked to the
-`github.com/amjaingzb/rkmEventsWebsite` repo, all `.env.local` vars (Supabase
-URL/keys, Resend key, `TICKET_FROM_EMAIL`, `EVENT_SLUG`, QR signing secret)
-added as Vercel env vars, and a production deploy triggered off `main`. Can
-proceed on the current `onboarding@resend.dev` sender in the meantime (see
-below) — hosting and email deliverability are independent blockers.
+**Deploy to Netlify (switched from Vercel) — biggest open gap, in progress
+(2026-09-08).** [[architecture.md]] had said "Hosting (planned): Vercel"
+since Phase A, but nothing ever turned that into an actionable step and it
+was never done. The site only exists locally (`scripts/server.sh`,
+host-reachable via the container port mapping) — there's no public URL
+anyone outside this sandbox can register through yet.
+
+**Why Netlify and not Vercel:** while signing up for Vercel, the project
+owner flagged (via a second opinion from Gemini) that Vercel's Hobby plan
+ToS restricts free-tier use to "personal or non-commercial use," and its own
+fair-use guidelines list "any method of requesting or processing payment
+from visitors of the site" as commercial usage — confirmed by reading
+Vercel's actual terms pages directly, not just the secondhand claim. This
+site collects a payment reference from registrants (even though the money
+itself moves off-site via UPI/bank transfer), so it's a real risk, not a
+false alarm. Cloudflare Pages was evaluated as an alternative and ruled
+out for a different reason: its Workers Free plan caps **CPU time at 10ms
+per request** (not wall-clock time — waiting on Supabase/Resend doesn't
+count, but rendering a page does), which is a hard, non-negotiable
+structural limit for an SSR-heavy Next.js app like this one (registration
+form, admin dashboard, QR PNG generation), not something avoidable by
+"not using bleeding-edge features." Netlify has neither restriction: no
+commercial-use clause in its ToS/Acceptable Use Policy (verified directly),
+and a 60-second synchronous function timeout fixed across all plans
+including Free (not the 10-second figure initially assumed — checked
+Netlify's current docs directly).
+
+**How much this changes the plan: very little.** This is a hosting-provider
+swap only — Next.js/Supabase/Resend/the payment module boundary are all
+unaffected, since none of that is Vercel-specific. Netlify has first-class
+Next.js support (its build system auto-detects and configures the Next.js
+runtime), so no application code changes are expected; if the actual deploy
+surfaces something Netlify-specific, it'll be noted here.
+
+**Status:** Netlify login in progress in this session (device-auth ticket
+flow via the Netlify CLI) — the project owner is completing sign-in. Once
+logged in, remaining steps: create/link a Netlify site to the
+`github.com/amjaingzb/rkmEventsWebsite` repo, port all `.env.local` vars
+(Supabase URL/keys, Resend key, `TICKET_FROM_EMAIL`, `EVENT_SLUG`, QR
+signing secret) into Netlify's environment variables, and trigger a
+production deploy off `main`. Can proceed on the current
+`onboarding@resend.dev` sender in the meantime (see below) — hosting and
+email deliverability are independent blockers.
 
 **Resend domain verification is blocked on an external person**, not an
 open task for Claude — project owner (2026-09-08) is waiting on someone
@@ -51,7 +82,7 @@ The admin dashboard is now feature-complete (round 2 polish pass) — see
    ahead of `origin/main` (the commit above wasn't there when `main` was
    last pushed). Same push-credentials situation as before: push from your
    own machine, or set up credentials in-session if you want Claude to do it.
-   (Also a prerequisite for the Vercel deploy above, since it deploys off
+   (Also a prerequisite for the Netlify deploy above, since it deploys off
    the GitHub repo.)
 3. Run [[setup.md]]'s concurrency load test against a test event to confirm
    the atomic seat-cap RPC behaves correctly under concurrent requests.

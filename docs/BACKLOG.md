@@ -14,16 +14,16 @@ Update this whenever something is skipped for time — don't let it get lost.
 > [!warning] Must fix before any real public registrations open
 > - **Not deployed anywhere** — the site only runs locally in this sandbox
 >   (`scripts/server.sh`); there's no public URL yet. [[architecture.md]] has
->   said "Hosting (planned): Vercel" since Phase A but it was never actually
->   done. See [[nextSteps.md]] "Next action" (added as a tracked task
->   2026-09-08 — previously fell through the cracks).
+>   said "Hosting (planned)" since Phase A but it was never actually done.
+>   Deploy is in progress now (2026-09-08) on **Netlify**, not Vercel — see
+>   [[nextSteps.md]] "Next action" for the switch and why.
 > - **Resend domain not verified** — `TICKET_FROM_EMAIL` is still the shared
 >   `onboarding@resend.dev` sandbox sender, which only delivers to the Resend
 >   account owner's own email (see item 7 below). Blocks ticket delivery to
 >   everyone else. Blocked on an external person handing over subdomain
 >   access (project owner, 2026-09-08) — not an actionable Claude task right
 >   now. Note: unrelated to site hosting — the site can stay on a free
->   `*.vercel.app` domain regardless of which domain email sends from.
+>   `*.netlify.app` domain regardless of which domain email sends from.
 > - **No rate limiting on `/api/register`** (item 11) — a scripted flood
 >   could exhaust the 500-seat cap with junk entries.
 > - **Duplicate submissions unblocked** (item 2) — same person can claim a
