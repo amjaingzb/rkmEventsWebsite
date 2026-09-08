@@ -12,12 +12,17 @@ Update this whenever something is skipped for time — don't let it get lost.
 ## Go-Live Checklist (2026-09-08)
 
 > [!warning] Must fix before any real public registrations open
+> - **Not deployed anywhere** — the site only runs locally in this sandbox
+>   (`scripts/server.sh`); there's no public URL yet. [[architecture.md]] has
+>   said "Hosting (planned): Vercel" since Phase A but it was never actually
+>   done. See [[nextSteps.md]] "Next action" (added as a tracked task
+>   2026-09-08 — previously fell through the cracks).
 > - **Resend domain not verified** — `TICKET_FROM_EMAIL` is still the shared
 >   `onboarding@resend.dev` sandbox sender, which only delivers to the Resend
 >   account owner's own email (see item 7 below). Blocks ticket delivery to
->   everyone else. Needs a real domain (org's existing one, if any — not yet
->   confirmed — or a cheap purchased one) verified at resend.com/domains.
->   Note: unrelated to site hosting — the site can stay on a free
+>   everyone else. Blocked on an external person handing over subdomain
+>   access (project owner, 2026-09-08) — not an actionable Claude task right
+>   now. Note: unrelated to site hosting — the site can stay on a free
 >   `*.vercel.app` domain regardless of which domain email sends from.
 > - **No rate limiting on `/api/register`** (item 11) — a scripted flood
 >   could exhaust the 500-seat cap with junk entries.

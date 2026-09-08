@@ -15,21 +15,34 @@ updated: 2026-09-08
 
 ## Next action
 
-**Resend is only delivering to one inbox right now** — `TICKET_FROM_EMAIL`
-is still `onboarding@resend.dev` (Resend's shared test sender), which Resend
-restricts to delivering only to the email address that owns the API key
-(confirmed live, 2026-09-08: sending elsewhere returns `403 validation_error`
-— see [[BACKLOG.md]] item 7). Verify a real domain at resend.com/domains and
-point `TICKET_FROM_EMAIL` at an address on it to unblock delivery to
-everyone else. Until then, test sends only reach the Resend account's own
-signup address. Four real inboxes are available for dev testing meanwhile:
-`amjain.gzb@gmail.com`, `bhikajicama09@gmail.com`,
-`ruchisai197518@gmail.com`, `sairam_197518@yahoo.in`.
+**Deploy to Vercel — biggest open gap, not yet actually tracked as a task
+before now (2026-09-08).** [[architecture.md]] has said "Hosting (planned):
+Vercel" since Phase A, but nothing in this file or [[BACKLOG.md]] ever
+turned that into an actionable step, and it was never done. The site only
+exists locally (`scripts/server.sh`, host-reachable via the container port
+mapping) — there's no public URL anyone outside this sandbox can register
+through yet. Needs: a Vercel project linked to the
+`github.com/amjaingzb/rkmEventsWebsite` repo, all `.env.local` vars (Supabase
+URL/keys, Resend key, `TICKET_FROM_EMAIL`, `EVENT_SLUG`, QR signing secret)
+added as Vercel env vars, and a production deploy triggered off `main`. Can
+proceed on the current `onboarding@resend.dev` sender in the meantime (see
+below) — hosting and email deliverability are independent blockers.
+
+**Resend domain verification is blocked on an external person**, not an
+open task for Claude — project owner (2026-09-08) is waiting on someone
+else to hand over access to a subdomain to verify at resend.com/domains.
+Until that lands, `TICKET_FROM_EMAIL` stays `onboarding@resend.dev`
+(Resend's shared test sender, restricted to delivering only to the API-key
+owner's own address — confirmed live: sending elsewhere returns `403
+validation_error`, see [[BACKLOG.md]] item 7). Four real inboxes are
+available for dev testing meanwhile: `amjain.gzb@gmail.com`,
+`bhikajicama09@gmail.com`, `ruchisai197518@gmail.com`,
+`sairam_197518@yahoo.in`.
 
 The admin dashboard is now feature-complete (round 2 polish pass) — see
 "Recently completed" below. All of that work is now committed
 (`6215f23`, 2026-09-08) — previously it sat uncommitted in the working tree.
-**Open items:**
+**Other open items:**
 
 1. ~~Run `supabase/migrations/0003_null_seat_number_on_reject.sql`~~ — done,
    confirmed 2026-09-08 by querying `registrations` directly (the one
@@ -38,6 +51,8 @@ The admin dashboard is now feature-complete (round 2 polish pass) — see
    ahead of `origin/main` (the commit above wasn't there when `main` was
    last pushed). Same push-credentials situation as before: push from your
    own machine, or set up credentials in-session if you want Claude to do it.
+   (Also a prerequisite for the Vercel deploy above, since it deploys off
+   the GitHub repo.)
 3. Run [[setup.md]]'s concurrency load test against a test event to confirm
    the atomic seat-cap RPC behaves correctly under concurrent requests.
 
