@@ -1,5 +1,6 @@
 import { createServiceClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
+import { CONTACT_EMAIL } from "@/lib/contact";
 
 const STATUS_COPY: Record<string, { title: string; body: string }> = {
   pending: {
@@ -16,7 +17,7 @@ const STATUS_COPY: Record<string, { title: string; body: string }> = {
   },
   rejected: {
     title: "Payment could not be verified",
-    body: "Please contact the organizers with your registration ID below to resolve this.",
+    body: `Please contact us at ${CONTACT_EMAIL} with your registration ID below to resolve this.`,
   },
 };
 

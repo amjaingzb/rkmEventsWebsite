@@ -66,6 +66,12 @@ count-then-insert check.
 > A multi-seat booking that would overflow the remaining cap falls entirely
 > to waitlist rather than partial-filling. Tracked in [[BACKLOG.md]].
 
+Releasing a seat (admin reject, `pending` rows only) uses the same
+single-UPDATE-with-guard pattern in a second function, `reject_registration`
+(`supabase/migrations/0002_reject_and_release_seat.sql`) — atomically flips
+status to `rejected` and decrements `seats_taken` by `num_attendees` in one
+call, no read-then-write gap there either.
+
 ## Payment Module Boundary
 
 `src/lib/payment/types.ts` defines one interface (`PaymentModule.verifyPayment`)
@@ -87,6 +93,16 @@ bypasses RLS, used for all data access from API routes) and
 `createSessionClient()`/`requireAdminSession()` (anon key + request cookies,
 used only to check "is there a logged-in admin?"). Never use the service-role
 client to check auth, never use the session client for data reads/writes.
+`/admin` is the single entry point — it checks the session server-side and
+redirects to `/admin/dashboard` or `/admin/login` — and
+`AdminLogoutButton.tsx` calls the browser Supabase client's `signOut()`.
+
+Admin-entered walk-in/cash registrations (`POST api/admin/manual-register`)
+go through the same `registerAttendee()` helper
+(`src/lib/registration/register.ts`) as the public form — the seat-cap
+invariant above is never bypassed for admin-entered rows either — then
+immediately call `markVerifiedAndIssueTicket()` since cash is already in
+hand, rather than landing in the pending queue.
 
 ## Tickets / QR
 
@@ -110,11 +126,12 @@ but must never feed the ticket email again.
 | `POST api/register` | validate + call the atomic RPC | public |
 | `GET api/admin/pending` | list pending registrations | admin session |
 | `POST api/admin/verify` | mark verified, issue ticket | admin session |
-| `POST api/admin/reject` (Phase B) | reject + release seat | admin session |
-| `GET api/admin/waitlist-export` (Phase B) | CSV export (waitlist only) | admin session |
-| `GET api/admin/registrations` (Phase B) | full list, all statuses | admin session |
-| `POST api/admin/resend` (Phase B) | resend ticket email for a verified row | admin session |
-| `GET api/admin/export` (Phase B) | CSV/Excel export of all registrations | admin session |
+| `POST api/admin/reject` | reject (pending only) + release seat atomically | admin session |
+| `GET api/admin/waitlist-export` (Phase B) | CSV export (waitlist only, for re-invite) | admin session |
+| `GET api/admin/registrations` | full list, all statuses, `?status=` filter | admin session |
+| `POST api/admin/resend` | resend ticket email (verified) or a plain status email (pending/waitlisted/rejected) | admin session |
+| `GET api/admin/export` | CSV export of all registrations | admin session |
+| `POST api/admin/manual-register` | admin-entered walk-in/cash registration; auto-verifies + issues ticket immediately | admin session |
 | `api/phonepe/initiate` / `webhook` (Phase B) | sandbox demo only | public / webhook signature |
 
 ## Pages

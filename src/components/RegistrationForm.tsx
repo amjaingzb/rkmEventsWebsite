@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { CONTACT_EMAIL } from "@/lib/contact";
 
 export default function RegistrationForm() {
   const router = useRouter();
@@ -33,7 +34,11 @@ export default function RegistrationForm() {
     setSubmitting(false);
 
     if (!res.ok) {
-      setError(data.error ?? "Something went wrong. Please try again.");
+      setError(
+        data.error
+          ? `${data.error} If this continues, contact us at ${CONTACT_EMAIL}.`
+          : `Something went wrong. Please try again, or contact us at ${CONTACT_EMAIL} if this continues.`
+      );
       return;
     }
 
