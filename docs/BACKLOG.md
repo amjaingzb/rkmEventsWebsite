@@ -65,8 +65,9 @@ Update this whenever something is skipped for time — don't let it get lost.
     registration — see [[nextSteps.md]] "Recently completed" for the full
     breakdown. One migration from that round
     (`0003_null_seat_number_on_reject.sql`, fixes a real seat-number-reuse
-    collision bug found via testing) is not yet run — see
-    [[nextSteps.md]] "Next action". Built:
+    collision bug found via testing) has now been run against the live
+    project — confirmed 2026-09-08 by querying `registrations` directly
+    (the one rejected row has `seat_number: null`). Built:
     - Full registrations view across all statuses, with tabs
       (All/Pending/Verified/Waitlisted/Rejected) — `GET /api/admin/registrations`.
     - Resend ticket email — `POST /api/admin/resend`, only for `verified`

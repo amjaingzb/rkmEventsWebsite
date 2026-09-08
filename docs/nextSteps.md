@@ -27,20 +27,19 @@ signup address. Four real inboxes are available for dev testing meanwhile:
 `ruchisai197518@gmail.com`, `sairam_197518@yahoo.in`.
 
 The admin dashboard is now feature-complete (round 2 polish pass) — see
-"Recently completed" below. **One manual step required:**
+"Recently completed" below. All of that work is now committed
+(`6215f23`, 2026-09-08) — previously it sat uncommitted in the working tree.
+**Open items:**
 
-1. **Run `supabase/migrations/0003_null_seat_number_on_reject.sql`** in the
-   Supabase SQL editor. Fixes a real bug found during testing: rejecting a
-   registration released its seat count but left `seat_number` set on the
-   rejected row, so that seat number gets reassigned to a future
-   registration and the dashboard can show two different people with the
-   same seat number. The migration also backfills any rows already affected.
-2. Run [[setup.md]]'s concurrency load test against a test event to confirm
+1. ~~Run `supabase/migrations/0003_null_seat_number_on_reject.sql`~~ — done,
+   confirmed 2026-09-08 by querying `registrations` directly (the one
+   rejected row has `seat_number: null`).
+2. **Push commit `6215f23` to `origin/main`** — local `main` is 1 commit
+   ahead of `origin/main` (the commit above wasn't there when `main` was
+   last pushed). Same push-credentials situation as before: push from your
+   own machine, or set up credentials in-session if you want Claude to do it.
+3. Run [[setup.md]]'s concurrency load test against a test event to confirm
    the atomic seat-cap RPC behaves correctly under concurrent requests.
-3. Push the local git repo to a GitHub remote — a remote
-   (`github.com/amjaingzb/rkmEventsWebsite`) is now configured, but this
-   sandbox has no push credentials; push from your own machine, or set up
-   credentials in-session if you want Claude to do it.
 
 Smaller open item: the live Supabase project now has a handful of test
 registrations from dev-flow verification (`TEST-TXN-002`, `TEST-TXN-003`,
