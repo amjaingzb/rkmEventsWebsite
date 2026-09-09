@@ -68,11 +68,11 @@ export default function Hero() {
 
         <div className="relative w-full aspect-[4/3] rounded-2xl shadow-xl overflow-hidden border border-gold/30 bg-white/50">
           <Image
-            src="/images/rkm-halasuru.png"
+            src="/images/hero-matha-photo.jpg"
             alt="Ramakrishna Math, Halasuru"
             fill
             sizes="(max-width: 1024px) 100vw, 576px"
-            className="object-contain"
+            className="object-cover"
             priority
           />
         </div>

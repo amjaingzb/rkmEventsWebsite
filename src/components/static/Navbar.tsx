@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState } from "react";
 
 const LINKS = [
@@ -39,8 +40,15 @@ export default function Navbar() {
   return (
     <header className="sticky top-0 z-50 bg-cream/90 backdrop-blur border-b border-gold/30">
       <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
-        <a href="#home" className="font-display text-xl font-semibold text-maroon">
-          Ramakrishna Math Halasuru
+        <a href="#home" className="flex items-center gap-2.5 font-display text-xl font-semibold text-maroon">
+          <Image
+            src="/images/logo.png"
+            alt=""
+            width={36}
+            height={36}
+            className="h-9 w-9 shrink-0"
+          />
+          <span>Ramakrishna Math Halasuru</span>
         </a>
 
         <nav className="hidden md:flex items-center gap-6">

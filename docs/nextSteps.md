@@ -2,7 +2,7 @@
 tags: [event-registration, next-steps]
 aliases: [next steps, todo, status]
 created: 2026-09-08
-updated: 2026-09-09
+updated: 2026-09-10
 ---
 
 # Next Steps
@@ -14,6 +14,18 @@ updated: 2026-09-09
 > "Recently completed", update "Next action", and refresh the queue.
 
 ## Next action
+
+> [!note] Real photo/logo assets swapped in (2026-09-10)
+> Follow-up to the visual redesign below, from real assets the project
+> owner dropped in `delme-clipboard/`: Hero's building photo is now
+> `public/images/hero-matha-photo.jpg` (real matha exterior, replacing the
+> placeholder `rkm-halasuru.png`, which was deleted as unused elsewhere),
+> `Navbar.tsx` now renders the real Ramakrishna Math emblem
+> (`public/images/logo.png`) next to the wordmark, and the keynote speaker
+> photo's circular crop was fixed (`object-cover` → `object-cover
+> object-top` in `SpeakerSection.tsx`) since center-cropping the portrait
+> source was cutting off the top of the head. `npm run build` and
+> `npm run lint` clean; verified all three live in a browser session.
 
 > [!note] Public page visual redesign done (2026-09-09)
 > Restyled the public event page in place, component by component, per a

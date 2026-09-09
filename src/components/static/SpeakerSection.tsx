@@ -34,7 +34,7 @@ export default function SpeakerSection() {
               alt="Swami Sarvapriyananda"
               fill
               sizes="160px"
-              className="object-cover"
+              className="object-cover object-top"
             />
           </div>
           <div className="flex-1 space-y-4">
