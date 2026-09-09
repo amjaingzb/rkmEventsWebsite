@@ -94,9 +94,14 @@ export default function AdminTable() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ registrationId: id }),
     });
+    const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
       setError(data.error ?? "Action failed");
+    } else if (url === "/api/admin/verify" && data.waitlisted) {
+      setError(
+        "Payment confirmed, but capacity filled in the meantime — moved to " +
+          "waitlisted. Needs manual resolution (refund or next-batch invite)."
+      );
     }
     setBusyId(null);
     await load(tab);

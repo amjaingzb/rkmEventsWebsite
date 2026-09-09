@@ -55,6 +55,12 @@ export async function POST(req: NextRequest) {
   const result = await applyConfirmedPhonePeSuccess(reg, payload);
   if (!result.applied) {
     console.error("PhonePe webhook: not applied —", result.reason);
+  } else if (result.waitlisted) {
+    console.error(
+      "PhonePe webhook: payment confirmed but capacity filled at verification — " +
+        "registration waitlisted with payment on file, needs manual resolution",
+      reg.id
+    );
   }
 
   return NextResponse.json({ ok: true });

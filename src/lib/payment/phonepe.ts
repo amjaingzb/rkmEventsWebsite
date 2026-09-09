@@ -265,7 +265,7 @@ interface RegistrationForPhonePe {
 export async function applyConfirmedPhonePeSuccess(
   reg: RegistrationForPhonePe,
   orderState: PhonePeOrderState
-): Promise<{ applied: boolean; reason?: string }> {
+): Promise<{ applied: boolean; reason?: string; waitlisted?: boolean }> {
   if (!isPhonePeSuccess(orderState)) {
     return { applied: false, reason: `not a completed order (state=${orderState.state})` };
   }
@@ -289,12 +289,12 @@ export async function applyConfirmedPhonePeSuccess(
     })
     .eq("id", reg.id);
 
-  await markVerifiedAndIssueTicket(reg.id, {
+  const outcome = await markVerifiedAndIssueTicket(reg.id, {
     verified: true,
     verifiedAt: new Date().toISOString(),
     verifiedBy: null,
     rawProviderResponse: orderState,
   });
 
-  return { applied: true };
+  return { applied: true, waitlisted: outcome.waitlisted };
 }

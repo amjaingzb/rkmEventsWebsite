@@ -67,7 +67,10 @@ export async function POST(req: NextRequest) {
     method: "manual",
   });
   verifyResult.verifiedBy = adminUserId;
-  await markVerifiedAndIssueTicket(reg.id, verifyResult);
+  const outcome = await markVerifiedAndIssueTicket(reg.id, verifyResult);
 
-  return NextResponse.json({ id: reg.id, status: "verified" });
+  return NextResponse.json({
+    id: reg.id,
+    status: outcome.waitlisted ? "waitlisted" : "verified",
+  });
 }

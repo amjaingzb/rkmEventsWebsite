@@ -53,28 +53,50 @@ function toTicketEmailInput(reg: RegistrationWithEvent) {
  * call into once a payment is verified. Keeping this outside src/lib/payment/**
  * is what makes the manual -> automatic swap touch only the payment module —
  * this function and everything downstream of it never changes.
+ *
+ * The capacity claim itself happens here (Item 3, registration-integrity.md)
+ * via claim_and_verify_registration — not at submission time — so an
+ * abandoned/incomplete checkout never squats on a seat. The RPC's row lock
+ * + `status = 'pending'` guard is the idempotency check (a double-click, or
+ * a webhook racing a status poll, both serialize on it).
  */
 export async function markVerifiedAndIssueTicket(
   registrationId: string,
   result: PaymentVerificationResult
-) {
+): Promise<{ alreadyProcessed: boolean; waitlisted?: boolean }> {
   const supabase = createServiceClient();
 
-  const { data: reg, error: updateError } = await supabase
-    .from("registrations")
-    .update({
-      status: "verified",
-      verified_by: result.verifiedBy,
-      verified_at: result.verifiedAt,
+  const { data: claimed, error: claimError } = await supabase
+    .rpc("claim_and_verify_registration", {
+      p_registration_id: registrationId,
+      p_verified_by: result.verifiedBy,
+      p_verified_at: result.verifiedAt,
     })
-    .eq("id", registrationId)
-    .eq("status", "pending") // idempotency guard: no-op if already verified
-    .select(REG_WITH_EVENT_SELECT)
     .single();
 
-  if (updateError || !reg) {
-    // Either not found, or already verified (double-click) — treat as a no-op
-    // rather than an error so a duplicate admin click doesn't send a second email.
+  if (claimError || !claimed) {
+    // Not found, or wasn't `pending` (double-click / already processed).
+    return { alreadyProcessed: true };
+  }
+
+  const claimedRow = claimed as { status: RegistrationStatus };
+
+  if (claimedRow.status === "waitlisted") {
+    // Rare race: payment confirmed but capacity filled at claim time. No
+    // ticket to send — admin resolves manually (refund / next-batch invite)
+    // via the admin dashboard's waitlisted view.
+    return { alreadyProcessed: false, waitlisted: true };
+  }
+
+  // status === "verified" -- fetch with the event join for the email (the
+  // RPC returns a plain registrations row with no join).
+  const { data: reg } = await supabase
+    .from("registrations")
+    .select(REG_WITH_EVENT_SELECT)
+    .eq("id", registrationId)
+    .single();
+
+  if (!reg) {
     return { alreadyProcessed: true };
   }
 
@@ -85,7 +107,7 @@ export async function markVerifiedAndIssueTicket(
     .update({ ticket_sent_at: new Date().toISOString() })
     .eq("id", registrationId);
 
-  return { alreadyProcessed: false };
+  return { alreadyProcessed: false, waitlisted: false };
 }
 
 /**

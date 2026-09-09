@@ -66,12 +66,15 @@ values ('test-event', 'Test Event', 'Test', 'Test Venue', 'Test Address',
 Temporarily set `EVENT_SLUG=test-event` in `.env.local`, restart `npm run dev`, then:
 
 ```
-npx tsx scripts/load-test-register.ts http://localhost:3000 20
+npx tsx --env-file=.env.local scripts/load-test-register.ts http://localhost:3000 20
 ```
 
-Confirm exactly 5 registrations land `pending` with unique registration
-numbers 1–5, the rest `waitlisted`, and `events.seats_taken` for
-`test-event` equals exactly 5. Then switch `EVENT_SLUG` back to the real
-event slug.
+Since the seat-cap claim happens at *verification* time (registration-
+integrity.md Item 3), the script submits 20 registrations (all land
+`pending`, no capacity claimed) and then "verifies" all of them
+concurrently by calling `claim_and_verify_registration` directly. Confirm
+exactly 5 land `verified` with unique registration numbers 1–5, the rest
+`waitlisted`, and `events.seats_taken` for `test-event` equals exactly 5.
+Then switch `EVENT_SLUG` back to the real event slug.
 
 See [[architecture.md]] for why this is guaranteed to be race-safe.

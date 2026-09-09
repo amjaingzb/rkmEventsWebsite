@@ -30,5 +30,7 @@ export async function GET(req: NextRequest) {
   const payload = await checkPhonePeStatus(reg.phonepe_merchant_txn_id);
   const result = await applyConfirmedPhonePeSuccess(reg, payload);
 
-  return NextResponse.json({ status: result.applied ? "verified" : reg.status });
+  return NextResponse.json({
+    status: result.applied ? (result.waitlisted ? "waitlisted" : "verified") : reg.status,
+  });
 }

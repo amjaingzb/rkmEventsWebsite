@@ -56,10 +56,24 @@ a future event could reuse this codebase without a multi-tenant UI (see
 > query against `registrations` needs the same guard.
 
 **`registrations`** — one row per signup. Status lifecycle:
-`pending` (guaranteed seat claimed, payment ref submitted, awaiting manual
-verification) → `verified` (ticket sent) or `rejected` (Phase B, releases the
-seat). `waitlisted` is a separate branch (no seat, cap was full), not a stage
-in that lifecycle — see [[nextSteps.md]] for the not-yet-built re-invite flow.
+`pending` (payment ref submitted, no seat claimed yet — see "The Core
+Invariant" below) → `verified` (payment confirmed, seat claimed at that
+point, ticket sent) or `rejected` (Phase B, releases the seat if one was
+claimed). `waitlisted` is a separate branch (no seat, cap was full at
+verification time), not a stage in that lifecycle — see [[nextSteps.md]]
+for the not-yet-built re-invite flow. `seat_number` was renamed to
+`registration_number` and removed from every registrant-facing surface
+(ticket email, confirmation page) — see [[registration-integrity.md]];
+kept internal-only (admin table/CSV) as a volunteer/day-of reference,
+since actual seating is volunteer-assisted, not assigned.
+
+A registration also can't duplicate an existing `pending`/`verified` row
+for the same event (matched on normalized email OR phone) unless the
+caller explicitly overrides it (`allowDuplicate`, used by the admin
+walk-in "register anyway" confirm) — see `findDuplicateRegistration` in
+`src/lib/registration/register.ts`. A single submission is capped at 4
+attendees (`register_attendee`'s guard, mirrored client-side by a 1-4
+dropdown) — see [[registration-integrity.md]] items 1-2.
 
 Full column definitions: `supabase/migrations/0001_init.sql`. New columns
 added 2026-09-08 in `supabase/migrations/0004_phonepe_and_payment_mode.sql`:
@@ -76,12 +90,36 @@ completed" 2026-09-09) are both also applied.
 ## The Core Invariant: Atomic Seat Cap
 
 `guaranteed_seat_cap` (default 500) must never be oversold under concurrent
-registrations. This is enforced entirely inside one Postgres function,
-`register_attendee`, via a single atomic
-`UPDATE events SET seats_taken = seats_taken + n WHERE seats_taken + n <= cap RETURNING`.
+registrations.
+
+> [!note] Claim moved from submission time to verification time (2026-09-09)
+> Per [[registration-integrity.md]] Item 3: `register_attendee`
+> (`supabase/migrations/0001_init.sql`, capacity guard added in `0007`,
+> renamed in `0008`) now just inserts a `pending` row unconditionally — it
+> no longer touches `events.seats_taken` at all. The atomic claim moved to
+> a new function, `claim_and_verify_registration`
+> (`supabase/migrations/0009_verification_time_capacity_claim.sql`), called
+> only from `markVerifiedAndIssueTicket()` (`src/lib/ticket/issue.ts`) once
+> a payment is actually confirmed — manual admin click, or PhonePe
+> webhook/status. This closes the "claim a slot, never pay" hole: an
+> abandoned/incomplete checkout no longer squats on capacity. The function
+> row-locks the registration first (`for update`) so a double-click racing
+> a webhook retry on the *same* row serializes instead of both passing the
+> pending check, then runs the same atomic
+> `UPDATE events SET seats_taken = seats_taken + n WHERE seats_taken + n <= cap RETURNING`
+> guard `register_attendee` used to run. **Deliberately does not check
+> `events.is_registration_open`** — that flag gates new submissions only
+> (see the public registration states note once Item 6 lands), never an
+> admin clearing an existing verification backlog.
+>
+> Rare race: a `pending` row can still fall to `waitlisted` if capacity
+> filled between submission and verification (mitigated, not eliminated, by
+> the Item 5 buffer) — the row keeps its payment fields in that case,
+> distinguishing it in admin from a normal no-payment waitlist/EOI row.
+
 Postgres serializes concurrent UPDATEs on the same row, so there is no
 read-then-write race window — never reintroduce an application-level
-count-then-insert check.
+count-then-insert check, and never move the claim back to submission time.
 
 > [!warning] Known simplification
 > A multi-seat booking that would overflow the remaining cap falls entirely
@@ -89,9 +127,13 @@ count-then-insert check.
 
 Releasing a seat (admin reject, `pending` rows only) uses the same
 single-UPDATE-with-guard pattern in a second function, `reject_registration`
-(`supabase/migrations/0002_reject_and_release_seat.sql`) — atomically flips
-status to `rejected` and decrements `seats_taken` by `num_attendees` in one
-call, no read-then-write gap there either.
+(`supabase/migrations/0002_reject_and_release_seat.sql`, updated for the
+rename in `0008`) — atomically flips status to `rejected` and decrements
+`seats_taken` by `num_attendees` in one call, no read-then-write gap there
+either. Since Item 3, a `pending` row never has a `registration_number` (it's
+only assigned at verification now), so the "release the seat" branch inside
+`reject_registration` is dead code for any row created after `0009` landed
+— kept harmlessly for pre-migration historical rows.
 
 ## Payment Module Boundary
 
