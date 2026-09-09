@@ -12,10 +12,10 @@ updated: 2026-09-09
 > project owner. **All items (1-6, the rename, and all open caveats)
 > implemented 2026-09-09** — see [[nextSteps.md]] "Recently completed" for
 > the build writeup and [[architecture.md]] for the as-built description.
-> Migrations `0007`-`0011` are written; the project owner is applying them
-> to the live Supabase project now (in order, via the SQL editor) — see
-> [[nextSteps.md]] "Next action" for where that stands and the manual
-> verification pass to do once all five are in. This supersedes
+> Migrations `0007`-`0011` are applied to the live Supabase project and
+> confirmed directly against it. A manual UI pass (each public state, a
+> real registration through to a ticket email, the concurrency load test)
+> is still open — see [[nextSteps.md]] "Next action". This supersedes
 > [[BACKLOG.md]] item 2 as the source of truth
 > for that item's plan, and expands it with a new item (6) surfaced during
 > review.

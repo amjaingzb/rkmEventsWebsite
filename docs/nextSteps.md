@@ -15,34 +15,37 @@ updated: 2026-09-09
 
 ## Next action
 
-> [!warning] Applying migrations 0007-0011 to the live Supabase project — in progress (2026-09-09)
-> All of [[registration-integrity.md]] (duplicate detection, per-submission
-> cap, the `seat_number` → `registration_number` rename, the
-> verification-time seat-cap claim, the capacity buffer, and the
-> Open/Full-EOI/Paused states) is implemented in code and build/lint clean
-> (6 commits, one per implementation-order step — see "Recently completed"
-> below). The five new migrations
-> (`0007_register_attendee_num_attendees_cap.sql` through
-> `0011_pause_message.sql`) were written but not run by Claude — no
-> `supabase` CLI/project link or direct Postgres access from that session,
-> matching how past migrations here were applied (project owner, via the
-> Supabase SQL editor). **Project owner is applying them now, one at a
-> time in order, via the SQL editor.**
+> [!note] Migrations 0007-0011 applied and confirmed live (2026-09-09)
+> All of [[registration-integrity.md]] is now both implemented (6 commits,
+> one per implementation-order step — see "Recently completed" below) and
+> applied to the live Supabase project. Confirmed directly against it
+> (not just assumed): `registration_number` column exists and `seat_number`
+> is gone (`0008`), `claim_and_verify_registration` RPC exists (`0009`),
+> `event_capacity_snapshot` RPC works with `waitlist_alert_threshold`
+> defaulted to `10` (`0010`), `events.pause_message` column exists
+> (`0011`), and `register_attendee` actually rejects `num_attendees > 4`
+> (`0007`). Real event snapshot at confirmation time: `confirmed_booking:
+> 6, outstanding: 1, cap: 500, buffer: 10` — sane, no oversell.
 >
-> **If picking this back up later and the migrations aren't all in yet:**
-> check which of `0007`-`0011` have actually run (e.g. `select
-> registration_number from registrations limit 1;` succeeding means `0008`
-> is in; `select pause_message from events limit 1;` succeeding means
-> `0011` is in) and resume from there — they must go in ascending order,
-> each depends on the previous one's schema. **Once all five are in**, do
-> the manual pass described in [[registration-integrity.md]] "Verification
-> approach": each of Open/Full-EOI/Paused via the new admin
-> capacity-settings panel, a real registration → verify → ticket-email/
-> confirmation-page check (confirming no seat number appears, phone does),
-> and re-running the concurrency load test (`docs/setup.md`) since it now
-> exercises `claim_and_verify_registration` instead of the old
-> submission-time claim. Only after that manual pass should this be
-> considered demo-ready.
+> **Still open before calling this demo-ready — a manual pass through the
+> actual UI** (schema checks above only confirm the DB side):
+> - Each of the three public states (Open/Full-EOI/Paused) via the new
+>   admin capacity-settings panel on `/admin/dashboard` — force Paused
+>   (manual toggle) and Full (temporarily drop `guaranteed_seat_cap` to
+>   match `seats_taken`) and confirm the right form/notice renders on `/`.
+> - One real registration through manual mode: submit → confirm it lands
+>   `pending` with `events.seats_taken` **unchanged** → Verify from the
+>   admin dashboard → confirm it becomes `verified`, gets a
+>   `registration_number`, `seats_taken` increments only then, and the
+>   ticket email has no seat number but does have the phone number.
+> - Re-run the concurrency load test
+>   (`npx tsx --env-file=.env.local scripts/load-test-register.ts ...`,
+>   see [[setup.md]]) against a test event — it now exercises
+>   `claim_and_verify_registration` directly, not `register_attendee`.
+> - Reset any registration created during this manual pass afterward
+>   (`reject_registration` via the admin Reject button, or
+>   `reset_event_registrations()` if it was all thrown-away test data) so
+>   the demo data stays clean.
 
 > [!warning] Production deploy gate before the demo — confirmed 2026-09-09
 > A production Netlify deploy (`netlify deploy --build --prod`) is a

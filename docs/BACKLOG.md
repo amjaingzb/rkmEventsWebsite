@@ -24,8 +24,8 @@ Update this whenever something is skipped for time — don't let it get lost.
 > - **No rate limiting on `/api/register`** (item 11) — a scripted flood
 >   could exhaust the 500-seat cap with junk entries.
 > - ~~**Duplicate submissions unblocked**~~ — **done (2026-09-09)**, see
->   item 2 below. Pending migrations `0007`-`0011` being applied to the
->   live Supabase project before this is actually live.
+>   item 2 below. Migrations `0007`-`0011` applied and confirmed live; a
+>   manual UI pass is still open, see [[nextSteps.md]] "Next action".
 > - **npm audit: 1 moderate + 1 high advisory** (item 14), fix requires a
 >   breaking Next 16 upgrade.
 > - **Footer contact is a personal placeholder Gmail** (`amjain.gzb@gmail.com`,
@@ -53,8 +53,8 @@ Update this whenever something is skipped for time — don't let it get lost.
    [[registration-integrity.md]] (duplicate detection against pending/
    verified rows, per-submission cap of 4, and the seat-cap-claim-timing
    redesign that came out of the same discussion). Migrations `0007`-`0011`
-   still need to be applied to the live Supabase project — see
-   [[nextSteps.md]] "Next action".
+   applied to the live Supabase project and confirmed directly against it
+   — a manual UI pass is still open, see [[nextSteps.md]] "Next action".
 3. **Idempotency of admin verify — strengthened (2026-09-09).**
    `markVerifiedAndIssueTicket` now delegates to `claim_and_verify_registration`,
    which row-locks the registration (`for update`) before checking
