@@ -51,6 +51,10 @@ Update this whenever something is skipped for time — don't let it get lost.
 2. **Duplicate submissions** — nothing currently stops the same person
    registering twice (same email/phone). Decide desired behavior (block,
    warn, or allow and let admin merge) before Phase B ships.
+   **Superseded by [[registration-integrity.md]] (2026-09-09)** — that doc
+   is now the source of truth for this item's plan (duplicate detection,
+   plus the related per-submission cap and seat-cap-claim-timing redesign
+   that came out of the same discussion). Not yet implemented.
 3. **Idempotency of admin verify** — `markVerifiedAndIssueTicket` guards
    against a double-click resending the email (via the `status = 'pending'`
    WHERE clause), but this hasn't been tested under true concurrent requests.
@@ -248,6 +252,22 @@ Update this whenever something is skipped for time — don't let it get lost.
    ticket/QR visual check at the door is fine for now. Not a launch blocker —
    don't prioritize the QR anti-forgery test (BACKLOG-adjacent, was in
    [[nextSteps.md]]'s queue) ahead of this being actually needed.
+   > [!note] Direction change under consideration (2026-09-09, thought only,
+   > nothing built) — project owner is leaning away from a native Android
+   > scanning app (complex, one-or-two-developer bandwidth) toward instead
+   > adding a **volunteer-password-gated attendance page to this same
+   > Next.js site**: takes a seat number and marks that registration
+   > present, writing directly to the same Supabase DB (so it's
+   > automatically synced everywhere, no separate datastore to reconcile).
+   > If opened on a phone browser, camera-based QR scanning may work too
+   > (would need a scanning lib + the not-yet-built `api/ticket/verify`
+   > online-verify endpoint referenced above). Collision handling (two
+   > volunteers marking the same seat, offline/flaky-connection behavior at
+   > the door) is acknowledged as unresolved and would need designing before
+   > building. This would likely replace, not complement, the
+   > previously-discussed separate "sevaConnect" Android companion app.
+   > Revisit after the prototype demo, same as the rest of this item — no
+   > decision made yet, just recorded so the idea isn't lost.
 10. **Admin audit log** — only `verified_by`/`verified_at` columns exist on
     `registrations`; no separate append-only audit trail of admin actions.
 11. **Rate limiting / abuse protection** — `api/register` has no rate limit;

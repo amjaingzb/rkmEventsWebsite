@@ -22,6 +22,10 @@ updated: 2026-09-08
 - [[setup.md]] — how to get a working local environment running
 - [[QR_PAYLOAD_SPEC.md]] — the frozen QR ticket payload format/contract
 - [[BACKLOG.md]] — full list of deferred/TBD items with rationale
+- [[registration-integrity.md]] — finalized (not-yet-built) design for
+  duplicate-registration detection, per-submission ticket cap, moving the
+  seat-cap claim to verification time, the Open/Full-EOI/Paused public
+  states, and the `seat_number` rename
 - [[netlify.md]] — hosting: credit system, safe-deploy workflow, restrictions
   to keep in mind
 - [[technical-concepts.md]] — plain-language Q&A log for the project owner's
