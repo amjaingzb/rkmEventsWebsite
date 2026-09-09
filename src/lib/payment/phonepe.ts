@@ -5,202 +5,248 @@ import { markVerifiedAndIssueTicket } from "@/lib/ticket/issue";
 import { computeAmountInr } from "./pricing";
 
 /**
- * PhonePe PG v1 Standard Checkout — SANDBOX DEMO ONLY.
+ * PhonePe PG **V2** "Standard Checkout" — SANDBOX DEMO ONLY.
  *
- * The default merchant id / salt key / salt index below are PhonePe's
- * publicly published sandbox test credentials (shared by every integrator
- * testing against their preprod environment — not specific to this org,
- * safe to have as a fallback default). This module must never be pointed
- * at a real merchant account without a full security review, and nothing
- * here should be treated as proof of an actual payment on its own — see
- * the amount check in applyConfirmedPhonePeSuccess.
+ * Rewritten 2026-09 from the original V1 implementation, which PhonePe
+ * deprecated entirely (see docs/BACKLOG.md item 6 for the V1 postmortem).
+ * V2 uses OAuth (client_id/client_secret → bearer token) instead of V1's
+ * salt-key/checksum scheme, and — unlike V1 — has **no publicly shared UAT
+ * credential**: every integrator, even in sandbox/Test Mode, must sign up
+ * at business.phonepe.com and pull their own client_id/client_secret from
+ * Developer Settings. That signup has not happened for this project yet,
+ * so nothing in this file can be exercised end-to-end until it does — see
+ * docs/BACKLOG.md item 6 for the up-to-date status.
  *
- * Request/response shapes and the checksum construction below follow
- * PhonePe's documented PG v1 API, but haven't been exercised against a
- * live sandbox call yet — verify the exact webhook body shape and the
- * checksum's path-suffix nuance (present for /pg/v1/pay, absent for the
- * callback) during first real testing; PhonePe's API details can drift.
+ * Endpoints, request/response shapes, and the webhook auth model below were
+ * verified directly against developer.phonepe.com on 2026-09-09 (not
+ * written from memory — that's exactly how the V1 version went stale
+ * without anyone noticing). If PhonePe's API drifts again, re-check:
+ *   https://developer.phonepe.com/payment-gateway/website-integration/standard-checkout/api-integration/api-reference/authorization
+ *   .../api-reference/create-payment/initiate-payment
+ *   .../api-reference/order-status
+ *   .../api-reference/webhook
  *
- * The credential getters below always resolve to the sandbox defaults when
- * NEXT_PUBLIC_APP_MODE is "development" (src/lib/appMode.ts), regardless of
- * whatever PHONEPE_* env vars happen to be set — so a shared secrets file
- * accidentally containing real credentials can never leak into a local/dev
- * run. In live mode they fall back to the same sandbox defaults if the real
- * env vars are unset, which is intentional: it lets a live deploy still
- * demo the PhonePe flow on sandbox credentials before a real merchant
- * account exists. isUsingSandboxCredentials() exposes whether that's
- * currently happening, so src/lib/environmentBanner.ts can surface it
- * visibly instead of failing silently.
+ * Credential resolution mirrors the old V1 file's safety property:
+ * development mode always forces the sandbox environment, regardless of
+ * PHONEPE_ENV — so a shared secrets file can never leak production
+ * credentials into a local/dev run. Sandbox and production creds live in
+ * separate env vars (PHONEPE_SANDBOX_* / PHONEPE_PRODUCTION_*) rather than
+ * one pair, since V2 has no shared-public fallback to fall back to.
  *
  * Intentionally does NOT implement PaymentModule (src/lib/payment/types.ts)
  * — that interface models synchronous "caller already has proof, confirm
  * it" verification, while PhonePe is two-phase and webhook-driven with no
  * shared request context between initiate and verify. The isolation
  * property that actually matters is preserved instead: nothing outside
- * this file and the api/phonepe/* routes knows PhonePe's request/checksum
+ * this file and the api/phonepe/* routes knows PhonePe's request/auth
  * shapes, and every success path still funnels through the unchanged
  * markVerifiedAndIssueTicket seam.
  */
 
-const DEFAULT_BASE_URL = "https://api-preprod.phonepe.com/apis/pg-sandbox";
-const DEFAULT_MERCHANT_ID = "PGTESTPAYUAT";
-const DEFAULT_SALT_KEY = "099eb0cd-02cf-4e2a-8aca-3e6c6aff0399";
-const DEFAULT_SALT_INDEX = "1";
+const SANDBOX_BASE_URL = "https://api-preprod.phonepe.com/apis/pg-sandbox";
+const PRODUCTION_AUTH_BASE_URL = "https://api.phonepe.com/apis/identity-manager";
+const PRODUCTION_PG_BASE_URL = "https://api.phonepe.com/apis/pg";
 
-function getMerchantId(): string {
-  if (isDevelopment) return DEFAULT_MERCHANT_ID;
-  return process.env.PHONEPE_MERCHANT_ID || DEFAULT_MERCHANT_ID;
-}
-function getSaltKey(): string {
-  if (isDevelopment) return DEFAULT_SALT_KEY;
-  return process.env.PHONEPE_SALT_KEY || DEFAULT_SALT_KEY;
-}
-function getSaltIndex(): string {
-  if (isDevelopment) return DEFAULT_SALT_INDEX;
-  return process.env.PHONEPE_SALT_INDEX || DEFAULT_SALT_INDEX;
-}
-function getBaseUrl(): string {
-  if (isDevelopment) return DEFAULT_BASE_URL;
-  return process.env.PHONEPE_BASE_URL || DEFAULT_BASE_URL;
+/** True whenever calls should go to PhonePe's UAT sandbox rather than
+ * production — always true in development mode; in live mode, true unless
+ * PHONEPE_ENV is exactly "production". */
+function usingSandbox(): boolean {
+  if (isDevelopment) return true;
+  return (process.env.PHONEPE_ENV ?? "sandbox").toLowerCase() !== "production";
 }
 
-/** True when PhonePe is currently resolving to its hardcoded sandbox
- * credentials rather than real production ones — always true in
- * development mode, and true in live mode until real PHONEPE_* env vars
- * are set. Drives the environment banner (src/lib/environmentBanner.ts). */
+function getAuthBaseUrl(): string {
+  return usingSandbox() ? SANDBOX_BASE_URL : PRODUCTION_AUTH_BASE_URL;
+}
+function getPgBaseUrl(): string {
+  return usingSandbox() ? SANDBOX_BASE_URL : PRODUCTION_PG_BASE_URL;
+}
+
+function requireEnv(name: string): string {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(
+      `${name} is not set — sign up at business.phonepe.com, enable Test Mode, ` +
+        `and copy the Client ID/Secret from Developer Settings (see docs/BACKLOG.md item 6).`
+    );
+  }
+  return value;
+}
+
+function getClientId(): string {
+  return requireEnv(usingSandbox() ? "PHONEPE_SANDBOX_CLIENT_ID" : "PHONEPE_PRODUCTION_CLIENT_ID");
+}
+function getClientSecret(): string {
+  return requireEnv(
+    usingSandbox() ? "PHONEPE_SANDBOX_CLIENT_SECRET" : "PHONEPE_PRODUCTION_CLIENT_SECRET"
+  );
+}
+function getClientVersion(): string {
+  const envVar = usingSandbox() ? "PHONEPE_SANDBOX_CLIENT_VERSION" : "PHONEPE_PRODUCTION_CLIENT_VERSION";
+  return process.env[envVar] ?? "1";
+}
+
+/** True whenever PhonePe calls would currently resolve to the UAT sandbox
+ * environment rather than real production — always true in development
+ * mode, and true in live mode until PHONEPE_ENV=production is set. Drives
+ * the environment banner (src/lib/environmentBanner.ts). Doesn't check
+ * whether credentials are actually configured — a missing client id/secret
+ * throws loudly the moment a call is attempted instead. */
 export function isUsingSandboxCredentials(): boolean {
-  return getBaseUrl() === DEFAULT_BASE_URL || getMerchantId() === DEFAULT_MERCHANT_ID;
+  return usingSandbox();
 }
 
 function sha256Hex(input: string): string {
   return createHash("sha256").update(input).digest("hex");
 }
 
-/** PhonePe's merchantTransactionId must be alphanumeric and length-capped —
- * a raw uuid (36 chars incl. dashes) doesn't safely fit; strip the dashes. */
-export function toMerchantTxnId(registrationId: string): string {
-  return registrationId.replace(/-/g, "");
+interface AccessToken {
+  token: string;
+  expiresAtMs: number;
+}
+
+let cachedToken: AccessToken | null = null;
+
+/** Fetches (and caches in-memory) the O-Bearer access token required by
+ * every other V2 call. Refreshed a bit before actual expiry to avoid races
+ * against a call already in flight. Not persisted across server restarts
+ * or serverless cold starts — refetched on demand, which is fine since the
+ * token endpoint has no rate-limit documented for that. */
+async function getAccessToken(): Promise<string> {
+  const now = Date.now();
+  if (cachedToken && cachedToken.expiresAtMs - 30_000 > now) {
+    return cachedToken.token;
+  }
+
+  const body = new URLSearchParams({
+    client_id: getClientId(),
+    client_version: getClientVersion(),
+    client_secret: getClientSecret(),
+    grant_type: "client_credentials",
+  });
+
+  const res = await fetch(`${getAuthBaseUrl()}/v1/oauth/token`, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: body.toString(),
+  });
+
+  const data = await res.json();
+  if (!res.ok || !data?.access_token) {
+    throw new Error(`PhonePe auth failed: ${data?.message ?? res.status}`);
+  }
+
+  const expiresAtSeconds: number = data.expires_at ?? Math.floor(now / 1000) + 3000;
+  cachedToken = { token: data.access_token, expiresAtMs: expiresAtSeconds * 1000 };
+  return cachedToken.token;
 }
 
 interface InitiateInput {
   registrationId: string;
   amountInr: number;
   redirectUrl: string;
-  callbackUrl: string;
 }
 
 interface InitiateResult {
   redirectUrl: string;
-  merchantTransactionId: string;
+  merchantOrderId: string;
 }
 
-export async function initiatePhonePePayment(
-  input: InitiateInput
-): Promise<InitiateResult> {
-  const merchantTransactionId = toMerchantTxnId(input.registrationId);
-  const merchantId = getMerchantId();
+export async function initiatePhonePePayment(input: InitiateInput): Promise<InitiateResult> {
+  // V2 allows hyphens/underscores in merchantOrderId (max 63 chars), so the
+  // raw registration uuid fits directly — no stripping needed, unlike V1.
+  const merchantOrderId = input.registrationId;
+  const accessToken = await getAccessToken();
 
   const payload = {
-    merchantId,
-    merchantTransactionId,
-    merchantUserId: merchantTransactionId,
+    merchantOrderId,
     amount: Math.round(input.amountInr * 100), // paise
-    redirectUrl: input.redirectUrl,
-    redirectMode: "REDIRECT",
-    callbackUrl: input.callbackUrl,
-    paymentInstrument: { type: "PAY_PAGE" },
+    expireAfter: 1200, // seconds; PhonePe allows 300-3600
+    paymentFlow: {
+      type: "PG_CHECKOUT",
+      merchantUrls: { redirectUrl: input.redirectUrl },
+    },
   };
 
-  const base64Payload = Buffer.from(JSON.stringify(payload)).toString("base64");
-  const checksum =
-    sha256Hex(base64Payload + "/pg/v1/pay" + getSaltKey()) + "###" + getSaltIndex();
-
-  const res = await fetch(`${getBaseUrl()}/pg/v1/pay`, {
+  const res = await fetch(`${getPgBaseUrl()}/checkout/v2/pay`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "X-VERIFY": checksum,
+      Authorization: `O-Bearer ${accessToken}`,
     },
-    body: JSON.stringify({ request: base64Payload }),
+    body: JSON.stringify(payload),
   });
 
   const data = await res.json();
-  const redirectUrl = data?.data?.instrumentResponse?.redirectInfo?.url;
-
-  if (!res.ok || !data?.success || !redirectUrl) {
+  if (!res.ok || !data?.redirectUrl) {
     throw new Error(`PhonePe initiate failed: ${data?.message ?? res.status}`);
   }
 
-  return { redirectUrl, merchantTransactionId };
+  return { redirectUrl: data.redirectUrl, merchantOrderId };
 }
 
-export interface PhonePeCallbackPayload {
-  success: boolean;
-  code: string;
-  message?: string;
-  data: {
-    merchantId: string;
-    merchantTransactionId: string;
-    transactionId: string;
-    amount: number; // paise
-    state: string;
-    responseCode: string;
-  };
+interface PhonePePaymentDetail {
+  transactionId?: string;
+  paymentMode?: string;
+  state?: string;
 }
 
-function extractBase64Response(rawBody: string): string {
-  const parsed = JSON.parse(rawBody) as { response: string };
-  return parsed.response;
+/** Shape shared by both the webhook's `payload` object and the order-status
+ * response body — PhonePe's own guidance is to key off `state` here (not
+ * the webhook's outer `event` field, and not the deprecated V1 `code`),
+ * since it's present and consistent across both. */
+export interface PhonePeOrderState {
+  orderId: string;
+  state: string; // "COMPLETED" | "FAILED" | "PENDING" | ...
+  amount: number; // paise
+  paymentDetails?: PhonePePaymentDetail[];
 }
 
-/** Verifies the webhook's X-VERIFY header. Checksum is over the raw base64
- * `response` field only, not the whole JSON body — must run before
- * decoding/trusting anything else in the payload. */
-export function verifyPhonePeWebhookSignature(
-  xVerifyHeader: string | null,
-  rawBody: string
-): boolean {
-  if (!xVerifyHeader) return false;
-  try {
-    const base64Response = extractBase64Response(rawBody);
-    const expected = sha256Hex(base64Response + getSaltKey()) + "###" + getSaltIndex();
-    return xVerifyHeader === expected;
-  } catch {
-    return false;
-  }
+export interface PhonePeWebhookBody {
+  event: string;
+  payload: PhonePeOrderState & { merchantOrderId: string; merchantId?: string };
 }
 
-export function decodePhonePeWebhookBody(rawBody: string): PhonePeCallbackPayload {
-  const base64Response = extractBase64Response(rawBody);
-  const decoded = Buffer.from(base64Response, "base64").toString("utf-8");
-  return JSON.parse(decoded);
+/** Verifies the webhook's Authorization header against the SHA (username +
+ * password) auth method — the simpler of PhonePe's two webhook auth
+ * options (the other, HMAC, needs a key-id → secret lookup and isn't worth
+ * the extra complexity for a single-webhook sandbox demo). PhonePe hashes
+ * as SHA256("username:password") and sends the hex digest verbatim in the
+ * Authorization header — no scheme prefix, no request-body involvement. */
+export function verifyPhonePeWebhookSignature(authorizationHeader: string | null): boolean {
+  if (!authorizationHeader) return false;
+  const username = process.env.PHONEPE_WEBHOOK_USERNAME;
+  const password = process.env.PHONEPE_WEBHOOK_PASSWORD;
+  if (!username || !password) return false;
+  const expected = sha256Hex(`${username}:${password}`);
+  return authorizationHeader.trim() === expected;
+}
+
+export function decodePhonePeWebhookBody(rawBody: string): PhonePeWebhookBody {
+  return JSON.parse(rawBody);
 }
 
 /** Reconciliation fallback for when the browser redirect lands before the
  * webhook does — PhonePe's own guidance is to never trust the redirect
  * alone. Works from localhost too, unlike the inbound webhook, since it's
  * an outbound call our server makes. */
-export async function checkPhonePeStatus(
-  merchantTransactionId: string
-): Promise<PhonePeCallbackPayload> {
-  const merchantId = getMerchantId();
-  const path = `/pg/v1/status/${merchantId}/${merchantTransactionId}`;
-  const checksum = sha256Hex(path + getSaltKey()) + "###" + getSaltIndex();
-
-  const res = await fetch(`${getBaseUrl()}${path}`, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      "X-VERIFY": checksum,
-      "X-MERCHANT-ID": merchantId,
-    },
-  });
-
+export async function checkPhonePeStatus(merchantOrderId: string): Promise<PhonePeOrderState> {
+  const accessToken = await getAccessToken();
+  const res = await fetch(
+    `${getPgBaseUrl()}/checkout/v2/order/${merchantOrderId}/status?details=false`,
+    {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `O-Bearer ${accessToken}`,
+      },
+    }
+  );
   return res.json();
 }
 
-function isPhonePeSuccess(payload: PhonePeCallbackPayload): boolean {
-  return payload.success === true && payload.code === "PAYMENT_SUCCESS";
+function isPhonePeSuccess(orderState: PhonePeOrderState): boolean {
+  return orderState.state === "COMPLETED";
 }
 
 interface RegistrationForPhonePe {
@@ -210,34 +256,36 @@ interface RegistrationForPhonePe {
 
 /**
  * The single place both the webhook and the status-reconciliation route
- * call into — never duplicate this sequence. Confirms the payload really
- * is a success, confirms the confirmed amount matches what this
- * registration owes (blocks a tampered/replayed callback from verifying an
- * under-paid registration), then hands off to the unchanged
- * markVerifiedAndIssueTicket seam.
+ * call into — never duplicate this sequence. Confirms the order really is
+ * COMPLETED, confirms the confirmed amount matches what this registration
+ * owes (blocks a tampered/replayed callback from verifying an under-paid
+ * registration), then hands off to the unchanged markVerifiedAndIssueTicket
+ * seam.
  */
 export async function applyConfirmedPhonePeSuccess(
   reg: RegistrationForPhonePe,
-  payload: PhonePeCallbackPayload
+  orderState: PhonePeOrderState
 ): Promise<{ applied: boolean; reason?: string }> {
-  if (!isPhonePeSuccess(payload)) {
-    return { applied: false, reason: `not a success payload (code=${payload.code})` };
+  if (!isPhonePeSuccess(orderState)) {
+    return { applied: false, reason: `not a completed order (state=${orderState.state})` };
   }
 
   const expectedAmountPaise = computeAmountInr(reg.num_attendees) * 100;
-  if (payload.data.amount !== expectedAmountPaise) {
+  if (orderState.amount !== expectedAmountPaise) {
     return {
       applied: false,
-      reason: `amount mismatch: expected ${expectedAmountPaise}, got ${payload.data.amount}`,
+      reason: `amount mismatch: expected ${expectedAmountPaise}, got ${orderState.amount}`,
     };
   }
+
+  const transactionId = orderState.paymentDetails?.[0]?.transactionId ?? orderState.orderId;
 
   const supabase = createServiceClient();
   await supabase
     .from("registrations")
     .update({
-      phonepe_transaction_id: payload.data.transactionId,
-      phonepe_raw_response: payload,
+      phonepe_transaction_id: transactionId,
+      phonepe_raw_response: orderState,
     })
     .eq("id", reg.id);
 
@@ -245,7 +293,7 @@ export async function applyConfirmedPhonePeSuccess(
     verified: true,
     verifiedAt: new Date().toISOString(),
     verifiedBy: null,
-    rawProviderResponse: payload,
+    rawProviderResponse: orderState,
   });
 
   return { applied: true };

@@ -86,29 +86,37 @@ call, no read-then-write gap there either.
 for **synchronous** verification, implemented by `src/lib/payment/manual.ts`
 (production path today — admin clicks Verify).
 
-> [!warning] Broken as of 2026-09-09 — PhonePe deprecated V1
-> `src/lib/payment/phonepe.ts` (built 2026-09-08) targets PhonePe's **V1**
-> PG API (salt-key/checksum auth, `X-VERIFY` header). Live testing on
-> 2026-09-09 confirmed PhonePe has since deprecated the entire V1 flow —
-> it fails with `"Key not found for the merchant"` regardless of which V1
-> credentials are used, in sandbox or production. A working integration
-> needs a rewrite to PhonePe's **V2 "Standard Checkout"** API (OAuth
-> `client_id`/`client_secret` token exchange instead of salt-key checksums,
-> different request/response shapes, different webhook verification) — not
-> a config fix. Full root-cause writeup: [[BACKLOG.md]] item 6. Manual
+> [!note] Rewritten to V2, still untestable — confirmed 2026-09-09
+> `src/lib/payment/phonepe.ts` originally targeted PhonePe's **V1** PG API
+> (salt-key/checksum auth), which PhonePe has since deprecated entirely —
+> see [[BACKLOG.md]] item 6 for that postmortem. It has been rewritten to
+> PhonePe's **V2 "Standard Checkout"** API: OAuth (`client_id`/`client_secret`
+> → bearer token) instead of salt-key checksums, `checkout/v2/pay` /
+> `checkout/v2/order/{id}/status` endpoints, and SHA(username:password)
+> webhook auth instead of an `X-VERIFY` checksum header. Endpoints and
+> shapes were verified directly against developer.phonepe.com, not written
+> from memory. **Still can't be exercised end-to-end**: unlike V1, PhonePe
+> V2 has no publicly shared sandbox credential — every integrator, even in
+> Test Mode, must sign up at business.phonepe.com and pull their own
+> Client ID/Secret from Developer Settings, and that signup hasn't happened
+> for this project. See [[BACKLOG.md]] item 6 for what's left. Manual
 > verification (the production path) is entirely unaffected.
 
 `src/lib/payment/phonepe.ts` is **not** a synchronous `PaymentModule`
 implementation, since PhonePe is two-phase/webhook-driven with no shared
 request context between initiate and verify. It exports
-`initiatePhonePePayment` (called by `POST api/phonepe/initiate`),
+`initiatePhonePePayment` (called by `POST api/phonepe/initiate` — note V2
+takes no `callbackUrl` param; the webhook URL is configured statically in
+PhonePe's dashboard, not passed per-request like V1's was),
 `verifyPhonePeWebhookSignature` + `decodePhonePeWebhookBody` (called by
-`POST api/phonepe/webhook`, the S2S callback), `checkPhonePeStatus` (called
-by `GET api/phonepe/status`, a reconciliation fallback for when the
-browser's redirect lands before the webhook does), and
-`applyConfirmedPhonePeSuccess` — the one function both the webhook and
-status routes call, which checks the confirmed amount matches
-`num_attendees × PRICE_PER_ATTENDEE_INR` before doing anything else.
+`POST api/phonepe/webhook`, the S2S callback — V2 auth is a static
+SHA(username:password) digest in the `Authorization` header, not a
+per-request body checksum), `checkPhonePeStatus` (called by
+`GET api/phonepe/status`, a reconciliation fallback for when the browser's
+redirect lands before the webhook does), and `applyConfirmedPhonePeSuccess`
+— the one function both the webhook and status routes call, which checks
+the confirmed amount matches `num_attendees × PRICE_PER_ATTENDEE_INR`
+before doing anything else.
 
 Both `manual.ts` and `phonepe.ts` funnel every success path through the
 same downstream seam, `markVerifiedAndIssueTicket()` in

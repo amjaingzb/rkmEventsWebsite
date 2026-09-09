@@ -39,16 +39,15 @@ export async function POST(req: NextRequest) {
   const origin = req.nextUrl.origin;
 
   try {
-    const { redirectUrl, merchantTransactionId } = await initiatePhonePePayment({
+    const { redirectUrl, merchantOrderId } = await initiatePhonePePayment({
       registrationId: reg.id,
       amountInr,
       redirectUrl: `${origin}/confirmation/${reg.id}`,
-      callbackUrl: `${origin}/api/phonepe/webhook`,
     });
 
     await supabase
       .from("registrations")
-      .update({ phonepe_merchant_txn_id: merchantTransactionId })
+      .update({ phonepe_merchant_txn_id: merchantOrderId })
       .eq("id", reg.id);
 
     return NextResponse.json({ redirectUrl });

@@ -93,24 +93,46 @@ Update this whenever something is skipped for time — don't let it get lost.
       (`supabase/migrations/0002_reject_and_release_seat.sql`), same
       single-UPDATE-with-guard shape as `register_attendee` — see
       [[architecture.md]].
-6. **PhonePe sandbox integration — BROKEN, needs a real rewrite (found
-   2026-09-09).** Built 2026-09-08 against PhonePe's **V1** PG API
-   (salt-key/checksum auth, `PGTESTPAYUAT` public test credentials). Live
-   end-to-end test on 2026-09-09 (after fixing two blockers along the
-   way — see below) hit `POST /api/phonepe/initiate` returning
-   `"Key not found for the merchant"` directly from PhonePe. Root cause,
-   confirmed via web search: **PhonePe has deprecated the entire V1 flow**
-   — V1 salt-key credentials no longer work against any current PhonePe
-   backend, sandbox included, regardless of which key/index values are
-   used. PhonePe now requires their **V2 "Standard Checkout" API**, a
-   different auth model (OAuth-style `client_id`/`client_secret` from the
-   PhonePe dashboard's Developer Settings) and different request/response
-   shapes — see PhonePe's [UAT Sandbox
-   docs](https://developer.phonepe.com/payment-gateway/uat-testing-go-live/uat-sandbox).
-   `src/lib/payment/phonepe.ts` needs a real rewrite to V2 before this can
-   work at all — not a config fix. Independent of the real-merchant-account
-   blocker (Adhyaksha approval + PhonePe onboarding) — the sandbox rewrite
-   is doable now, just not done yet.
+6. **PhonePe sandbox integration — rewritten to V2 (2026-09-09), still
+   blocked on credentials, not yet tested live.** Originally built
+   2026-09-08 against PhonePe's **V1** PG API (salt-key/checksum auth,
+   `PGTESTPAYUAT` public test credentials). Live end-to-end test on
+   2026-09-09 hit `POST /api/phonepe/initiate` returning `"Key not found
+   for the merchant"` directly from PhonePe. Root cause, confirmed via web
+   search: **PhonePe has deprecated the entire V1 flow** — V1 salt-key
+   credentials no longer work against any current PhonePe backend, sandbox
+   included, regardless of which key/index values are used.
+   - **Rewrite done, same day (2026-09-09)**: `src/lib/payment/phonepe.ts`
+     now targets PhonePe's **V2 "Standard Checkout"** API — OAuth
+     (`client_id`/`client_secret` → `O-Bearer` token via
+     `POST .../v1/oauth/token`) instead of salt-key checksums,
+     `checkout/v2/pay` / `checkout/v2/order/{id}/status` endpoints instead
+     of `/pg/v1/pay` / `/pg/v1/status`, and SHA(username:password) webhook
+     auth in the `Authorization` header instead of an `X-VERIFY` body
+     checksum. `initiatePhonePePayment` no longer takes a `callbackUrl`
+     param — V2's webhook URL is configured statically in the PhonePe
+     Business Dashboard, not passed per-request. Endpoints and
+     request/response shapes were verified directly against
+     developer.phonepe.com on 2026-09-09 (not written from memory — see
+     [[architecture.md]] "Payment Module Boundary" for the exact doc
+     pages), specifically to avoid repeating how the V1 implementation went
+     stale unnoticed. `npm run build` clean; **not yet exercised against a
+     live PhonePe call** — see next bullet for why.
+   - **New, real blocker found during the rewrite, distinct from the
+     V1-deprecation issue**: unlike V1, PhonePe **V2 has no publicly shared
+     sandbox credential**. Every integrator — even in Test Mode — must sign
+     up at `business.phonepe.com/pg/register`, enable the Test Mode toggle,
+     and pull their own Client ID/Secret from Developer Settings. That
+     signup has not happened for this project. So this is no longer purely
+     "independent of the real-merchant-account blocker" the way the old
+     V1 assessment claimed — a signup (albeit a lightweight, sandbox-only
+     one, not the full Adhyaksha-approval merchant onboarding) is now a
+     hard prerequisite before any of this can be tested end-to-end. Env
+     vars are wired up and documented (`.env.local.example`:
+     `PHONEPE_ENV`, `PHONEPE_SANDBOX_CLIENT_ID/SECRET/CLIENT_VERSION`,
+     `PHONEPE_PRODUCTION_CLIENT_ID/SECRET/CLIENT_VERSION`,
+     `PHONEPE_WEBHOOK_USERNAME/PASSWORD`) — someone just needs to fill them
+     in once the sandbox account exists.
    - Two other real bugs found and fixed getting this far: (a)
      `service_role` had no `UPDATE` grant on `events`
      (`supabase/migrations/0005_grant_events_update.sql`, since the
@@ -149,12 +171,13 @@ Update this whenever something is skipped for time — don't let it get lost.
      BACKLOG item plus that architecture.md section are now the source of
      truth for PhonePe status; nothing further needs to be pulled from the
      clipboard file.
-   - **Re-confirmed 2026-09-09** while testing the new `NEXT_PUBLIC_APP_MODE`
-     toggle (unrelated feature, landed same day): `/api/phonepe/initiate`
-     still returns the same `"Key not found for the merchant"` error
-     described above. Credential resolution was confirmed byte-identical
-     before/after the `NEXT_PUBLIC_APP_MODE` change, so this is the
-     pre-existing V1-deprecation issue, not a new regression.
+   - **2026-09-09, while testing the new `NEXT_PUBLIC_APP_MODE` toggle**
+     (unrelated feature, landed same day, before the V2 rewrite):
+     `/api/phonepe/initiate` still returned the same `"Key not found for
+     the merchant"` error described above. Credential resolution was
+     confirmed byte-identical before/after the `NEXT_PUBLIC_APP_MODE`
+     change, so that was the pre-existing V1-deprecation issue, not a new
+     regression — since superseded by the V2 rewrite above.
    **Production PhonePe integration remains out of scope** regardless —
    merchant account not set up, and even a fixed V2 sandbox must never be
    treated as a real payment guarantee.

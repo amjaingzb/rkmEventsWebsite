@@ -48,15 +48,26 @@ manual/on-request).
 
 **Open to-dos:**
 
-0. **Draft-deploy to test PhonePe end to end via the real webhook** —
-   `supabase/migrations/0004_phonepe_and_payment_mode.sql` has been run
-   against the live Supabase project (2026-09-09), so registration, the
-   PhonePe sandbox flow, and the admin payment-mode toggle all work from
-   `npm run dev`. What's left: the real inbound PhonePe webhook can't
-   reach `localhost` — one `netlify deploy --build --alias demo` gets a
-   stable public URL to test the actual scan-QR → "Simulate Success" →
-   webhook-fires loop. See [[architecture.md]] "Payment Module Boundary"
-   and [[BACKLOG.md]] item 6.
+0. **Sign up for a PhonePe sandbox account, then draft-deploy to test V2
+   end to end via the real webhook** — blocked on a step that didn't exist
+   under V1: `src/lib/payment/phonepe.ts` was rewritten to PhonePe's V2
+   "Standard Checkout" API on 2026-09-09 (V1 is deprecated, see
+   [[BACKLOG.md]] item 6), but V2 has no publicly shared sandbox
+   credential — someone needs to sign up at
+   `business.phonepe.com/pg/register`, flip the Test Mode toggle, and copy
+   the Client ID/Secret from Developer Settings into
+   `PHONEPE_SANDBOX_CLIENT_ID`/`PHONEPE_SANDBOX_CLIENT_SECRET` (see
+   `.env.local.example`), plus set up a webhook (URL + SHA username/
+   password) in that same dashboard and copy the username/password into
+   `PHONEPE_WEBHOOK_USERNAME`/`PHONEPE_WEBHOOK_PASSWORD`. Once that's done:
+   `supabase/migrations/0004_phonepe_and_payment_mode.sql` is already run
+   against the live Supabase project, so registration and the admin
+   payment-mode toggle work from `npm run dev` — what's left is the real
+   inbound PhonePe webhook can't reach `localhost`, so one
+   `netlify deploy --build --alias demo` gets a stable public URL to
+   register that webhook against and test the actual pay → webhook-fires
+   loop. See [[architecture.md]] "Payment Module Boundary" and
+   [[BACKLOG.md]] item 6 for the full rewrite writeup.
 1. **Update the DNS instructions sent to the admin (Bluehost)** — the
    message already sent
    (`Type: CNAME, Host: events, Points To: cname.vercel-dns.com`) was
@@ -74,63 +85,7 @@ manual/on-request).
    ahead of `origin/main` (check `git status -sb` for the exact count, it
    shifts each session). Push from your own machine, or ask Claude to set
    up credentials in-session.
-3. **Resend domain verification — DONE, confirmed 2026-09-09.** Resend now
-   shows "Domain verified: Your domain is ready to send emails." for
-   `rkmhalasuru.simplicie.com`. `TICKET_FROM_EMAIL` updated in
-   `0_SECRETS/env.local` from `onboarding@resend.dev` to
-   `tickets@rkmhalasuru.simplicie.com`, dev server restarted, and confirmed
-   live end-to-end: registered + verified a test entry
-   (`bhikajicama09@gmail.com`, seat 6, "Resend Verify Test") through the
-   admin dashboard, ticket email delivered with no `403 validation_error`
-   and no error in the dev server log — the sandbox-sender restriction
-   ([[BACKLOG.md]] item 7) is resolved. That test registration was left in
-   place (verified, harmless) rather than deleted — see the existing
-   "smaller open item" below about clearing test registrations before real
-   ones start coming in.
-   Background — the project owner has direct Cloudflare DNS access
-   via their brother's account for `simplicie.com`, and verified
-   `rkmhalasuru.simplicie.com` directly (subdomain, not `amit.simplicie.com`
-   as originally guessed — see [[technical-concepts.md]] for the DNS/Resend
-   background Q&A this walkthrough built up).
-   - **Domain added in Resend**, region ap-northeast-1 (not ap-south-1 —
-     that's just what Resend assigned, no functional issue).
-   - **All 4 DNS records added in Cloudflare**, confirmed via screenshot,
-     all "DNS only" (not proxied): DKIM TXT (`resend._domainkey.rkmha...`),
-     SPF MX (`send.rkmhalasuru` → `feedback-smtp.ap-northeast-1.amazonses.com`,
-     priority 10), SPF TXT (`send.rkmhalasuru` → `v=spf1
-     include:amazonses.com ~all`), DMARC TXT (`_dmarc` → `v=DMARC1;
-     p=none;`). Existing records on the same zone (brother's Gmail/Workspace
-     MX + DKIM) were left untouched — confirmed via screenshot.
-   - Clicked "I've already added the records" in Resend — as of 2026-09-09
-     all 3 checks show **pending**, Resend's banner says DNS propagation
-     "may take a few hours." **Next action to resume:** go back to
-     resend.com/domains → the `rkmhalasuru.simplicie.com` domain, check if
-     it now shows verified; if still pending after a few hours, re-check
-     Cloudflare records are unchanged and re-click "I've already added the
-     records." Once verified, update `TICKET_FROM_EMAIL` (in
-     `0_SECRETS/env.local` and wherever mirrored) from `onboarding@resend.dev`
-     to something like `tickets@rkmhalasuru.simplicie.com`, restart the dev
-     server, and send a real test registration to a second inbox (not the
-     Resend account owner's) to confirm the `403 validation_error` is gone.
-   - **Netlify custom domain — DONE (2026-09-09).**
-     `rkmhalasuru.simplicie.com` is now the Netlify project's Primary
-     domain, HTTPS enabled with a valid Let's Encrypt certificate (issued
-     2026-09-09, auto-renews before Dec 8). Cloudflare CNAME
-     `rkmhalasuru.simplicie.com → rkm-halasuru-registration.netlify.app`,
-     left "DNS only" (not proxied). Along the way: had to also add a
-     one-time Netlify domain-ownership-verification TXT record
-     (`subdomain-owner-verific...`) because `simplicie.com`'s root was
-     already registered to a Netlify project elsewhere; and deleted a
-     leftover unused `amit.simplicie.com` CNAME from a prior attempt
-     (same target, tagged "Amit-unused") to avoid multiple aliases pointing
-     at the same site. **Not yet done:** actually load
-     `https://rkmhalasuru.simplicie.com` in a browser to confirm the site
-     renders correctly end-to-end (cert is confirmed valid, but the live
-     page load itself hasn't been checked yet).
-   - See [[BACKLOG.md]] item 16 for a deferred, purely-cosmetic follow-up
-     (renaming the Netlify project itself) — confirmed not to affect any of
-     the records above.
-4. Run [[setup.md]]'s concurrency load test against a test event to confirm
+3. Run [[setup.md]]'s concurrency load test against a test event to confirm
    the atomic seat-cap RPC behaves correctly under concurrent requests.
 
 The admin dashboard is feature-complete (round 2 polish pass) — see
@@ -173,6 +128,61 @@ Full rationale and the complete deferred-items list: [[BACKLOG.md]].
 
 ## Recently completed
 
+- **2026-09-09 (PhonePe rewritten V1 → V2 — the "bigger task" from a
+  previous session, correcting a gap where it had been documented as a
+  known bug but never actually fixed).** `src/lib/payment/phonepe.ts`
+  previously targeted PhonePe's deprecated V1 PG API; rewrote it to V2
+  "Standard Checkout": OAuth (`client_id`/`client_secret` → `O-Bearer`
+  token via `POST .../v1/oauth/token`, cached in-memory until near
+  expiry) instead of salt-key checksums, `checkout/v2/pay` /
+  `checkout/v2/order/{id}/status` endpoints, and SHA(username:password)
+  webhook auth in the `Authorization` header instead of an `X-VERIFY` body
+  checksum. `initiatePhonePePayment` dropped its `callbackUrl` param — V2's
+  webhook URL is configured statically in the PhonePe dashboard, not
+  passed per-request — so `src/app/api/phonepe/initiate/route.ts` and
+  `src/app/api/phonepe/webhook/route.ts` were updated to match. Endpoints
+  and request/response shapes verified directly against
+  developer.phonepe.com (curl, not memory) before writing any code, since
+  the V1 implementation had gone stale unnoticed the same way. `.env.local.example`
+  updated with the new var names (`PHONEPE_ENV`, `PHONEPE_SANDBOX_*`,
+  `PHONEPE_PRODUCTION_*`, `PHONEPE_WEBHOOK_USERNAME/PASSWORD`); dev-mode
+  still forces the sandbox environment regardless of `PHONEPE_ENV`, same
+  safety property as before. Build/lint clean.
+  **New blocker found doing this** (not present in V1): PhonePe V2 has no
+  publicly shared sandbox credential — a lightweight sandbox-only signup at
+  business.phonepe.com is now required before this can be tested live, see
+  item 0 above and [[BACKLOG.md]] item 6.
+- **2026-09-09 (Resend domain verification + Netlify custom domain — both
+  DONE, confirmed and tested).** Resend shows "Domain verified: Your domain
+  is ready to send emails." for `rkmhalasuru.simplicie.com`.
+  `TICKET_FROM_EMAIL` updated in `0_SECRETS/env.local` from
+  `onboarding@resend.dev` to `tickets@rkmhalasuru.simplicie.com`, dev server
+  restarted, and confirmed live end-to-end: registered + verified a test
+  entry (`bhikajicama09@gmail.com`, seat 6, "Resend Verify Test") through
+  the admin dashboard, ticket email delivered with no `403 validation_error`
+  — the sandbox-sender restriction ([[BACKLOG.md]] item 7) is resolved. That
+  test registration was left in place (verified, harmless) — see the
+  "smaller open item" below about clearing test registrations before real
+  ones start coming in. Background: the project owner has direct Cloudflare
+  DNS access via their brother's account for `simplicie.com`, and verified
+  `rkmhalasuru.simplicie.com` directly (subdomain, not `amit.simplicie.com`
+  as originally guessed — see [[technical-concepts.md]] for the DNS/Resend
+  background Q&A this built up). Domain added in Resend (region
+  ap-northeast-1); all 4 DNS records added in Cloudflare (DKIM TXT, SPF MX,
+  SPF TXT, DMARC TXT), all "DNS only", confirmed via screenshot; existing
+  records on the same zone left untouched.
+  **Netlify custom domain also DONE and confirmed working end-to-end**:
+  `rkmhalasuru.simplicie.com` is the Netlify project's Primary domain,
+  HTTPS enabled with a valid Let's Encrypt certificate (issued 2026-09-09,
+  auto-renews before Dec 8), Cloudflare CNAME →
+  `rkm-halasuru-registration.netlify.app`, "DNS only". Along the way: added
+  a one-time Netlify domain-ownership-verification TXT record (root was
+  already registered to a Netlify project elsewhere) and deleted a leftover
+  unused `amit.simplicie.com` CNAME. The live page load at
+  `https://rkmhalasuru.simplicie.com` has since been confirmed rendering
+  correctly. See [[BACKLOG.md]] item 16 for a deferred, purely-cosmetic
+  follow-up (renaming the Netlify project itself) — confirmed not to affect
+  any of the above.
 - **2026-09-09 (compile-time dev/live mode toggle + preview banner)** — new
   `NEXT_PUBLIC_APP_MODE` (`development`/`live`, defaults to `development`),
   resolved once in `src/lib/appMode.ts`. Deploy-time/compile-time, not a

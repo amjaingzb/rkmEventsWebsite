@@ -10,34 +10,36 @@ import {
 // checked — PhonePe retries on non-2xx, and a not-found/mismatch is logged
 // server-side rather than surfaced in the response (no info leak to a
 // caller that isn't proven to be PhonePe until the signature check passes).
+// The webhook URL itself is configured statically in the PhonePe Business
+// Dashboard (Developer Settings → Webhook), not passed per-request as it
+// was in V1 — this route's path must match whatever's configured there.
 export async function POST(req: NextRequest) {
   const rawBody = await req.text();
-  const xVerify = req.headers.get("X-VERIFY");
+  const authorization = req.headers.get("Authorization");
 
-  if (!verifyPhonePeWebhookSignature(xVerify, rawBody)) {
+  if (!verifyPhonePeWebhookSignature(authorization)) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
 
-  let payload;
+  let body;
   try {
-    payload = decodePhonePeWebhookBody(rawBody);
+    body = decodePhonePeWebhookBody(rawBody);
   } catch (err) {
     console.error("PhonePe webhook: malformed payload", err);
     return NextResponse.json({ ok: true });
   }
 
+  const { payload } = body;
+
   const supabase = createServiceClient();
   const { data: reg } = await supabase
     .from("registrations")
     .select("id, num_attendees")
-    .eq("phonepe_merchant_txn_id", payload.data.merchantTransactionId)
+    .eq("phonepe_merchant_txn_id", payload.merchantOrderId)
     .single();
 
   if (!reg) {
-    console.error(
-      "PhonePe webhook: no registration for merchantTransactionId",
-      payload.data.merchantTransactionId
-    );
+    console.error("PhonePe webhook: no registration for merchantOrderId", payload.merchantOrderId);
     return NextResponse.json({ ok: true });
   }
 
