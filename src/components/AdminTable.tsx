@@ -16,7 +16,7 @@ interface Registration {
   payment_reference: string | null;
   payment_amount: number | null;
   status: Status;
-  seat_number: number | null;
+  registration_number: number | null;
   ticket_sent_at: string | null;
   verified_at: string | null;
   created_at: string;
@@ -51,7 +51,7 @@ function matchesSearch(r: Registration, q: string): boolean {
     r.email,
     r.phone,
     r.payment_reference ?? "",
-    r.seat_number != null ? String(r.seat_number) : "",
+    r.registration_number != null ? String(r.registration_number) : "",
     r.id,
   ].some((field) => field.toLowerCase().includes(needle));
 }
@@ -126,7 +126,7 @@ export default function AdminTable() {
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search name, phone, email, seat #, ref, ID..."
+            placeholder="Search name, phone, email, reg. no., ref, ID..."
             className="border rounded px-2 py-1 text-sm w-64"
           />
           <a
@@ -149,7 +149,7 @@ export default function AdminTable() {
           <table className="w-full text-sm border-collapse">
             <thead>
               <tr className="text-left border-b">
-                <th className="py-2 pr-4">Seat #</th>
+                <th className="py-2 pr-4">Reg. No.</th>
                 <th className="py-2 pr-4">Name</th>
                 <th className="py-2 pr-4">Contact</th>
                 <th className="py-2 pr-4">Attendees</th>
@@ -163,7 +163,7 @@ export default function AdminTable() {
             <tbody>
               {visibleRows.map((r) => (
                 <tr key={r.id} className="border-b align-top">
-                  <td className="py-2 pr-4">{r.seat_number ?? "—"}</td>
+                  <td className="py-2 pr-4">{r.registration_number ?? "—"}</td>
                   <td className="py-2 pr-4">{r.full_name}</td>
                   <td className="py-2 pr-4">
                     {r.email}

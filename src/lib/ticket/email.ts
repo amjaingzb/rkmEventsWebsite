@@ -12,7 +12,7 @@ interface TicketEmailInput {
   startTime: string;
   endTime: string;
   venueName: string;
-  seatNumber: number | null;
+  phone: string;
   numAttendees: number;
   paymentAmount: number | null;
   verifiedAt: string;
@@ -38,11 +38,6 @@ export async function sendTicketEmail(input: TicketEmailInput) {
         <strong>Date:</strong> ${input.eventDate}<br/>
         <strong>Time:</strong> ${input.startTime} - ${input.endTime}<br/>
         <strong>Venue:</strong> ${input.venueName}<br/>
-        ${
-          input.seatNumber
-            ? `<strong>Seat No:</strong> ${input.seatNumber}<br/>`
-            : ""
-        }
         <strong>Number of attendees:</strong> ${input.numAttendees}<br/>
         ${
           input.paymentAmount != null
@@ -50,7 +45,8 @@ export async function sendTicketEmail(input: TicketEmailInput) {
             : ""
         }
         <strong>Confirmed on:</strong> ${new Date(input.verifiedAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}<br/>
-        <strong>Registration ID:</strong> ${input.regId}
+        <strong>Registration ID:</strong> ${input.regId}<br/>
+        <strong>Phone:</strong> ${input.phone}
       </p>
       <img src="cid:${qrContentId}" alt="Ticket QR code" width="220" height="220" />
       <p style="color: #666; font-size: 13px; margin-top: 24px;">

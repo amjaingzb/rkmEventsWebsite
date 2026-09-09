@@ -69,8 +69,9 @@ Temporarily set `EVENT_SLUG=test-event` in `.env.local`, restart `npm run dev`, 
 npx tsx scripts/load-test-register.ts http://localhost:3000 20
 ```
 
-Confirm exactly 5 registrations land `pending` with unique seat numbers 1–5,
-the rest `waitlisted`, and `events.seats_taken` for `test-event` equals
-exactly 5. Then switch `EVENT_SLUG` back to the real event slug.
+Confirm exactly 5 registrations land `pending` with unique registration
+numbers 1–5, the rest `waitlisted`, and `events.seats_taken` for
+`test-event` equals exactly 5. Then switch `EVENT_SLUG` back to the real
+event slug.
 
 See [[architecture.md]] for why this is guaranteed to be race-safe.

@@ -14,7 +14,7 @@ interface RegistrationWithEvent {
   id: string;
   email: string;
   full_name: string;
-  seat_number: number | null;
+  phone: string;
   num_attendees: number;
   payment_amount: number | null;
   verified_at: string | null;
@@ -40,7 +40,7 @@ function toTicketEmailInput(reg: RegistrationWithEvent) {
     startTime: reg.events.start_time,
     endTime: reg.events.end_time,
     venueName: reg.events.venue_name,
-    seatNumber: reg.seat_number,
+    phone: reg.phone,
     numAttendees: reg.num_attendees,
     paymentAmount: reg.payment_amount,
     // Only called with rows that have already been verified, so this is set.

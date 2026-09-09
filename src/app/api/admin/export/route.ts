@@ -7,7 +7,7 @@ const COLUMNS = [
   "phone",
   "num_attendees",
   "status",
-  "seat_number",
+  "registration_number",
   "payment_reference",
   "payment_amount",
   "created_at",

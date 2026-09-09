@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
   let query = supabase
     .from("registrations")
     .select(
-      "id, full_name, email, phone, num_attendees, payment_reference, payment_amount, status, seat_number, ticket_sent_at, verified_at, created_at"
+      "id, full_name, email, phone, num_attendees, payment_reference, payment_amount, status, registration_number, ticket_sent_at, verified_at, created_at"
     )
     .eq("event_id", event.id)
     .order("created_at", { ascending: true });

@@ -34,7 +34,7 @@ export default async function ConfirmationPage({
 
   const { data: reg } = await supabase
     .from("registrations")
-    .select("id, full_name, status, seat_number, num_attendees, events(payment_mode)")
+    .select("id, full_name, status, num_attendees, events(payment_mode)")
     .eq("id", id)
     .single();
 
@@ -54,11 +54,6 @@ export default async function ConfirmationPage({
         <p>
           <strong>Name:</strong> {reg.full_name}
         </p>
-        {reg.seat_number && (
-          <p>
-            <strong>Seat number:</strong> {reg.seat_number}
-          </p>
-        )}
         <p className="mt-2 text-gray-500 break-all">
           <strong>Registration ID:</strong> {reg.id}
         </p>
