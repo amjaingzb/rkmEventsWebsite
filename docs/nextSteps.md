@@ -45,15 +45,31 @@ updated: 2026-09-09
 >   case and the genuinely-full case afterward, both now correct. See
 >   [[registration-integrity.md]] Item 5 for the full writeup.
 >
-> **Still open before calling this demo-ready:**
-> - A real ticket-email delivery check (submit → verify through the actual
->   admin dashboard UI → confirm the email arrives with no seat number and
->   the phone number present) — the pass above verified the DB/RPC layer
->   directly, not the admin-UI-to-email path end to end.
-> - Re-run the concurrency load test
->   (`npx tsx --env-file=.env.local scripts/load-test-register.ts ...`,
->   see [[setup.md]]) against a test event — it now exercises
->   `claim_and_verify_registration` directly, not `register_attendee`.
+> **Both closed out (2026-09-09):**
+> - **Admin-UI-to-email path, confirmed end to end.** Submitted a real
+>   registration through the public form in manual-verification mode,
+>   clicked **Verify** in the live admin dashboard, and confirmed
+>   `ticket_sent_at` got stamped (i.e. the real Resend send succeeded —
+>   `sendTicketEmail` throws on any API-level error and that throw would
+>   have blocked the timestamp update). Confirmed by reading
+>   `src/lib/ticket/email.ts` that the template has no seat-number field
+>   anywhere and does include `Phone: ${input.phone}`. Two throwaway test
+>   rows this created on the real event were flagged to the project owner
+>   rather than auto-deleted (destructive live-data edits are blocked by
+>   the session's own safety classifier); project owner said not to worry
+>   about them for now.
+> - **Concurrency load test re-run against `claim_and_verify_registration`,
+>   confirmed race-safe.** Pointed `EVENT_SLUG` at the existing `test-event`
+>   row (cap 5), fired 20 concurrent `POST /api/register` calls, then 20
+>   concurrent `claim_and_verify_registration` RPC calls via
+>   `scripts/load-test-register.ts`. Verified directly against Supabase:
+>   exactly 5 `verified` rows with unique `registration_number`s 1–5, 15
+>   `waitlisted` all with `registration_number: null`, `events.seats_taken`
+>   exactly 5 — no oversell. Confirms the claim logic holds under real
+>   concurrency now that it's called from verification time, not just
+>   submission time. Test rows wiped via `reset_event_registrations`,
+>   `EVENT_SLUG` switched back to `halasuru-sarvapriyananda-2026`, dev
+>   server restarted.
 
 > [!warning] Production deploy gate before the demo — confirmed 2026-09-09
 > A production Netlify deploy (`netlify deploy --build --prod`) is a
