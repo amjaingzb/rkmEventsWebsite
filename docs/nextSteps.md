@@ -15,24 +15,34 @@ updated: 2026-09-09
 
 ## Next action
 
-> [!warning] Migrations 0007-0011 not yet applied to the live Supabase project (2026-09-09)
+> [!warning] Applying migrations 0007-0011 to the live Supabase project — in progress (2026-09-09)
 > All of [[registration-integrity.md]] (duplicate detection, per-submission
 > cap, the `seat_number` → `registration_number` rename, the
 > verification-time seat-cap claim, the capacity buffer, and the
-> Open/Full-EOI/Paused states) is implemented in code and build/lint clean,
-> but the five new migrations
+> Open/Full-EOI/Paused states) is implemented in code and build/lint clean
+> (6 commits, one per implementation-order step — see "Recently completed"
+> below). The five new migrations
 > (`0007_register_attendee_num_attendees_cap.sql` through
-> `0011_pause_message.sql`) have **not** been run against the real Supabase
-> project — this session had no `supabase` CLI/project link and no direct
-> Postgres access, matching how past migrations in this project were
-> applied (by the project owner, in the Supabase SQL editor). Until they're
-> run, in order, the live site's registration flow will error against the
-> old schema/RPC shapes (e.g. `register_attendee` still expects the old
-> `seat_number` column name). Run them, then do the manual pass described
-> in [[registration-integrity.md]] "Verification approach" (each of Open/
-> Full-EOI/Paused via the new admin capacity-settings panel, plus a real
-> ticket email/confirmation-page check for the rename) before relying on
-> this in the demo.
+> `0011_pause_message.sql`) were written but not run by Claude — no
+> `supabase` CLI/project link or direct Postgres access from that session,
+> matching how past migrations here were applied (project owner, via the
+> Supabase SQL editor). **Project owner is applying them now, one at a
+> time in order, via the SQL editor.**
+>
+> **If picking this back up later and the migrations aren't all in yet:**
+> check which of `0007`-`0011` have actually run (e.g. `select
+> registration_number from registrations limit 1;` succeeding means `0008`
+> is in; `select pause_message from events limit 1;` succeeding means
+> `0011` is in) and resume from there — they must go in ascending order,
+> each depends on the previous one's schema. **Once all five are in**, do
+> the manual pass described in [[registration-integrity.md]] "Verification
+> approach": each of Open/Full-EOI/Paused via the new admin
+> capacity-settings panel, a real registration → verify → ticket-email/
+> confirmation-page check (confirming no seat number appears, phone does),
+> and re-running the concurrency load test (`docs/setup.md`) since it now
+> exercises `claim_and_verify_registration` instead of the old
+> submission-time claim. Only after that manual pass should this be
+> considered demo-ready.
 
 > [!warning] Production deploy gate before the demo — confirmed 2026-09-09
 > A production Netlify deploy (`netlify deploy --build --prod`) is a
