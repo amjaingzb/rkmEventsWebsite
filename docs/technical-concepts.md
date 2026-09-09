@@ -90,3 +90,23 @@ The only reason your brother's real `simplicie.com` situation is different is th
 - Internet mail standards (RFC 5321) require that any domain used as a Return-Path/MAIL FROM address **must have an MX record**, so that if a bounce needs to be generated, there's a defined place to route it. That's the only purpose of this record — it points to Amazon's own bounce-handling server, not to any inbox you own.
 
 Nobody will ever send a normal email *to* `send.rkmhalasuru.simplicie.com`, and no mailbox exists there. It's internal plumbing required by the SPF/bounce-handling spec — still squarely in "sending" territory, not a parallel receiving setup.
+
+---
+
+## Q: For PhonePe, how does the app find out a payment succeeded — and if PhonePe's server calls Netlify (not my laptop), how would my local test even know?
+
+`#phonepe` `#webhooks` `#supabase` `#architecture`
+
+**There are two independent ways this app learns "did the payment succeed?", and a shared database is what makes both work no matter which server is involved.**
+
+- **Way A — browser status-check.** When you land back on the confirmation page after paying, that page itself asks PhonePe directly, "how did this payment go?" and updates the registration based on the answer. This only needs *your browser* to reach *whichever server served that page* — no public internet round-trip required.
+- **Way B — the real webhook.** PhonePe's own server proactively calls *our* server the instant payment completes, with no browser involved at all. The catch: PhonePe's servers live on the public internet and can't reach a laptop or local container (`localhost`, `172.28.1.2`, etc.) — those addresses only mean something inside your own network. So the webhook has to point at a public URL instead, in this project's case a Netlify draft deploy.
+
+**The piece that ties them together: Supabase, the actual database.** It's not tied to localhost or Netlify — it's a separate, independent cloud database that *both* your local dev server and the Netlify deploy connect to as clients, using the same credentials. So Way B's real flow is:
+1. PhonePe calls Netlify's webhook (the only address it can actually reach).
+2. Netlify's webhook code updates the *shared* Supabase database — "this registration is now verified."
+3. Your local dev server, when you refresh the confirmation page, reads from that *same* Supabase database and sees the update.
+
+Neither server ever talks to the other directly — Supabase is the shared source of truth both read/write. That's also why registration/payment testing has worked seamlessly switching between local and Netlify all session: it's always been the same underlying database underneath, regardless of which server happened to handle a given request.
+
+**One-line rule:** a webhook needs a public URL because it's the *internet* (PhonePe's servers) calling in — but once that call lands anywhere and updates the shared database, every other server reading from that same database sees the result, local dev included.
