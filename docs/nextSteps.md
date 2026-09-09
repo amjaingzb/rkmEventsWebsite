@@ -30,18 +30,15 @@ manual/on-request).
 
 **Open to-dos:**
 
-0. **Run the new migration, then draft-deploy to test PhonePe end to end**
-   — `supabase/migrations/0004_phonepe_and_payment_mode.sql` (adds
-   `events.payment_mode` + PhonePe correlation columns on `registrations`)
-   needs to be run in the Supabase SQL editor before the new PhonePe
-   sandbox integration / UPI display / payment-mode toggle work at all —
-   confirmed blocking live 2026-09-08 (`registerAttendee` now selects
-   `payment_mode`, so registration itself 500s until this runs). After
-   that: everything works from `npm run dev` except the real inbound
-   PhonePe webhook (can't reach `localhost`) — one
-   `netlify deploy --build --alias demo` gets a stable public URL to test
-   the actual scan-QR → "Simulate Success" → webhook-fires loop. See
-   [[architecture.md]] "Payment Module Boundary" and [[BACKLOG.md]] item 6.
+0. **Draft-deploy to test PhonePe end to end via the real webhook** —
+   `supabase/migrations/0004_phonepe_and_payment_mode.sql` has been run
+   against the live Supabase project (2026-09-09), so registration, the
+   PhonePe sandbox flow, and the admin payment-mode toggle all work from
+   `npm run dev`. What's left: the real inbound PhonePe webhook can't
+   reach `localhost` — one `netlify deploy --build --alias demo` gets a
+   stable public URL to test the actual scan-QR → "Simulate Success" →
+   webhook-fires loop. See [[architecture.md]] "Payment Module Boundary"
+   and [[BACKLOG.md]] item 6.
 1. **Update the DNS instructions sent to the admin (Bluehost)** — the
    message already sent
    (`Type: CNAME, Host: events, Points To: cname.vercel-dns.com`) was
@@ -140,10 +137,10 @@ Full rationale and the complete deferred-items list: [[BACKLOG.md]].
     at build time and made the "no redeploy" toggle silently not work.
     Fixed with `export const dynamic = "force-dynamic"` on `src/app/page.tsx`.
   - Build/lint verified clean; homepage and the new UPI QR endpoint
-    live-tested against the running dev server. **Not yet fully
-    live-tested** — see item 0 above, blocked on running the new
-    migration against the live Supabase project, then a Netlify draft
-    deploy to test the real inbound webhook (can't reach `localhost`).
+    live-tested against the running dev server. Migration
+    `0004_phonepe_and_payment_mode.sql` run against the live Supabase
+    project 2026-09-09 — see item 0 above for what's still left (a
+    Netlify draft deploy to test the real inbound webhook).
 - **2026-09-08 (deployed to Netlify, switched from planned Vercel)** — site
   is now live at https://rkm-halasuru-registration.netlify.app, smoke-tested
   (homepage, `/admin/login`, and an auth-gated API route all responding

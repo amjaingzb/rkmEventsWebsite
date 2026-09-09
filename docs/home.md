@@ -24,6 +24,9 @@ updated: 2026-09-08
 - [[BACKLOG.md]] — full list of deferred/TBD items with rationale
 - [[netlify.md]] — hosting: credit system, safe-deploy workflow, restrictions
   to keep in mind
+- [[technical-concepts.md]] — plain-language Q&A log for the project owner's
+  own reference (not instructions for Claude); add to it as such questions
+  come up
 
 ## Where things live in the repo
 

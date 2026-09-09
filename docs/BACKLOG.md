@@ -98,10 +98,11 @@ Update this whenever something is skipped for time — don't let it get lost.
    admin-toggleable `events.payment_mode` switch — see
    [[architecture.md]] "Payment Module Boundary" for the full design.
    Uses PhonePe's public sandbox test credentials (no merchant account
-   needed). **Not yet applied to the live Supabase project** — needs
-   `supabase/migrations/0004_phonepe_and_payment_mode.sql` run in the SQL
-   editor first (same process as items 4/5a's migrations), then a Netlify
-   draft deploy to test the real inbound webhook (can't reach `localhost`).
+   needed). `supabase/migrations/0004_phonepe_and_payment_mode.sql` has
+   been run against the live Supabase project (2026-09-09) — registration
+   and the payment-mode toggle work end to end from `npm run dev`. Still
+   needs a Netlify draft deploy to test the real inbound webhook (can't
+   reach `localhost`).
    **Production PhonePe integration remains out of scope** — merchant
    account not set up, sandbox test credentials are public/shared and
    must never be treated as a real payment guarantee.
