@@ -15,6 +15,25 @@ updated: 2026-09-09
 
 ## Next action
 
+> [!warning] Migrations 0007-0011 not yet applied to the live Supabase project (2026-09-09)
+> All of [[registration-integrity.md]] (duplicate detection, per-submission
+> cap, the `seat_number` → `registration_number` rename, the
+> verification-time seat-cap claim, the capacity buffer, and the
+> Open/Full-EOI/Paused states) is implemented in code and build/lint clean,
+> but the five new migrations
+> (`0007_register_attendee_num_attendees_cap.sql` through
+> `0011_pause_message.sql`) have **not** been run against the real Supabase
+> project — this session had no `supabase` CLI/project link and no direct
+> Postgres access, matching how past migrations in this project were
+> applied (by the project owner, in the Supabase SQL editor). Until they're
+> run, in order, the live site's registration flow will error against the
+> old schema/RPC shapes (e.g. `register_attendee` still expects the old
+> `seat_number` column name). Run them, then do the manual pass described
+> in [[registration-integrity.md]] "Verification approach" (each of Open/
+> Full-EOI/Paused via the new admin capacity-settings panel, plus a real
+> ticket email/confirmation-page check for the rename) before relying on
+> this in the demo.
+
 > [!warning] Production deploy gate before the demo — confirmed 2026-09-09
 > A production Netlify deploy (`netlify deploy --build --prod`) is a
 > **required task before the Adhyaksha Maharaj demo**, but the project
@@ -152,6 +171,58 @@ page, registration form error) reads from that one constant. See
 Full rationale and the complete deferred-items list: [[BACKLOG.md]].
 
 ## Recently completed
+
+- **2026-09-09 (implemented all of registration-integrity.md — duplicate
+  detection, per-submission cap, seat_number rename, verification-time
+  seat-cap claim, capacity buffer, Open/Full-EOI/Paused states).** Landed
+  as 6 separate commits, one per implementation-order step, per the doc's
+  own instruction:
+  1. **Duplicate detection + per-submission cap + SLA copy** —
+     `registerAttendee()` now checks pending/verified rows for a matching
+     normalized email or phone before claiming, returning 409 with the
+     existing registration ID instead of silently allowing a second claim;
+     the admin walk-in form gets an explicit "register anyway" override.
+     `register_attendee` now rejects `num_attendees > 4` (was unbounded),
+     matching a new 1-4 dropdown on the public form. Manual-mode pending
+     emails/confirmation page now mention the ~5 day verification SLA.
+  2. **`seat_number` → `registration_number` rename** — removed entirely
+     from the ticket email and confirmation page (replaced by the
+     registrant's own phone number as a reference); kept internal-only in
+     the admin table ("Reg. No.") and CSV export.
+  3. **Seat-cap claim moved from submission time to verification time**
+     (the architectural change) — `register_attendee` now just inserts a
+     `pending` row; a new `claim_and_verify_registration` RPC (row-locked
+     via `for update`) does the atomic claim, called only from
+     `markVerifiedAndIssueTicket`. Closes the "claim a slot, never pay"
+     hole. Found and fixed a real correctness bug this surfaced in
+     `api/phonepe/status` (would have reported "verified" instead of
+     "waitlisted" on the rare paid-but-capacity-filled race). Updated
+     `scripts/load-test-register.ts` to exercise the claim at its new
+     location.
+  4. **Capacity buffer + shared snapshot** — repurposed the previously
+     unused `waitlist_alert_threshold` column as an admin-editable buffer
+     (default 10); one shared `event_capacity_snapshot()` function/
+     `src/lib/registration/capacity.ts` module for the auto-pause and
+     full-EOI formulas, used by both the public page and admin panel.
+  5. **Open/Full-EOI/Paused public states** — `src/app/page.tsx` now picks
+     one of three states per request: Paused (manual toggle OR
+     auto-pause near the backlog buffer) shows only an admin-set message,
+     no form; Full shows a new no-payment `EoiForm.tsx` (→ `POST
+     api/register/eoi` → `registerInterest()`, always `waitlisted`); Open
+     is today's form. New `AdminCapacitySettings.tsx` panel on the admin
+     dashboard exposes seat cap/buffer/pause toggle/pause message plus the
+     live numbers. Admin table now flags a `waitlisted` row that has
+     payment fields set (the rare Item-3 race) distinctly from a normal
+     EOI signup.
+  - All five migrations (`0007`-`0011`) are written but **not yet applied
+    to the live Supabase project** — see "Next action" above.
+  - `npm run build` and `npm run lint` clean after every commit. Full
+    manual pass (each public state, a real ticket email/confirmation-page
+    check) still pending until the migrations are applied — no live
+    Supabase/CLI access from this session.
+  - See [[registration-integrity.md]] for the full design and all five
+    "Open" caveat resolutions, and [[architecture.md]] for the as-built
+    description.
 
 - **2026-09-09 (dropped "PhonePe" branding from registrant-facing copy).**
   Project owner's concern: naming PhonePe explicitly ("pay securely via

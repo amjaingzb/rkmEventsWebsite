@@ -1,6 +1,7 @@
 import { createServiceClient } from "@/lib/supabase/server";
 import { computeAmountInr } from "@/lib/payment/pricing";
 import { normalizePhone } from "@/lib/phone";
+import { MAX_ATTENDEES_PER_SUBMISSION } from "./limits";
 
 const EVENT_SLUG = process.env.EVENT_SLUG ?? "halasuru-sarvapriyananda-2026";
 
@@ -113,4 +114,77 @@ export async function registerAttendee(
 
   const row = reg as { id: string; status: "pending" | "waitlisted" };
   return { duplicate: false, id: row.id, status: row.status };
+}
+
+export interface RegisterInterestInput {
+  fullName: string;
+  email: string;
+  phone: string;
+  numAttendees?: number;
+}
+
+export interface RegisterInterestResult {
+  id: string;
+  status: "waitlisted";
+  /** Informational only, never blocks — see registration-integrity.md Item 6 caveat 4. */
+  duplicateOf?: string;
+}
+
+/**
+ * The lightweight Expression-of-Interest insert path (Item 6): used once
+ * guaranteed seats are full. Unlike registerAttendee, this never requires
+ * payment fields and never claims capacity (there's no cap left to claim)
+ * -- it inserts straight to `waitlisted`. Kept as a separate function
+ * rather than a flag on registerAttendee since the two contracts differ
+ * enough (no payment requirement, always waitlisted, no RPC call) that a
+ * shared function would need more branching than two plain functions.
+ */
+export async function registerInterest(
+  input: RegisterInterestInput
+): Promise<RegisterInterestResult> {
+  const supabase = createServiceClient();
+
+  const { data: event, error: eventError } = await supabase
+    .from("events")
+    .select("id")
+    .eq("slug", EVENT_SLUG)
+    .single();
+
+  if (eventError || !event) {
+    throw new Error("Event not found");
+  }
+
+  const numAttendees = input.numAttendees ?? 1;
+  if (numAttendees < 1 || numAttendees > MAX_ATTENDEES_PER_SUBMISSION) {
+    throw new Error(`numAttendees must be between 1 and ${MAX_ATTENDEES_PER_SUBMISSION}`);
+  }
+
+  // Informational only (Item 1/6 caveat 4) -- EOI's whole point is "leave
+  // your info even if you're one of many," so a match never blocks the
+  // insert, unlike the paid-registration path above.
+  const duplicateOf = await findDuplicateRegistration(
+    supabase,
+    event.id,
+    input.email,
+    input.phone
+  );
+
+  const { data: reg, error } = await supabase
+    .from("registrations")
+    .insert({
+      event_id: event.id,
+      full_name: input.fullName,
+      email: input.email,
+      phone: input.phone,
+      num_attendees: numAttendees,
+      status: "waitlisted",
+    })
+    .select("id")
+    .single();
+
+  if (error || !reg) {
+    throw new Error(error?.message ?? "Registration failed");
+  }
+
+  return { id: reg.id, status: "waitlisted", duplicateOf: duplicateOf ?? undefined };
 }

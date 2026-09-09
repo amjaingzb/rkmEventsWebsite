@@ -180,7 +180,14 @@ export default function AdminTable() {
                     {r.payment_reference ?? "—"}
                     {r.payment_amount != null ? ` (₹${r.payment_amount})` : ""}
                   </td>
-                  <td className="py-2 pr-4 capitalize">{r.status}</td>
+                  <td className="py-2 pr-4 capitalize">
+                    {r.status}
+                    {r.status === "waitlisted" && r.payment_reference != null && (
+                      <span className="ml-2 text-amber-700 text-xs whitespace-nowrap">
+                        ⚠ paid — needs resolution
+                      </span>
+                    )}
+                  </td>
                   <td className="py-2 pr-4">
                     {new Date(r.created_at).toLocaleString()}
                   </td>

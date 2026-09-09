@@ -23,8 +23,9 @@ Update this whenever something is skipped for time — don't let it get lost.
 >   `403 validation_error`. See [[nextSteps.md]] item 3.
 > - **No rate limiting on `/api/register`** (item 11) — a scripted flood
 >   could exhaust the 500-seat cap with junk entries.
-> - **Duplicate submissions unblocked** (item 2) — same person can claim a
->   seat more than once.
+> - ~~**Duplicate submissions unblocked**~~ — **done (2026-09-09)**, see
+>   item 2 below. Pending migrations `0007`-`0011` being applied to the
+>   live Supabase project before this is actually live.
 > - **npm audit: 1 moderate + 1 high advisory** (item 14), fix requires a
 >   breaking Next 16 upgrade.
 > - **Footer contact is a personal placeholder Gmail** (`amjain.gzb@gmail.com`,
@@ -48,22 +49,30 @@ Update this whenever something is skipped for time — don't let it get lost.
    exposure today, but RLS should still be added as defense-in-depth before
    wider rollout: anon role restricted to executing `register_attendee` only,
    admin role gated by an authenticated check. See plan Phase B.
-2. **Duplicate submissions** — nothing currently stops the same person
-   registering twice (same email/phone). Decide desired behavior (block,
-   warn, or allow and let admin merge) before Phase B ships.
-   **Superseded by [[registration-integrity.md]] (2026-09-09)** — that doc
-   is now the source of truth for this item's plan (duplicate detection,
-   plus the related per-submission cap and seat-cap-claim-timing redesign
-   that came out of the same discussion). Not yet implemented.
-3. **Idempotency of admin verify** — `markVerifiedAndIssueTicket` guards
-   against a double-click resending the email (via the `status = 'pending'`
-   WHERE clause), but this hasn't been tested under true concurrent requests.
+2. **Duplicate submissions — done (2026-09-09).** Implemented per
+   [[registration-integrity.md]] (duplicate detection against pending/
+   verified rows, per-submission cap of 4, and the seat-cap-claim-timing
+   redesign that came out of the same discussion). Migrations `0007`-`0011`
+   still need to be applied to the live Supabase project — see
+   [[nextSteps.md]] "Next action".
+3. **Idempotency of admin verify — strengthened (2026-09-09).**
+   `markVerifiedAndIssueTicket` now delegates to `claim_and_verify_registration`,
+   which row-locks the registration (`for update`) before checking
+   `status = 'pending'` — a real fix, not just a guard, for a double-click
+   racing a PhonePe webhook/status-poll on the same row. Still not
+   load-tested under true concurrency on the *admin verify* path itself
+   (the load test in [[setup.md]] exercises the same RPC, but via a direct
+   service-role call, not through the authenticated admin route).
 4. **Rejection + seat release flow** — built 2026-09-08 as part of item 5a
    below (`POST /api/admin/reject`, atomic seat release via
    `reject_registration()`). Scoped to `pending` rows only.
 5. **Waitlist re-invite tooling** — no CSV export or bulk-notify mechanism;
    organizers currently would need to query Supabase directly to re-engage
-   the waitlist if a bigger venue is arranged.
+   the waitlist if a bigger venue is arranged. Note (2026-09-09): waitlisted
+   rows now come from two distinct sources — Full-EOI signups (no payment
+   fields) and the rare Item-3 verification-time race (has payment fields,
+   flagged in the admin table) — see [[registration-integrity.md]]; any
+   re-invite tooling should account for both.
 5a. **Admin dashboard full build — done (2026-09-08)**, migration applied and
     every action (list/filter/resend/export/WhatsApp/reject) verified live
     against the real Supabase project, including a direct check that reject

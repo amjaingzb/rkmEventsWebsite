@@ -324,6 +324,16 @@ invariant above is never bypassed for admin-entered rows either — then
 immediately call `markVerifiedAndIssueTicket()` since cash is already in
 hand, rather than landing in the pending queue.
 
+> [!note] Admin walk-in always bypasses Open/Full-EOI/Paused (Item 6)
+> This route never renders the public page, so it's never subject to the
+> Open/Full-EOI/Paused gating below — that gate lives entirely in
+> `src/app/page.tsx`'s server-render choice of which form to show, not in
+> `registerAttendee`/`register_attendee`/`claim_and_verify_registration`.
+> An admin handling a walk-in has direct knowledge of real availability the
+> automatic thresholds don't, so this is intentional, per
+> [[registration-integrity.md]] Item 6 caveat 5 — no code enforces it, it's
+> just a structural consequence of which code path the walk-in form calls.
+
 ## Tickets / QR
 
 Pipe-delimited, HMAC-signed payload — frozen contract in [[QR_PAYLOAD_SPEC.md]],
@@ -357,15 +367,40 @@ but must never feed the ticket email again.
 | `GET api/phonepe/status` | reconciliation fallback (redirect-vs-webhook race) + local-dev testing path | public |
 | `GET api/upi/qr` | static UPI payment QR (PNG), always shown regardless of mode | public |
 | `POST api/admin/payment-mode` | flips `events.payment_mode`, no redeploy needed | admin session |
+| `POST api/register/eoi` | Expression-of-Interest insert (Item 6): no payment fields, always `waitlisted` | public |
+| `GET/POST api/admin/capacity-settings` | read/update seat cap, buffer, manual pause, pause message; GET also returns the live capacity snapshot | admin session |
 
 ## Pages
 
 `/` — single-page layout: Hero, SpeakerSection, VenueParkingSection (venue +
-parking), FaqSection (inline accordion, not a separate route), then the
-registration form, then Footer. Components live under
-`src/components/static/`; content is currently Lorem Ipsum placeholders
-(see [[BACKLOG.md]] item 12) pending real copy from the project owner.
-Also `/confirmation/[id]`, `/admin/login`, `/admin/dashboard`.
+parking), FaqSection (inline accordion, not a separate route), then one of
+three registration states (Open/Full-EOI/Paused, see below), then Footer.
+Components live under `src/components/static/`; content is currently Lorem
+Ipsum placeholders (see [[BACKLOG.md]] item 12) pending real copy from the
+project owner. Also `/confirmation/[id]`, `/admin/login`, `/admin/dashboard`.
+
+### Public registration states: Open / Full-EOI / Paused
+
+Per [[registration-integrity.md]] Item 6, `src/app/page.tsx` picks one of
+three states on every request (already `force-dynamic`, so this reflects
+live admin settings with no redeploy):
+
+- **Paused** (highest priority) — `manual_pause` (the `is_registration_open`
+  column, repurposed; admin-set via the capacity settings panel, persists
+  exactly as set) OR `auto_pause` (recomputed every request:
+  `confirmedBooking + outstanding >= cap - buffer`, never stored). Shows
+  only the admin-set `pause_message` — no form, no data collection
+  (`PausedNotice.tsx`).
+- **Full → EOI** — `confirmedBooking >= cap`. Shows `EoiForm.tsx` (name/
+  email/phone/attendee-count, no payment), which calls `POST
+  api/register/eoi` → `registerInterest()` and always lands `waitlisted`.
+- **Open** (default) — today's full `RegistrationForm`.
+
+`confirmedBooking`/`outstanding`/the two threshold formulas are one shared
+definition (`src/lib/registration/capacity.ts`, backed by
+`event_capacity_snapshot()`), used by both this page and the admin
+`AdminCapacitySettings.tsx` panel so they can't compute these numbers
+differently.
 
 ## Phasing
 

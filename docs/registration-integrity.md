@@ -5,14 +5,25 @@ created: 2026-09-09
 updated: 2026-09-09
 ---
 
-# Registration Integrity Hardening — Finalized Design (not yet implemented)
+# Registration Integrity Hardening — Design and Implementation
 
 > [!note] Status
 > Design finalized 2026-09-09 across a full item-by-item review with the
-> project owner. Nothing in this doc is built yet — implementation is
-> deferred to a future session. This supersedes [[BACKLOG.md]] item 2 as
-> the source of truth for that item's plan, and expands it with a new
-> item (6) surfaced during review.
+> project owner. **All items (1-6, the rename, and all open caveats)
+> implemented 2026-09-09** — see [[nextSteps.md]] "Recently completed" for
+> the build writeup and [[architecture.md]] for the as-built description.
+> Migrations `0007`-`0011` are written but **not yet applied to the live
+> Supabase project** — see [[nextSteps.md]] "Next action" before testing
+> against it. This supersedes [[BACKLOG.md]] item 2 as the source of truth
+> for that item's plan, and expands it with a new item (6) surfaced during
+> review.
+>
+> All five "Open" caveats below were resolved during implementation:
+> match scope (Item 1) as originally decided; EOI gets a separate
+> `registerInterest()` function (caveat 2); EOI collects `numAttendees`
+> (caveat 3); Item 1/2 apply to EOI, with duplicate detection softened to
+> informational/non-blocking there (caveat 4); admin walk-in bypasses
+> Paused/Full-EOI by construction, no code needed (caveat 5).
 
 ## Problem statement
 
