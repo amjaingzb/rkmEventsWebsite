@@ -2,7 +2,7 @@
 tags: [event-registration, next-steps]
 aliases: [next steps, todo, status]
 created: 2026-09-08
-updated: 2026-09-08
+updated: 2026-09-09
 ---
 
 # Next Steps
@@ -75,6 +75,40 @@ manual/on-request).
 2. ~~Run [[setup.md]]'s concurrency load test~~ — **done (2026-09-09).**
    See "Recently completed" below. `EVENT_SLUG` confirmed back to
    `halasuru-sarvapriyananda-2026`.
+3. **Manual mobile test pass — not yet done, needed before the demo
+   (added 2026-09-09).** Project owner wants to physically test on a phone:
+   - Open the registration flow on mobile and confirm tapping the PhonePe
+     button actually opens/deep-links into a UPI app correctly (this is a
+     real device/OS behavior that local `npm run dev` desktop testing
+     can't confirm).
+   - General "does the site look/behave broken on mobile" pass across the
+     main pages (landing page, registration form, confirmation page,
+     admin dashboard) — layout, tap targets, no horizontal scroll, etc.
+   - No specific bug reported yet — this is a first look, not a fix for a
+     known issue.
+4. **Cosmetic fixes — trivial but flagged as important for the Adhyaksha
+   Maharaj demo (added 2026-09-09).** Project owner's own visual review:
+   - Whitespace showing behind/around the main hero photo at the top of
+     the landing page (`src/components/static/Hero.tsx`) — likely an
+     image-sizing/object-fit or container-padding issue, needs a look.
+   - Speaker photo crops the face slightly
+     (`src/components/static/SpeakerSection.tsx`) — likely an `object-fit`/
+     `object-position` fix on the image, not a new asset (unless the source
+     image itself doesn't have enough headroom).
+   - Project owner's broader read: the site "still looks a bit bland" —
+     open-ended, not a specific bug. Their suggestion: consider a **mock
+     screens pass first** (e.g. the `design` skill's canvas) to explore
+     visual direction before sinking time into incremental CSS tweaks — not
+     decided yet, raise with the project owner before starting a redesign
+     pass.
+5. **Companion app — enhance existing "sevaConnect" app (added
+   2026-09-09).** Project owner wants to extend an existing app called
+   sevaConnect as a mobile companion to this registration site — **not
+   part of this repo**, no trace of it found here. Needs a follow-up
+   conversation to establish: where that app's codebase lives, what "the
+   companion app" is meant to do relative to this site (e.g. is this the
+   eventual QR-scanning app referenced in [[BACKLOG.md]] item 9?), and
+   whether it's in scope before or after the demo. Nothing started.
 
 The admin dashboard is feature-complete (round 2 polish pass) — see
 "Recently completed" below. All of that work is committed and deployed.
