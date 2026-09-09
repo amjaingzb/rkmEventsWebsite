@@ -29,8 +29,10 @@ Update this whenever something is skipped for time — don't let it get lost.
 >   breaking Next 16 upgrade.
 > - **Footer contact is a personal placeholder Gmail** (`amjain.gzb@gmail.com`,
 >   `src/lib/contact.ts`), not a real org contact — fine for demo/dev, swap
->   before real attendees rely on it for payment disputes. See
->   [[dev-accounts.md]].
+>   before real attendees rely on it for payment disputes. As of 2026-09-09
+>   this is a `NEXT_PUBLIC_APP_MODE`-gated pick (`LIVE_CONTACT_EMAIL`
+>   constant), not a bare hardcoded string — see [[dev-accounts.md]] and
+>   [[architecture.md]] "Environment mode".
 
 > [!note] Should fix before wider rollout, not necessarily before a demo
 > RLS policies (item 1), admin-verify concurrency untested (item 3), no
@@ -137,13 +139,22 @@ Update this whenever something is skipped for time — don't let it get lost.
      file can be deleted. Also recorded there: the confirmed design for
      sandbox-vs-live once V2 is built — admin dashboard keeps exactly 2
      visible options (`manual`/`phonepe`, no 3rd dropdown entry), with
-     sandbox-vs-live decided by a separate env-var config
-     (`PHONEPE_ENV=sandbox|live`) rather than a user-facing toggle, since
-     V2's auth/shapes are identical across environments (only base URL +
-     client credentials differ) — see [[architecture.md]] "Future: sandbox
-     vs. live config shape" for the full note. This BACKLOG item plus that
-     architecture.md section are now the source of truth for PhonePe
-     status; nothing further needs to be pulled from the clipboard file.
+     sandbox-vs-live decided by a separate env-var config rather than a
+     user-facing toggle, since V2's auth/shapes are identical across
+     environments (only base URL + client credentials differ) — **now
+     implemented as `NEXT_PUBLIC_APP_MODE`** (2026-09-09, see
+     [[architecture.md]] "Environment mode"), superseding the originally
+     proposed `PHONEPE_ENV=sandbox|live` name. See [[architecture.md]]
+     "Future: sandbox vs. live config shape" for the full note. This
+     BACKLOG item plus that architecture.md section are now the source of
+     truth for PhonePe status; nothing further needs to be pulled from the
+     clipboard file.
+   - **Re-confirmed 2026-09-09** while testing the new `NEXT_PUBLIC_APP_MODE`
+     toggle (unrelated feature, landed same day): `/api/phonepe/initiate`
+     still returns the same `"Key not found for the merchant"` error
+     described above. Credential resolution was confirmed byte-identical
+     before/after the `NEXT_PUBLIC_APP_MODE` change, so this is the
+     pre-existing V1-deprecation issue, not a new regression.
    **Production PhonePe integration remains out of scope** regardless —
    merchant account not set up, and even a fixed V2 sandbox must never be
    treated as a real payment guarantee.

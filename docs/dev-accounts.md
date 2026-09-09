@@ -35,14 +35,21 @@ updated: 2026-09-09
 
 ## Where each role actually lives (code vs. account vs. nothing)
 
-> [!note] There is no central "mode switch"
-> None of this toggles via an env var or config flag — each role lives in a
-> different place, confirmed 2026-09-09:
+> [!note] There IS now a central mode switch — `NEXT_PUBLIC_APP_MODE`
+> As of 2026-09-09 this is no longer true for `CONTACT_EMAIL` (see below) —
+> updated to match. See [[architecture.md]] "Environment mode" for the
+> full toggle design; `NEXT_PUBLIC_APP_MODE` doesn't touch any of the other
+> roles on this page (webadmin/infra, admin login, test customers), only
+> `CONTACT_EMAIL` and PhonePe credentials today.
 
-- **Public contact email** — one hardcoded constant,
-  `CONTACT_EMAIL` in `src/lib/contact.ts`. Going live is a one-line edit to
-  a real org/volunteer address; every surface that shows contact info reads
-  from that constant, so nothing else needs to change.
+- **Public contact email** — resolved by `src/lib/contact.ts` via the
+  compile-time `NEXT_PUBLIC_APP_MODE` toggle (`src/lib/appMode.ts`):
+  `DEV_CONTACT_EMAIL` in development, `LIVE_CONTACT_EMAIL` in live mode.
+  Both are still `amjain.gzb@gmail.com` for now — going live for real means
+  updating `LIVE_CONTACT_EMAIL` to a real org/volunteer address and setting
+  `NEXT_PUBLIC_APP_MODE=live` in the production Netlify context (see
+  [[netlify.md]]); every surface that shows contact info reads from the
+  same `CONTACT_EMAIL` export, so nothing else needs to change.
 - **Webadmin/infra email** (`amjain.gzb@gmail.com`) — not stored in code or
   env at all. It's whoever owns the external accounts (Supabase project,
   Resend account, Netlify team `amjain-gzb`). Changing it means
@@ -61,13 +68,14 @@ updated: 2026-09-09
 
 ## Live vs. dev-mode toggle
 
-Nothing code-level keys off these emails — the same `EVENT_SLUG` /
-Supabase project is used in both modes (see [[architecture.md]]). The
-separation above is a **convention for who's-who**, not a technical
-env-var switch. When the project goes live:
+The same `EVENT_SLUG` / Supabase project is used in both modes (see
+[[architecture.md]]) — that part is still just a convention, not a
+technical switch. `CONTACT_EMAIL` specifically now IS a technical switch
+via `NEXT_PUBLIC_APP_MODE` (see above). When the project goes live:
 
-- `CONTACT_EMAIL` should move off `amjain.gzb@gmail.com` to a real org
-  address (see [[BACKLOG.md]] go-live checklist).
+- Update `LIVE_CONTACT_EMAIL` in `src/lib/contact.ts` to a real org
+  address, then set `NEXT_PUBLIC_APP_MODE=live` in the production Netlify
+  context (see [[BACKLOG.md]] go-live checklist and [[netlify.md]]).
 - Test registrations under the two test-customer inboxes should be cleared
   from `registrations` (see [[nextSteps.md]]).
 - `amjain.gzb@gmail.com`'s role as the infra/service-account owner doesn't

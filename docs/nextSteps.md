@@ -173,6 +173,44 @@ Full rationale and the complete deferred-items list: [[BACKLOG.md]].
 
 ## Recently completed
 
+- **2026-09-09 (compile-time dev/live mode toggle + preview banner)** — new
+  `NEXT_PUBLIC_APP_MODE` (`development`/`live`, defaults to `development`),
+  resolved once in `src/lib/appMode.ts`. Deploy-time/compile-time, not a
+  runtime feature flag — distinct from `events.payment_mode` (unchanged).
+  Wired into two things:
+  - `CONTACT_EMAIL` (`src/lib/contact.ts`) now picks `DEV_CONTACT_EMAIL` vs
+    `LIVE_CONTACT_EMAIL` — both still `amjain.gzb@gmail.com` for now, but
+    going live for real is now a one-constant edit instead of touching the
+    export directly. See [[dev-accounts.md]].
+  - `src/lib/payment/phonepe.ts` credential getters always resolve to the
+    hardcoded sandbox defaults in development mode regardless of
+    `PHONEPE_*` env vars (can't leak real creds into a dev run); in live
+    mode they still fall back to sandbox if real creds are unset — by
+    design, so a live deploy can demo PhonePe before a real merchant
+    account exists. New `isUsingSandboxCredentials()` export exposes that
+    state.
+  - New `⚠ Development / Preview` banner
+    (`src/components/EnvironmentBanner.tsx`, gated by
+    `src/lib/environmentBanner.ts`, rendered site-wide from the root
+    layout) is the visibility safety net for the case above: shown in dev
+    mode always, and in live mode whenever `payment_mode = phonepe_sandbox`
+    while PhonePe is still on sandbox credentials; hidden for
+    `payment_mode = manual` or once real PhonePe credentials are set.
+  - `.env.local.example` and `0_SECRETS/env.local` updated with the new
+    var. Netlify per-context setup (`netlify env:set ... --context
+    production`) documented in [[netlify.md]] but **not yet run** —
+    needs the project owner's go-ahead first.
+  - Build/lint clean. Verified live via the chrome-devtools sidecar: banner
+    renders on home, admin login, and admin dashboard in default
+    (development) mode; toggling `payment_mode` between `manual` and
+    `phonepe_sandbox` while temporarily running a second local server with
+    `NEXT_PUBLIC_APP_MODE=live` confirmed the banner correctly shows/hides
+    per the condition above.
+  - While testing, re-confirmed the pre-existing PhonePe V1 "Key not found
+    for the merchant" issue (see [[BACKLOG.md]] item 6) — unrelated to this
+    change, credential values confirmed byte-identical before/after.
+  - See [[architecture.md]] "Environment mode" for the full design.
+
 - **2026-09-08 (PhonePe sandbox integration + always-on UPI display)** —
   built while waiting on the Resend domain handover, so the project owner
   can demo both a manual and an automated payment flow to Adhyaksha

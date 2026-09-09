@@ -98,6 +98,39 @@ in the live production deploy — they don't affect app behavior since
 app code, remember production is pinned to `25fdd96` until the next
 explicitly-requested `--prod` deploy.
 
+## Per-context env vars (NEXT_PUBLIC_APP_MODE)
+
+`NEXT_PUBLIC_APP_MODE` (see [[architecture.md]] "Environment mode") should
+be `live` for the true production URL only, and `development` everywhere
+else (draft deploys, the `demo` alias) — so a draft/demo deploy always
+stays sandboxed (PhonePe on sandbox credentials, the `⚠ Development /
+Preview` banner visible) even though it's a real, fully-working deploy.
+Since env vars currently apply uniformly to every context (imported once
+via `netlify env:import`), this needs Netlify's per-context CLI overrides,
+a one-time setup:
+
+```
+netlify env:set NEXT_PUBLIC_APP_MODE development          # default for all contexts (draft/branch deploys)
+netlify env:set NEXT_PUBLIC_APP_MODE live --context production
+```
+
+And later, once a real PhonePe merchant account exists:
+
+```
+netlify env:set PHONEPE_MERCHANT_ID <real-id> --context production
+netlify env:set PHONEPE_SALT_KEY <real-key> --context production
+netlify env:set PHONEPE_SALT_INDEX <real-index> --context production
+netlify env:set PHONEPE_BASE_URL https://api.phonepe.com/apis/hermes --context production
+```
+
+> [!warning] Not yet run
+> These commands haven't been run against the real Netlify account yet —
+> confirm with the project owner before running them, same as any other
+> account-affecting action. Until then, every context (including
+> production) still resolves `NEXT_PUBLIC_APP_MODE` to its unset default
+> (`development`), so a `--prod` deploy today would still show the preview
+> banner and use PhonePe sandbox credentials.
+
 ## Other things to know
 
 - **Function timeout: 60 seconds**, synchronous, fixed across all plans

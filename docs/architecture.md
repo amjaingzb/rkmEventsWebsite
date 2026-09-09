@@ -155,6 +155,47 @@ on a phone lets PhonePe launch a UPI app directly, bypassing the
 instrument-selection page natively). Worth designing in alongside the V2
 rewrite above, not as a separate pass.
 
+### Environment mode (dev vs. live)
+
+`NEXT_PUBLIC_APP_MODE` (`"development"` | `"live"`, defaults to
+`"development"` if unset/unrecognized) is a **compile-time/deploy-time**
+toggle, resolved once in `src/lib/appMode.ts` (`APP_MODE`, `isLive`,
+`isDevelopment`) — not a runtime feature flag, and unrelated to
+`events.payment_mode` below, which stays a legitimate runtime, per-event,
+admin-toggleable DB flag. It's `NEXT_PUBLIC_`-prefixed (safe: it only ever
+holds the mode name, never a secret) so it resolves correctly in both
+server code and the one client component that needs it
+(`RegistrationForm.tsx`, via `CONTACT_EMAIL`).
+
+What it controls today:
+- **`CONTACT_EMAIL`** (`src/lib/contact.ts`) — picks between
+  `DEV_CONTACT_EMAIL` and `LIVE_CONTACT_EMAIL`. Both are still the same
+  placeholder personal inbox for now (see [[dev-accounts.md]]) — going live
+  for real means updating `LIVE_CONTACT_EMAIL` to a real org address.
+- **PhonePe credentials** (`src/lib/payment/phonepe.ts`) — in development
+  mode, the credential getters always return the hardcoded sandbox
+  defaults regardless of what `PHONEPE_*` env vars happen to be set, so a
+  shared secrets file containing real credentials can never leak into a
+  local/dev run. In live mode they fall back to the same sandbox defaults
+  if the real env vars are unset — intentionally, so a live deploy can
+  still demo the PhonePe flow before a real merchant account exists.
+  `isUsingSandboxCredentials()` exposes whether that fallback is active.
+- **The `⚠ Development / Preview` banner**
+  (`src/components/EnvironmentBanner.tsx`, shown site-wide via the root
+  layout, gated by `src/lib/environmentBanner.ts`) — the visibility
+  safety net for the case above. Shown whenever the deployment isn't fully
+  live end-to-end: always in development mode, and in live mode whenever
+  `payment_mode = 'phonepe_sandbox'` **and** PhonePe is still resolving to
+  sandbox credentials. Hidden when `payment_mode = 'manual'` (no PhonePe
+  dependency, genuinely production-ready on its own) or once real PhonePe
+  production credentials are set.
+
+Netlify side: since deploys aren't git-linked and env vars otherwise apply
+uniformly to every deploy context, `NEXT_PUBLIC_APP_MODE` is set per
+context (`netlify env:set ... --context production` for the true
+production deploy, left at the `development` default everywhere else) —
+see [[netlify.md]].
+
 ### Payment mode switch
 
 `events.payment_mode` (`'manual'` | `'phonepe_sandbox'`, default `'manual'`)
@@ -165,22 +206,23 @@ redeploy needed, so both flows can be demoed live in one sitting. `/` is
 statically-prerendered homepage would otherwise bake in whatever mode was
 active at build time).
 
-> [!note] Future: sandbox vs. live config shape (decided 2026-09-09, not
-> built yet)
+> [!note] Future: sandbox vs. live config shape (decided 2026-09-09,
+> implemented 2026-09-09 via NEXT_PUBLIC_APP_MODE)
 > Once the V2 rewrite above happens, the **admin-visible** `payment_mode`
 > stays exactly 2 options — `manual` and `phonepe` (today's `phonepe_sandbox`
 > label just becomes `phonepe`) — never a 3rd dropdown entry for
 > sandbox-vs-live. Sandbox vs. live is decided by a separate,
-> non-user-facing config (e.g. `PHONEPE_ENV=sandbox|live`), because V2's
-> auth model and request/response shapes are identical across both
-> environments — only the base URL and `client_id`/`client_secret` differ.
-> Concretely: `manual` → real UPI verification (unchanged); `phonepe` →
-> PhonePe checkout, routed to sandbox or live purely by `PHONEPE_ENV`. The
-> webhook handler, `applyConfirmedPhonePeSuccess`, and everything
-> downstream of it need zero changes between sandbox and live under this
-> design — that symmetry only holds once V2 is in place, not for today's
-> broken V1 code. Recorded here so the eventual rewrite doesn't have to
-> re-derive this decision.
+> non-user-facing config — this is now `NEXT_PUBLIC_APP_MODE` (see
+> "Environment mode" above), superseding the originally-proposed
+> `PHONEPE_ENV=sandbox|live` name so V2 doesn't introduce a second,
+> redundant toggle. V2's auth model and request/response shapes are
+> identical across both environments — only the base URL and
+> `client_id`/`client_secret` differ. Concretely: `manual` → real UPI
+> verification (unchanged); `phonepe` → PhonePe checkout, routed to sandbox
+> or live purely by `NEXT_PUBLIC_APP_MODE`. The webhook handler,
+> `applyConfirmedPhonePeSuccess`, and everything downstream of it need zero
+> changes between sandbox and live under this design — that symmetry only
+> holds once V2 is in place, not for today's broken V1 code.
 
 ### Static UPI display
 

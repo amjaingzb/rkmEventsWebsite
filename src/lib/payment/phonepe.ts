@@ -1,4 +1,5 @@
 import { createHash } from "crypto";
+import { isDevelopment } from "@/lib/appMode";
 import { createServiceClient } from "@/lib/supabase/server";
 import { markVerifiedAndIssueTicket } from "@/lib/ticket/issue";
 import { computeAmountInr } from "./pricing";
@@ -20,6 +21,17 @@ import { computeAmountInr } from "./pricing";
  * checksum's path-suffix nuance (present for /pg/v1/pay, absent for the
  * callback) during first real testing; PhonePe's API details can drift.
  *
+ * The credential getters below always resolve to the sandbox defaults when
+ * NEXT_PUBLIC_APP_MODE is "development" (src/lib/appMode.ts), regardless of
+ * whatever PHONEPE_* env vars happen to be set — so a shared secrets file
+ * accidentally containing real credentials can never leak into a local/dev
+ * run. In live mode they fall back to the same sandbox defaults if the real
+ * env vars are unset, which is intentional: it lets a live deploy still
+ * demo the PhonePe flow on sandbox credentials before a real merchant
+ * account exists. isUsingSandboxCredentials() exposes whether that's
+ * currently happening, so src/lib/environmentBanner.ts can surface it
+ * visibly instead of failing silently.
+ *
  * Intentionally does NOT implement PaymentModule (src/lib/payment/types.ts)
  * — that interface models synchronous "caller already has proof, confirm
  * it" verification, while PhonePe is two-phase and webhook-driven with no
@@ -36,16 +48,28 @@ const DEFAULT_SALT_KEY = "099eb0cd-02cf-4e2a-8aca-3e6c6aff0399";
 const DEFAULT_SALT_INDEX = "1";
 
 function getMerchantId(): string {
+  if (isDevelopment) return DEFAULT_MERCHANT_ID;
   return process.env.PHONEPE_MERCHANT_ID || DEFAULT_MERCHANT_ID;
 }
 function getSaltKey(): string {
+  if (isDevelopment) return DEFAULT_SALT_KEY;
   return process.env.PHONEPE_SALT_KEY || DEFAULT_SALT_KEY;
 }
 function getSaltIndex(): string {
+  if (isDevelopment) return DEFAULT_SALT_INDEX;
   return process.env.PHONEPE_SALT_INDEX || DEFAULT_SALT_INDEX;
 }
 function getBaseUrl(): string {
+  if (isDevelopment) return DEFAULT_BASE_URL;
   return process.env.PHONEPE_BASE_URL || DEFAULT_BASE_URL;
+}
+
+/** True when PhonePe is currently resolving to its hardcoded sandbox
+ * credentials rather than real production ones — always true in
+ * development mode, and true in live mode until real PHONEPE_* env vars
+ * are set. Drives the environment banner (src/lib/environmentBanner.ts). */
+export function isUsingSandboxCredentials(): boolean {
+  return getBaseUrl() === DEFAULT_BASE_URL || getMerchantId() === DEFAULT_MERCHANT_ID;
 }
 
 function sha256Hex(input: string): string {

@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 import { Cormorant_Garamond, Inter } from "next/font/google";
+import { EnvironmentBanner } from "@/components/EnvironmentBanner";
+import { shouldShowEnvironmentBanner } from "@/lib/environmentBanner";
 import "./globals.css";
+
+export const dynamic = "force-dynamic";
 
 const display = Cormorant_Garamond({
   subsets: ["latin"],
@@ -18,14 +22,17 @@ export const metadata: Metadata = {
   description: "Registration for Swami Sarvapriyananda's visit, 31 Oct 2026",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const showBanner = await shouldShowEnvironmentBanner();
+
   return (
     <html lang="en" className={`${display.variable} ${body.variable}`}>
       <body className="min-h-screen bg-cream text-ink font-sans">
+        {showBanner && <EnvironmentBanner />}
         {children}
       </body>
     </html>
