@@ -33,6 +33,8 @@ updated: 2026-09-08
   come up
 - [[dev-accounts.md]] — which personal email plays which role (webadmin/
   infra, public contact, test customers) during dev mode
+- [[git-label-strategy.md]] — when (and when not) to create a git tag;
+  Claude should proactively suggest tagging at real milestones
 
 ## Where things live in the repo
 
