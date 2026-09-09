@@ -157,14 +157,22 @@ manual/on-request).
      visual direction before sinking time into incremental CSS tweaks — not
      decided yet, raise with the project owner before starting a redesign
      pass.
-5. **Companion app — enhance existing "sevaConnect" app (added
-   2026-09-09).** Project owner wants to extend an existing app called
-   sevaConnect as a mobile companion to this registration site — **not
-   part of this repo**, no trace of it found here. Needs a follow-up
-   conversation to establish: where that app's codebase lives, what "the
-   companion app" is meant to do relative to this site (e.g. is this the
-   eventual QR-scanning app referenced in [[BACKLOG.md]] item 9?), and
-   whether it's in scope before or after the demo. Nothing started.
+5. **Attendance/QR-scanning — webapp, not a separate "sevaConnect" Android
+   app (corrected 2026-09-09; superseded an earlier, incompatible note in
+   this same slot).** Per [[BACKLOG.md]] item 9's "Direction change under
+   consideration" note (also 2026-09-09), the project owner is leaning away
+   from a native Android companion app entirely, toward a
+   volunteer-password-gated attendance page built into this same Next.js
+   site instead — takes a seat number, marks that registration present,
+   writes directly to the same Supabase DB (no separate datastore to
+   reconcile). This **replaces**, not enhances, the previously-discussed
+   separate "sevaConnect" Android app. Still just a direction, nothing
+   built: collision handling (two volunteers marking the same seat) and
+   offline/flaky-connection behavior at the door are unresolved and need
+   designing first; camera-based QR scanning from a phone browser would
+   also need the not-yet-built `api/ticket/verify` online-verify endpoint.
+   Confirmed out of scope before the demo — see [[BACKLOG.md]] item 9,
+   revisit after.
 
 The admin dashboard is feature-complete (round 2 polish pass) — see
 "Recently completed" below. All of that work is committed and deployed.
