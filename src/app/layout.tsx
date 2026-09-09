@@ -30,7 +30,7 @@ export default async function RootLayout({
   const showBanner = await shouldShowEnvironmentBanner();
 
   return (
-    <html lang="en" className={`${display.variable} ${body.variable}`}>
+    <html lang="en" className={`${display.variable} ${body.variable} scroll-smooth`}>
       <body className="min-h-screen bg-cream text-ink font-sans">
         {showBanner && <EnvironmentBanner />}
         {children}

@@ -9,7 +9,7 @@ const AGENDA = [
 
 export default function AgendaSection() {
   return (
-    <section id="agenda" className="max-w-4xl mx-auto px-4 py-16">
+    <section id="agenda" className="max-w-4xl mx-auto px-4 py-16 md:py-24 scroll-mt-16">
       <h2 className="font-display text-3xl font-semibold text-maroon text-center mb-2">
         Agenda
       </h2>

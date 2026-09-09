@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const LINKS = [
   { href: "#home", label: "Home" },
@@ -12,6 +12,29 @@ const LINKS = [
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
+  const [active, setActive] = useState("#home");
+
+  useEffect(() => {
+    const sections = LINKS.map((link) =>
+      document.getElementById(link.href.slice(1))
+    ).filter((el): el is HTMLElement => el !== null);
+
+    if (sections.length === 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            setActive(`#${entry.target.id}`);
+          }
+        }
+      },
+      { rootMargin: "-40% 0px -55% 0px", threshold: 0 }
+    );
+
+    sections.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <header className="sticky top-0 z-50 bg-cream/90 backdrop-blur border-b border-gold/30">
@@ -25,7 +48,12 @@ export default function Navbar() {
             <a
               key={link.href}
               href={link.href}
-              className="text-sm font-medium text-ink/80 hover:text-maroon transition"
+              className={`text-sm font-medium transition relative pb-1 ${
+                active === link.href
+                  ? "text-maroon after:absolute after:left-0 after:right-0 after:-bottom-[1px] after:h-0.5 after:bg-saffron"
+                  : "text-ink/80 hover:text-maroon"
+              }`}
+              aria-current={active === link.href ? "true" : undefined}
             >
               {link.label}
             </a>
@@ -61,7 +89,9 @@ export default function Navbar() {
             <a
               key={link.href}
               href={link.href}
-              className="text-sm font-medium text-ink/80"
+              className={`text-sm font-medium ${
+                active === link.href ? "text-maroon font-semibold" : "text-ink/80"
+              }`}
               onClick={() => setOpen(false)}
             >
               {link.label}

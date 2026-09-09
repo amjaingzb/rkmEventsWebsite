@@ -15,6 +15,23 @@ updated: 2026-09-09
 
 ## Next action
 
+> [!note] Public page visual redesign done (2026-09-09)
+> Restyled the public event page in place, component by component, per a
+> screenshot-driven brief: `Navbar.tsx` (smooth scroll + IntersectionObserver
+> scroll-spy), `Hero.tsx` (2-column desktop layout with date/time/venue
+> chips), `SpeakerSection.tsx` (featured card, condensed bullet highlights +
+> "Read full bio" toggle replacing three unbroken paragraphs),
+> `FaqSection.tsx` (CSS grid-rows open/close transition + rotating chevron,
+> same accordion state logic), and the register-section wrapper plus
+> `RegistrationForm.tsx`/`EoiForm.tsx` (elevated card, new shared
+> `src/components/FormInput.tsx` primitive, client-side inline validation
+> messages layered on top of — not replacing — the existing
+> submit/duplicate/PhonePe-redirect logic). No business logic, API calls, or
+> the paused/full-eoi/open conditional in `page.tsx` changed — purely
+> presentational. `npm run build` and `npm run lint` both clean; manually
+> exercised scroll-spy, the FAQ transition, the bio toggle, and form
+> validation in a live browser session (desktop + mobile viewport).
+
 > [!note] Migrations applied + manual verification pass done, one real bug found and fixed (2026-09-09)
 > All of [[registration-integrity.md]] is implemented (6 commits, one per
 > implementation-order step — see "Recently completed" below), migrations

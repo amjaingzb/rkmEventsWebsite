@@ -5,8 +5,8 @@ const MAPS_LINK =
 
 export default function VenueParkingSection() {
   return (
-    <section id="venue" className="bg-maroon/5 border-y border-gold/30">
-      <div className="max-w-4xl mx-auto px-4 py-16">
+    <section id="venue" className="bg-maroon/5 border-y border-gold/30 scroll-mt-16">
+      <div className="max-w-4xl mx-auto px-4 py-16 md:py-24">
         <h2 className="font-display text-3xl font-semibold text-maroon text-center mb-2">
           Venue &amp; Logistics
         </h2>
