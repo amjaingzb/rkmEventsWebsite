@@ -19,8 +19,8 @@ updated: 2026-09-09
 
 | Email | Role | Where it's used |
 |---|---|---|
-| `amjain.gzb@gmail.com` | **Webadmin / infra contact.** Used to sign up almost everywhere. | Supabase account owner, Resend account owner (API key), Netlify account (`amjain-gzb` team), git commit author (`userEmail` in Claude Code) |
-| `bhikajicama09@gmail.com` | **Public-facing contact address.** Placeholder until a real org inbox exists. | `CONTACT_EMAIL` in `src/lib/contact.ts` (footer, rejected-status copy, form error fallback); also one of the two admin login credentials in `0_SECRETS/users.website` |
+| `amjain.gzb@gmail.com` | **Webadmin / infra contact, and public-facing contact address.** Used to sign up almost everywhere; also the placeholder public contact until a real org inbox exists (switched here from `bhikajicama09@gmail.com`, project owner decision 2026-09-09). | Supabase account owner, Resend account owner (API key), Netlify account (`amjain-gzb` team), git commit author (`userEmail` in Claude Code); `CONTACT_EMAIL` in `src/lib/contact.ts` (footer, rejected-status copy, form error fallback) |
+| `bhikajicama09@gmail.com` | **Admin login only** (no longer the public contact address). | One of the two admin login credentials in `0_SECRETS/users.website` |
 | `ruchisai197518@gmail.com` | **Test customer/registrant.** | Use as the "attendee" email when manually testing the public registration form |
 | `sairam_197518@yahoo.in` | **Test customer/registrant.** | Same as above — second test identity, useful when a test needs two distinct registrants (e.g. duplicate-submission checks, seat-cap load testing) |
 
@@ -66,7 +66,7 @@ Supabase project is used in both modes (see [[architecture.md]]). The
 separation above is a **convention for who's-who**, not a technical
 env-var switch. When the project goes live:
 
-- `CONTACT_EMAIL` should move off `bhikajicama09@gmail.com` to a real org
+- `CONTACT_EMAIL` should move off `amjain.gzb@gmail.com` to a real org
   address (see [[BACKLOG.md]] go-live checklist).
 - Test registrations under the two test-customer inboxes should be cleared
   from `registrations` (see [[nextSteps.md]]).

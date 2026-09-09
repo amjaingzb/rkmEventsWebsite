@@ -148,12 +148,14 @@ longer near-term — confirmed by the project owner (2026-09-08) as post-
 prototype-demo work; manual visual ticket check is fine until then. See
 [[BACKLOG.md]] item 9.
 
-Footer/error-message contact email is now `bhikajicama09@gmail.com`
-(project owner decision, 2026-09-08) — a placeholder personal inbox, not the
-final org contact. Swap `CONTACT_EMAIL` in `src/lib/contact.ts` when the
-real one is ready; every message that shows contact info (footer, rejected
-status message/email/WhatsApp, confirmation page, registration form error)
-reads from that one constant.
+Footer/error-message contact email is now `amjain.gzb@gmail.com`
+(project owner decision, 2026-09-09, switched from the earlier
+`bhikajicama09@gmail.com` placeholder) — still a placeholder personal
+inbox, not the final org contact. Swap `CONTACT_EMAIL` in
+`src/lib/contact.ts` when the real one is ready; every message that shows
+contact info (footer, rejected status message/email/WhatsApp, confirmation
+page, registration form error) reads from that one constant. See
+[[dev-accounts.md]] for the full email-role breakdown.
 
 ## Queue (after the admin dashboard work above)
 

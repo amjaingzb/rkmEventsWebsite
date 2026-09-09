@@ -27,9 +27,10 @@ Update this whenever something is skipped for time — don't let it get lost.
 >   seat more than once.
 > - **npm audit: 1 moderate + 1 high advisory** (item 14), fix requires a
 >   breaking Next 16 upgrade.
-> - **Footer contact is a personal placeholder Gmail** (`bhikajicama09@gmail.com`,
+> - **Footer contact is a personal placeholder Gmail** (`amjain.gzb@gmail.com`,
 >   `src/lib/contact.ts`), not a real org contact — fine for demo/dev, swap
->   before real attendees rely on it for payment disputes.
+>   before real attendees rely on it for payment disputes. See
+>   [[dev-accounts.md]].
 
 > [!note] Should fix before wider rollout, not necessarily before a demo
 > RLS policies (item 1), admin-verify concurrency untested (item 3), no
