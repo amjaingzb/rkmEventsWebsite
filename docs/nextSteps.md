@@ -15,6 +15,55 @@ updated: 2026-09-10
 
 ## Next action
 
+> [!warning] Highest priority — deploy to production before tomorrow's demo (2026-09-10)
+> Project owner has a demo tomorrow (2026-09-11) and needs the current code
+> live on the real production site, then tested there, before then. This
+> supersedes everything else in this file until done. Per the deploy-gate
+> note further down and [[netlify.md]], a production deploy
+> (`netlify deploy --build --prod`) costs Netlify credits and was
+> deliberately being held back until local work froze for the demo — that
+> trigger has now arrived. Steps: (1) confirm local `main` is in the state
+> wanted for the demo (all of today's commits: UI redesign, hero/logo/
+> favicon assets, `.next` cache-corruption fix), (2) run the production
+> deploy, (3) smoke-test the live site (registration flow, admin verify,
+> ticket email) before the demo, not just locally.
+
+> [!note] To discuss later — identify and plan content-editability for
+> > subjective/placeholder copy (2026-09-10)
+> Project owner expects Swamiji to keep requesting changes to subjective
+> content — hero image, FAQ, hero/main text, speaker intro, agenda — all
+> currently placeholder-quality hardcoded JSX (see [[BACKLOG.md]] item 12).
+> Two things to plan out together later, not decided yet:
+> 1. **Inventory which pieces are placeholder/subjective-content candidates**
+>    likely to keep changing, vs. which are stable enough to leave hardcoded.
+> 2. **For each, decide the best low-friction way for a non-technical monk to
+>    submit edits** — e.g. FAQ as a CSV (`category | question | answer`) that
+>    opens directly in Excel, editable by a monk, then run through a script
+>    on the dev machine. Open question raised by the project owner, for
+>    later research rather than urgent: would reading such content from the
+>    database at request time (vs. a CSV-driven rebuild/redeploy) be too
+>    costly for the free-tier Supabase/Netlify setup given how light this
+>    site is? Not a hard requirement — motivation is mainly to avoid
+>    burning Netlify's redeploy/credit limit on every small copy tweak, not
+>    a performance concern.
+
+> [!note] Rounded favicon — done, switched to a different logo (2026-09-10)
+> The Halasuru/Ulsoor-style shield badge previously in `icon.png`/
+> `apple-icon.png` is a quatrefoil/scalloped medallion, not drawn as a
+> circle — a plain circular mask would've clipped its four corner points.
+> Project owner instead chose to swap in the general Ramakrishna Math &
+> Mission seal (snake-swan-sun-lotus disc, naturally circular in its source
+> art), from images they dropped in `delme-clipboard/icons/`:
+> `Ramakrishna_Math___Ramakrishna_Mission_idtiPh1l5z_1.jpeg` → `icon.png`
+> (48×48) and `Logo-Color-512px.jpg` → `apple-icon.png` (180×180). Both
+> center-cropped to square, scaled to 90% with transparent padding (so the
+> cobra's head loop — which touches the edge of the source art — stays
+> fully inside the mask), then circle-masked. **Known mismatch, accepted by
+> project owner**: the navbar/hero logo (`public/images/logo.png`) still
+> shows the original shield badge, so the browser tab icon and the on-page
+> logo are now two different (though both official) emblems. `npm run
+> build` clean.
+
 > [!note] Real photo/logo assets swapped in (2026-09-10)
 > Follow-up to the visual redesign below, from real assets the project
 > owner dropped in `delme-clipboard/`: Hero's building photo is now
