@@ -13,10 +13,16 @@ updated: 2026-09-09
 > implemented 2026-09-09** — see [[nextSteps.md]] "Recently completed" for
 > the build writeup and [[architecture.md]] for the as-built description.
 > Migrations `0007`-`0011` are applied to the live Supabase project and
-> confirmed directly against it. A manual UI pass (each public state, a
-> real registration through to a ticket email, the concurrency load test)
-> is still open — see [[nextSteps.md]] "Next action". This supersedes
-> [[BACKLOG.md]] item 2 as the source of truth
+> confirmed directly against it. Manual UI pass done 2026-09-09: a real
+> registration through Open (submission → verification, confirmed the
+> seat claim only happens at verification and `seats_taken` moves exactly
+> once), the EOI route, the per-submission cap, and duplicate detection all
+> confirmed working against the live DB (test rows cleaned up
+> afterward). **Found and fixed a real bug in the Item 5 formula this
+> way** — see the warning under Item 5 below — Full-EOI could never
+> render before the fix. Still open: a real ticket-email delivery check
+> and the concurrency load test re-run — see [[nextSteps.md]] "Next
+> action". This supersedes [[BACKLOG.md]] item 2 as the source of truth
 > for that item's plan, and expands it with a new item (6) surfaced during
 > review.
 >
@@ -144,11 +150,25 @@ updated: 2026-09-09
   Editable from the Item 6 settings panel (both for testing and real
   operation).
 - Threshold formulas (finalized together with Item 6):
-  - `auto_pause` (backlog relief): `confirmedBooking + outstanding >= cap - buffer`
+  - `auto_pause` (backlog relief): `confirmedBooking < cap AND confirmedBooking + outstanding >= cap - buffer`
   - EOI trigger (true fullness): `confirmedBooking >= cap`
   - where `confirmedBooking` = `events.seats_taken` (verified seats, post
     Item 3) and `outstanding` = sum of `num_attendees` across `pending`
     rows for the event (excludes `waitlisted`/EOI rows).
+
+> [!warning] Bug found and fixed during implementation, 2026-09-09
+> The `auto_pause` formula originally omitted the `confirmedBooking < cap`
+> guard (just `confirmedBooking + outstanding >= cap - buffer`). That's
+> mathematically *always* true whenever `Full` is also true (for any
+> `buffer >= 0`: `confirmedBooking + outstanding >= confirmedBooking >=
+> cap >= cap - buffer`), and since Paused wins the priority check, the
+> EOI form could **never** actually render — the site would show
+> "temporarily paused" forever once genuinely full, defeating the entire
+> point of Item 6. Caught by manually forcing the Full case during
+> verification (temporarily set `guaranteed_seat_cap` to match
+> `seats_taken`) and confirmed fixed the same way. The guard above ensures
+> `auto_pause` only fires as a backlog brake *before* the cap is reached;
+> once truly full, it correctly falls through to Full-EOI instead.
 - Admin display of live remaining capacity
   (`guaranteed_seat_cap - seats_taken`, plus the outstanding/pending
   count) is folded into the Item 6 settings panel rather than a separate

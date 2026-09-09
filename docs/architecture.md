@@ -388,9 +388,12 @@ live admin settings with no redeploy):
 - **Paused** (highest priority) — `manual_pause` (the `is_registration_open`
   column, repurposed; admin-set via the capacity settings panel, persists
   exactly as set) OR `auto_pause` (recomputed every request:
-  `confirmedBooking + outstanding >= cap - buffer`, never stored). Shows
-  only the admin-set `pause_message` — no form, no data collection
-  (`PausedNotice.tsx`).
+  `confirmedBooking < cap AND confirmedBooking + outstanding >= cap - buffer`,
+  never stored — the `confirmedBooking < cap` guard matters: without it,
+  `auto_pause` is always true whenever `Full` is too, making Full-EOI
+  unreachable; see [[registration-integrity.md]] Item 5 for the bug this
+  was caught and fixed). Shows only the admin-set `pause_message` — no
+  form, no data collection (`PausedNotice.tsx`).
 - **Full → EOI** — `confirmedBooking >= cap`. Shows `EoiForm.tsx` (name/
   email/phone/attendee-count, no payment), which calls `POST
   api/register/eoi` → `registerInterest()` and always lands `waitlisted`.

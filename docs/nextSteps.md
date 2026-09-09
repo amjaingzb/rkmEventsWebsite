@@ -15,37 +15,45 @@ updated: 2026-09-09
 
 ## Next action
 
-> [!note] Migrations 0007-0011 applied and confirmed live (2026-09-09)
-> All of [[registration-integrity.md]] is now both implemented (6 commits,
-> one per implementation-order step — see "Recently completed" below) and
-> applied to the live Supabase project. Confirmed directly against it
-> (not just assumed): `registration_number` column exists and `seat_number`
-> is gone (`0008`), `claim_and_verify_registration` RPC exists (`0009`),
-> `event_capacity_snapshot` RPC works with `waitlist_alert_threshold`
-> defaulted to `10` (`0010`), `events.pause_message` column exists
-> (`0011`), and `register_attendee` actually rejects `num_attendees > 4`
-> (`0007`). Real event snapshot at confirmation time: `confirmed_booking:
-> 6, outstanding: 1, cap: 500, buffer: 10` — sane, no oversell.
+> [!note] Migrations applied + manual verification pass done, one real bug found and fixed (2026-09-09)
+> All of [[registration-integrity.md]] is implemented (6 commits, one per
+> implementation-order step — see "Recently completed" below), migrations
+> `0007`-`0011` are applied to the live Supabase project, and a manual
+> pass through the real running app (not just schema checks) confirmed
+> the following, cleaning up every test row created afterward so live
+> data was left exactly as found (`confirmed_booking: 6, outstanding: 1,
+> cap: 500, buffer: 10`):
+> - **Open state**: real submission via `POST /api/register` lands
+>   `pending` with `events.seats_taken` unchanged; directly calling
+>   `claim_and_verify_registration` (same RPC the admin Verify button
+>   calls) then correctly flips it to `verified`, assigns a
+>   `registration_number`, and increments `seats_taken` only at that point.
+> - **Duplicate detection + per-submission cap**: confirmed a `waitlisted`
+>   (EOI) row does *not* block a later duplicate (correct, out of match
+>   scope), a `pending` row *does* block one (409 + existing ID), and both
+>   `/api/register` and `/api/register/eoi` reject `numAttendees > 4`.
+> - **Paused state**: manually flipping `is_registration_open` to `false`
+>   correctly shows the admin's pause message with no form.
+> - **Full-EOI state**: — **found and fixed a real bug**. With the
+>   original `auto_pause` formula, forcing `guaranteed_seat_cap` down to
+>   match `seats_taken` (to test "genuinely full") showed "Paused" forever,
+>   never the EOI form — `auto_pause`'s formula was mathematically always
+>   true whenever `Full` was too, so Full-EOI could never win the priority
+>   check. Fixed by adding a `confirmedBooking < cap` guard to `auto_pause`
+>   (`src/lib/registration/capacity.ts`) so it only fires as a backlog
+>   brake *before* the cap is reached; re-tested both the backlog-pause
+>   case and the genuinely-full case afterward, both now correct. See
+>   [[registration-integrity.md]] Item 5 for the full writeup.
 >
-> **Still open before calling this demo-ready — a manual pass through the
-> actual UI** (schema checks above only confirm the DB side):
-> - Each of the three public states (Open/Full-EOI/Paused) via the new
->   admin capacity-settings panel on `/admin/dashboard` — force Paused
->   (manual toggle) and Full (temporarily drop `guaranteed_seat_cap` to
->   match `seats_taken`) and confirm the right form/notice renders on `/`.
-> - One real registration through manual mode: submit → confirm it lands
->   `pending` with `events.seats_taken` **unchanged** → Verify from the
->   admin dashboard → confirm it becomes `verified`, gets a
->   `registration_number`, `seats_taken` increments only then, and the
->   ticket email has no seat number but does have the phone number.
+> **Still open before calling this demo-ready:**
+> - A real ticket-email delivery check (submit → verify through the actual
+>   admin dashboard UI → confirm the email arrives with no seat number and
+>   the phone number present) — the pass above verified the DB/RPC layer
+>   directly, not the admin-UI-to-email path end to end.
 > - Re-run the concurrency load test
 >   (`npx tsx --env-file=.env.local scripts/load-test-register.ts ...`,
 >   see [[setup.md]]) against a test event — it now exercises
 >   `claim_and_verify_registration` directly, not `register_attendee`.
-> - Reset any registration created during this manual pass afterward
->   (`reject_registration` via the admin Reject button, or
->   `reset_event_registrations()` if it was all thrown-away test data) so
->   the demo data stays clean.
 
 > [!warning] Production deploy gate before the demo — confirmed 2026-09-09
 > A production Netlify deploy (`netlify deploy --build --prod`) is a

@@ -43,10 +43,20 @@ export async function getCapacitySnapshot(
   };
 }
 
-/** Backlog-relief condition (Item 6): too many unverified submissions
- * piling up near the cap -- stop taking new ones until admins catch up. */
+/**
+ * Backlog-relief condition (Item 6): too many unverified submissions
+ * piling up near the cap -- stop taking new ones until admins catch up.
+ *
+ * Only applies *before* the cap is actually reached (confirmedBooking <
+ * cap). Without that guard, this formula is always true whenever isFull()
+ * is true too (confirmedBooking + outstanding >= confirmedBooking >= cap
+ * >= cap - buffer for any buffer >= 0), which would make Full-EOI
+ * permanently unreachable -- Paused would win the priority check every
+ * time the event is genuinely full, instead of falling through to the
+ * EOI form. Found via manual testing 2026-09-09 (registration-integrity.md).
+ */
 export function computeAutoPause(s: CapacitySnapshot): boolean {
-  return s.confirmedBooking + s.outstanding >= s.cap - s.buffer;
+  return s.confirmedBooking < s.cap && s.confirmedBooking + s.outstanding >= s.cap - s.buffer;
 }
 
 /** True fullness (Item 6): verified seats alone have reached the cap --
