@@ -18,25 +18,29 @@ export async function GET(req: NextRequest) {
 
   const supabase = createServiceClient();
 
+  const { data: event, error: eventError } = await supabase
+    .from("events")
+    .select("id, title, event_date, payment_mode")
+    .eq("slug", EVENT_SLUG)
+    .single();
+
+  if (eventError) {
+    return NextResponse.json({ error: eventError.message }, { status: 500 });
+  }
+
   let query = supabase
     .from("registrations")
     .select(
       "id, full_name, email, phone, num_attendees, payment_reference, payment_amount, status, seat_number, ticket_sent_at, verified_at, created_at"
     )
+    .eq("event_id", event.id)
     .order("created_at", { ascending: true });
 
   if (status) {
     query = query.eq("status", status);
   }
 
-  const [{ data, error }, { data: event }] = await Promise.all([
-    query,
-    supabase
-      .from("events")
-      .select("title, event_date, payment_mode")
-      .eq("slug", EVENT_SLUG)
-      .single(),
-  ]);
+  const { data, error } = await query;
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

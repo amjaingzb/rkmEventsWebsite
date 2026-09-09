@@ -64,7 +64,7 @@ export default async function ConfirmationPage({
         </p>
       </div>
 
-      {isPending && (
+      {isPending && paymentMode !== "phonepe_sandbox" && (
         <div className="mt-6 text-left">
           <UpiPaymentInfo amountInr={computeAmountInr(reg.num_attendees)} />
         </div>

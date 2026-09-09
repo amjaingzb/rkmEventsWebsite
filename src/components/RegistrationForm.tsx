@@ -119,10 +119,10 @@ export default function RegistrationForm({ paymentMode }: { paymentMode: string 
         <p className="text-sm text-ink/60">
           Registration fee: <strong>₹{amountInr}</strong>
           {isPhonePe
-            ? " — pay securely via PhonePe below."
+            ? " — pay securely online below (any UPI app, card, or netbanking)."
             : " — pay via UPI/bank transfer, then enter the transaction reference below."}
         </p>
-        <UpiPaymentInfo amountInr={amountInr} />
+        {!isPhonePe && <UpiPaymentInfo amountInr={amountInr} />}
         {!isPhonePe && (
           <div>
             <label className="block text-sm font-medium mb-1">
@@ -151,7 +151,7 @@ export default function RegistrationForm({ paymentMode }: { paymentMode: string 
         {submitting
           ? "Submitting..."
           : isPhonePe
-            ? `Pay ₹${amountInr} via PhonePe`
+            ? `Pay ₹${amountInr} online`
             : "Register"}
       </button>
     </form>

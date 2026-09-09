@@ -48,39 +48,46 @@ manual/on-request).
 
 **Open to-dos:**
 
-0. **Update the DNS instructions sent to the admin (Bluehost)** — the
-   message already sent
+0. **Update the DNS instructions sent to the admin (Bluehost)** —
+   **downgraded to a fallback, confirmed 2026-09-09; not a demo blocker.**
+   The Bluehost admin hasn't replied to the original (Vercel-targeted, now
+   wrong-for-Netlify) DNS message at all. Project owner's plan: escalate
+   directly to Adhyaksha Maharaj **after** the demo if needed, rather than
+   chase the admin further now. Separately, the project owner's brother has
+   already okayed loaning the `simplicie.com` subdomain path (the same
+   mechanism already used for `rkmhalasuru.simplicie.com`, see
+   [[nextSteps.md]] "Recently completed" 2026-09-09 and [[netlify.md]]) as a
+   working fallback if the Bluehost domain never comes through — so the
+   custom-domain need is already covered independent of this admin. No
+   action needed here for the demo. If it's ever picked back up: the
+   original message
    (`Type: CNAME, Host: events, Points To: cname.vercel-dns.com`) was
-   written for Vercel and is wrong for Netlify. Netlify doesn't have one
-   universal CNAME target like Vercel does — the exact record only appears
-   after adding the custom domain in Netlify's dashboard (Domain management
-   → Add a domain you already own → enter `events.<yourdomain>`), and it's
-   generated specific to this site (likely a CNAME to
-   `rkm-halasuru-registration.netlify.app`, but needs confirming there, not
-   guessed). The Resend TXT/CNAME part of that same message is unaffected
-   and can stay as originally planned. Not yet done — needs the project
-   owner to either do the "Add domain" step or ask Claude to (dashboard
-   action, not blocked on CLI access).
+   written for Vercel and is wrong for Netlify — Netlify's exact CNAME
+   target only appears after adding the custom domain in its dashboard
+   (Domain management → Add a domain you already own → enter
+   `events.<yourdomain>`), likely `rkm-halasuru-registration.netlify.app`
+   but needs confirming there, not guessed. The Resend TXT/CNAME part of
+   that same message is unaffected and can stay as originally planned.
 1. **Push local commits to `origin/main`** — local `main` is currently
    ahead of `origin/main` (check `git status -sb` for the exact count, it
    shifts each session). Push from your own machine, or ask Claude to set
    up credentials in-session.
-2. Run [[setup.md]]'s concurrency load test against a test event to confirm
-   the atomic seat-cap RPC behaves correctly under concurrent requests.
+2. ~~Run [[setup.md]]'s concurrency load test~~ — **done (2026-09-09).**
+   See "Recently completed" below. `EVENT_SLUG` confirmed back to
+   `halasuru-sarvapriyananda-2026`.
 
 The admin dashboard is feature-complete (round 2 polish pass) — see
 "Recently completed" below. All of that work is committed and deployed.
 
-Smaller open item: the live Supabase project now has a handful of test
-registrations from dev-flow verification (`TEST-TXN-002`, `TEST-TXN-003`,
-`TEST-TXN-REJECT-001`, a `Test Cash Walkin` manual entry, and — added
-2026-09-09 during PhonePe V2 live testing — five more: `PhonePe V2 Test`,
-`PhonePe V2 Test 2`, `PhonePe Webhook Test`, `PhonePe Webhook Test 2`,
-`PhonePe Webhook Test 3`, three of which are `verified` with real ticket
-emails sent to `amjain.gzb+phonepe...@gmail.com` aliases) — fine to leave
-for now, but worth clearing out of `registrations` before real registrations
-start coming in (they don't affect `seats_taken`/the cap once
-rejected/verified, but they'll clutter the admin dashboard and CSV export).
+~~Smaller open item: test registrations clutter~~ — **done (2026-09-09).**
+See "Recently completed" below: all prior test/dev registrations wiped via
+the new `reset_event_registrations()` DB function, replaced with 3 clean
+demo entries (Ruchi Jain, Sai Ram — verified; Lakshmi Iyer — pending) using
+the documented test-customer identities from [[dev-accounts.md]]. A real
+bug was also found and fixed in the process: the admin dashboard and CSV
+export weren't scoped to `EVENT_SLUG` at all, silently mixing in
+registrations from any other event row (e.g. the `test-event` used for
+load testing) — see below for the fix.
 
 Deprioritized: QR anti-forgery testing and the mobile scanning app are no
 longer near-term — confirmed by the project owner (2026-09-08) as post-
@@ -112,6 +119,100 @@ Full rationale and the complete deferred-items list: [[BACKLOG.md]].
 
 ## Recently completed
 
+- **2026-09-09 (dropped "PhonePe" branding from registrant-facing copy).**
+  Project owner's concern: naming PhonePe explicitly ("pay securely via
+  PhonePe below" / "Pay ₹500 via PhonePe") could make registrants think
+  they specifically need the PhonePe app installed — when PhonePe's hosted
+  checkout actually accepts any UPI app, card, or netbanking. Reworded in
+  `src/components/RegistrationForm.tsx` (the only two registrant-facing
+  strings that named it) to "pay securely online below (any UPI app, card,
+  or netbanking)" / "Pay ₹500 online" — generic, payment-method-neutral
+  copy. Internal naming (`api/phonepe/*` routes, `payment_mode` value
+  `phonepe_sandbox`, the admin dashboard's "PhonePe sandbox (auto-verify)"
+  label) is unaffected — only the two public strings a registrant actually
+  sees changed. Build clean, verified live.
+- **2026-09-09 (fixed the PhonePe/manual UI overlap bug ahead of a
+  dual-payment-method demo).** Project owner is demoing **both** payment
+  methods live (manual + PhonePe sandbox) — surfaced that
+  [[BACKLOG.md]] item 6's known UX gap (the generic Math UPI QR/deep-link
+  block still rendered even in `phonepe_sandbox` mode, alongside the
+  actual "Pay via PhonePe" button) would be directly visible and confusing
+  in exactly that demo. Cheap fix, done same day: gated
+  `<UpiPaymentInfo>` behind `!isPhonePe` in
+  `src/components/RegistrationForm.tsx`, and behind
+  `paymentMode !== "phonepe_sandbox"` in
+  `src/app/confirmation/[id]/page.tsx` (same overlap existed there too, on
+  the pending-confirmation screen, not previously noticed). Build clean;
+  verified live via the chrome-devtools sidecar in both modes — PhonePe
+  mode now shows only the PhonePe button/copy, manual mode still shows the
+  full UPI QR/reference-field flow unchanged. Dev server restarted after
+  build (same stale-cache gotcha as before — never `npm run build` while
+  `next dev` is running against the same `.next`).
+- **2026-09-09 (demo-data cleanup + a real cross-event data-leak bug found
+  and fixed).** Project owner wanted the live `registrations` table wiped
+  of all dev/test clutter before the demo and reseeded with a small, clean
+  set so the dashboard doesn't look like an empty prototype.
+  - Added `reset_event_registrations(p_event_slug text)` in
+    `supabase/migrations/0006_dev_reset_registrations.sql` — a
+    `SECURITY DEFINER` RPC (same pattern as `register_attendee`/
+    `reject_registration`) that atomically deletes all registrations for
+    one event and zeroes its `seats_taken`, granted to `service_role` only.
+    This is the "one-touch wipe" the project owner asked to have saved in
+    the DB rather than re-derived each time — callable anytime via
+    `supabase.rpc('reset_event_registrations', { p_event_slug })` with the
+    service-role key, or `select reset_event_registrations('slug');` in the
+    SQL editor. Not called from any app code.
+  - Used it to wipe all 13 rows from the real event (including one,
+    `Ruchi Jain`, the project owner initially wanted kept — then decided a
+    full wipe + clean reseed was less confusing than a partial one).
+  - **Bug found while verifying the wipe actually took**: the admin
+    dashboard still showed 5 unrelated `Load Test *` rows after the wipe.
+    Root cause — `GET /api/admin/registrations` and `GET /api/admin/export`
+    never filtered by event at all; they returned every row in
+    `registrations` regardless of `event_id`, only using `EVENT_SLUG` to
+    fetch the event's title/date for display. Those 5 rows were leftovers
+    from the `test-event` row used for the concurrency load test earlier
+    this session. Fixed both routes to look up the event by `EVENT_SLUG`
+    first and filter `registrations` on `event_id` — see
+    `src/app/api/admin/registrations/route.ts` and
+    `src/app/api/admin/export/route.ts`. This was a real latent bug
+    independent of today's cleanup (multi-tenancy is minimal per the root
+    `CLAUDE.md`, but any second `events` row — even a throwaway test one —
+    was already leaking into the one production admin dashboard). `npm run
+    build` clean; cleared the stray `test-event` rows with the same reset
+    function and confirmed via a live dashboard reload (chrome-devtools
+    sidecar) that only the intended rows show.
+  - Reseeded via the real `POST /api/register` flow (not raw SQL) using the
+    documented test-customer identities from [[dev-accounts.md]] —
+    `ruchisai197518@gmail.com` / `sairam_197518@yahoo.in` — not the infra
+    email: **Ruchi Jain** (seat 1, 1 attendee) and **Sai Ram** (seats 2-3, 2
+    attendees) verified through the real admin dashboard "Verify" button
+    (tickets sent, confirmed live), **Lakshmi Iyer** (seat 4, 1 attendee,
+    also under `ruchisai197518@gmail.com`) left `pending` so the dashboard
+    shows a realistic in-progress queue rather than everything already
+    ticketed. `events.seats_taken` is now 4 for the real event.
+  - Dev server was mid-toggled to `payment_mode = phonepe_sandbox` from
+    earlier PhonePe testing when this was done — verification still went
+    through the same `markVerifiedAndIssueTicket` seam either way, so it
+    doesn't affect ticket correctness, but worth remembering to check
+    `payment_mode` before a live demo walkthrough of the admin flow.
+- **2026-09-09 (seat-cap concurrency load test — confirmed race-safe).**
+  Ran [[setup.md]]'s test: inserted a `test-event` row (cap 5) via the
+  Supabase SQL editor (service-role key lacks direct INSERT/DELETE grants on
+  `events`/`registrations` for ad-hoc script writes — same category of gap
+  as [[BACKLOG.md]] item on `service_role` grants, worth remembering if a
+  future script needs table writes outside the RPC path), pointed
+  `EVENT_SLUG` at it, restarted the dev server, and fired 20 concurrent
+  `POST /api/register` calls via `scripts/load-test-register.ts`. Verified
+  directly against Supabase (not just the app's JSON response): exactly 5
+  `pending` with unique seat numbers 1–5, 15 `waitlisted` all with
+  `seat_number: null`, and `events.seats_taken` exactly 5 — no oversell.
+  Confirms `register_attendee`'s atomic `UPDATE ... WHERE ... RETURNING`
+  guard holds under real concurrency, not just in theory. `EVENT_SLUG`
+  switched back to `halasuru-sarvapriyananda-2026` and the dev server
+  restarted; the `test-event` row itself was left in place (harmless,
+  invisible to the app while `EVENT_SLUG` points elsewhere) so it can be
+  reused for a future load test without repeating the SQL insert.
 - **2026-09-09 (PhonePe V2 confirmed working live, end to end).** Following
   the V1 → V2 rewrite (see the entry below), the project owner signed up
   for a PhonePe sandbox account at business.phonepe.com — confirmed only

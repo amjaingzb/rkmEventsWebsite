@@ -17,6 +17,8 @@ const COLUMNS = [
 
 type ExportRow = Record<(typeof COLUMNS)[number], unknown>;
 
+const EVENT_SLUG = process.env.EVENT_SLUG ?? "halasuru-sarvapriyananda-2026";
+
 function csvEscape(value: unknown): string {
   if (value === null || value === undefined) return "";
   const str = String(value);
@@ -35,9 +37,20 @@ export async function GET() {
 
   const supabase = createServiceClient();
 
+  const { data: event, error: eventError } = await supabase
+    .from("events")
+    .select("id")
+    .eq("slug", EVENT_SLUG)
+    .single();
+
+  if (eventError) {
+    return NextResponse.json({ error: eventError.message }, { status: 500 });
+  }
+
   const { data, error } = await supabase
     .from("registrations")
     .select(COLUMNS.join(", "))
+    .eq("event_id", event.id)
     .order("created_at", { ascending: true });
 
   if (error) {

@@ -172,15 +172,24 @@ Update this whenever something is skipped for time — don't let it get lost.
      [[nextSteps.md]]; (b) none, that was the only toggle-blocking bug —
      the V1/V2 issue is separate, hit only once actually submitting a
      `phonepe_sandbox`-mode registration.
-   - **Separate, real UX bug found in the same testing pass**: in
-     `phonepe_sandbox` mode, `RegistrationForm.tsx` shows the copy "pay
-     securely via PhonePe below" directly above the same generic,
-     always-shown Math UPI QR/deep-link block (`UpiPaymentInfo.tsx`,
-     works with any UPI app) — that QR has nothing to do with the actual
-     PhonePe flow, which happens via a separate "Pay via PhonePe" button
-     that redirects off-site. Misleading regardless of the V1/V2 break.
-     Not fixed yet (project owner's call, 2026-09-09 — this round was
-     documentation-only); fast follow whenever wanted.
+   - **Separate, real UX bug found in the same testing pass — fixed
+     2026-09-09.** In `phonepe_sandbox` mode, `RegistrationForm.tsx` showed
+     the copy "pay securely via PhonePe below" directly above the same
+     generic, always-shown Math UPI QR/deep-link block
+     (`UpiPaymentInfo.tsx`, works with any UPI app) — that QR had nothing
+     to do with the actual PhonePe flow, which happens via a separate "Pay
+     via PhonePe" button that redirects off-site. Misleading regardless of
+     the V1/V2 break. Surfaced again ahead of a dual-payment-method demo
+     (manual + PhonePe sandbox live side by side), so fixed same day:
+     `<UpiPaymentInfo>` is now gated behind `!isPhonePe` in
+     `RegistrationForm.tsx` and behind `paymentMode !== "phonepe_sandbox"`
+     in `src/app/confirmation/[id]/page.tsx` (same overlap existed there
+     too, on the pending-confirmation screen). The registrant-facing copy
+     was also reworded away from naming PhonePe specifically ("pay
+     securely online below (any UPI app, card, or netbanking)" / "Pay ₹500
+     online") since PhonePe's hosted checkout accepts more than the
+     PhonePe app. See [[nextSteps.md]] "Recently completed" for the full
+     breakdown.
    - Manual verification (production path) is completely unaffected by any
      of this — only `phonepe_sandbox` mode is broken.
    - **Research absorbed, decision recorded (2026-09-09):** the project

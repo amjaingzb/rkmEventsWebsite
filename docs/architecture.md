@@ -45,6 +45,16 @@ reuse is fine, a multi-tenant admin UI is explicitly not.
 a future event could reuse this codebase without a multi-tenant UI (see
 `supabase/seed.sql`, selected at runtime via the `EVENT_SLUG` env var).
 
+> [!warning] Every `registrations` query must filter by event
+> `registrations` has no other tenant boundary — a second `events` row (even
+> a throwaway one used for load testing) silently leaks into any query that
+> selects from `registrations` without an `event_id` filter. `GET
+> api/admin/registrations` and `GET api/admin/export` did exactly this
+> until fixed 2026-09-09 (they used `EVENT_SLUG` only to look up the
+> event's display fields, not to scope the registrations query) — both now
+> resolve the event row first and add `.eq("event_id", event.id)`. Any new
+> query against `registrations` needs the same guard.
+
 **`registrations`** — one row per signup. Status lifecycle:
 `pending` (guaranteed seat claimed, payment ref submitted, awaiting manual
 verification) → `verified` (ticket sent) or `rejected` (Phase B, releases the
@@ -56,9 +66,12 @@ added 2026-09-08 in `supabase/migrations/0004_phonepe_and_payment_mode.sql`:
 `events.payment_mode`, and on `registrations` —
 `phonepe_merchant_txn_id` (our own dash-stripped-uuid correlation id,
 uniquely indexed), `phonepe_transaction_id` (PhonePe's own), and
-`phonepe_raw_response` (jsonb, for debugging). **Not yet applied to the
-live Supabase project** — needs to be run in the SQL editor, same process
-as `0002`/`0003` before it.
+`phonepe_raw_response` (jsonb, for debugging). Applied to the live
+Supabase project (confirmed 2026-09-08). `0005_grant_events_update.sql`
+(grants `service_role` `UPDATE` on `events`, needed by the payment-mode
+toggle) and `0006_dev_reset_registrations.sql` (dev-only
+`reset_event_registrations()` wipe RPC, see [[nextSteps.md]] "Recently
+completed" 2026-09-09) are both also applied.
 
 ## The Core Invariant: Atomic Seat Cap
 
@@ -293,9 +306,9 @@ but must never feed the ticket email again.
 | `POST api/admin/verify` | mark verified, issue ticket | admin session |
 | `POST api/admin/reject` | reject (pending only) + release seat atomically | admin session |
 | `GET api/admin/waitlist-export` (Phase B) | CSV export (waitlist only, for re-invite) | admin session |
-| `GET api/admin/registrations` | full list, all statuses, `?status=` filter | admin session |
+| `GET api/admin/registrations` | full list for `EVENT_SLUG`'s event, all statuses, `?status=` filter | admin session |
 | `POST api/admin/resend` | resend ticket email (verified) or a plain status email (pending/waitlisted/rejected) | admin session |
-| `GET api/admin/export` | CSV export of all registrations | admin session |
+| `GET api/admin/export` | CSV export of `EVENT_SLUG`'s registrations | admin session |
 | `POST api/admin/manual-register` | admin-entered walk-in/cash registration; auto-verifies + issues ticket immediately | admin session |
 | `POST api/phonepe/initiate` | start a PhonePe sandbox checkout for a `pending` registration | public |
 | `POST api/phonepe/webhook` | PhonePe's S2S callback; signature-verified, auto-verifies + issues ticket | public, webhook signature |
