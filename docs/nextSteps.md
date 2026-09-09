@@ -48,27 +48,7 @@ manual/on-request).
 
 **Open to-dos:**
 
-0. **Sign up for a PhonePe sandbox account, then draft-deploy to test V2
-   end to end via the real webhook** — blocked on a step that didn't exist
-   under V1: `src/lib/payment/phonepe.ts` was rewritten to PhonePe's V2
-   "Standard Checkout" API on 2026-09-09 (V1 is deprecated, see
-   [[BACKLOG.md]] item 6), but V2 has no publicly shared sandbox
-   credential — someone needs to sign up at
-   `business.phonepe.com/pg/register`, flip the Test Mode toggle, and copy
-   the Client ID/Secret from Developer Settings into
-   `PHONEPE_SANDBOX_CLIENT_ID`/`PHONEPE_SANDBOX_CLIENT_SECRET` (see
-   `.env.local.example`), plus set up a webhook (URL + SHA username/
-   password) in that same dashboard and copy the username/password into
-   `PHONEPE_WEBHOOK_USERNAME`/`PHONEPE_WEBHOOK_PASSWORD`. Once that's done:
-   `supabase/migrations/0004_phonepe_and_payment_mode.sql` is already run
-   against the live Supabase project, so registration and the admin
-   payment-mode toggle work from `npm run dev` — what's left is the real
-   inbound PhonePe webhook can't reach `localhost`, so one
-   `netlify deploy --build --alias demo` gets a stable public URL to
-   register that webhook against and test the actual pay → webhook-fires
-   loop. See [[architecture.md]] "Payment Module Boundary" and
-   [[BACKLOG.md]] item 6 for the full rewrite writeup.
-1. **Update the DNS instructions sent to the admin (Bluehost)** — the
+0. **Update the DNS instructions sent to the admin (Bluehost)** — the
    message already sent
    (`Type: CNAME, Host: events, Points To: cname.vercel-dns.com`) was
    written for Vercel and is wrong for Netlify. Netlify doesn't have one
@@ -81,11 +61,11 @@ manual/on-request).
    and can stay as originally planned. Not yet done — needs the project
    owner to either do the "Add domain" step or ask Claude to (dashboard
    action, not blocked on CLI access).
-2. **Push local commits to `origin/main`** — local `main` is currently
+1. **Push local commits to `origin/main`** — local `main` is currently
    ahead of `origin/main` (check `git status -sb` for the exact count, it
    shifts each session). Push from your own machine, or ask Claude to set
    up credentials in-session.
-3. Run [[setup.md]]'s concurrency load test against a test event to confirm
+2. Run [[setup.md]]'s concurrency load test against a test event to confirm
    the atomic seat-cap RPC behaves correctly under concurrent requests.
 
 The admin dashboard is feature-complete (round 2 polish pass) — see
@@ -93,7 +73,11 @@ The admin dashboard is feature-complete (round 2 polish pass) — see
 
 Smaller open item: the live Supabase project now has a handful of test
 registrations from dev-flow verification (`TEST-TXN-002`, `TEST-TXN-003`,
-`TEST-TXN-REJECT-001`, and a `Test Cash Walkin` manual entry) — fine to leave
+`TEST-TXN-REJECT-001`, a `Test Cash Walkin` manual entry, and — added
+2026-09-09 during PhonePe V2 live testing — five more: `PhonePe V2 Test`,
+`PhonePe V2 Test 2`, `PhonePe Webhook Test`, `PhonePe Webhook Test 2`,
+`PhonePe Webhook Test 3`, three of which are `verified` with real ticket
+emails sent to `amjain.gzb+phonepe...@gmail.com` aliases) — fine to leave
 for now, but worth clearing out of `registrations` before real registrations
 start coming in (they don't affect `seats_taken`/the cap once
 rejected/verified, but they'll clutter the admin dashboard and CSV export).
@@ -128,6 +112,53 @@ Full rationale and the complete deferred-items list: [[BACKLOG.md]].
 
 ## Recently completed
 
+- **2026-09-09 (PhonePe V2 confirmed working live, end to end).** Following
+  the V1 → V2 rewrite (see the entry below), the project owner signed up
+  for a PhonePe sandbox account at business.phonepe.com — confirmed only
+  email/phone verification is needed for Test Mode, no GST/PAN/business
+  documents (those gate go-live, not sandbox access). Client ID/Secret and
+  a SHA-auth webhook (username/password) were created and wired into both
+  `0_SECRETS/env.local` and Netlify's env vars (`netlify env:set`, all
+  contexts). Then ran three real test registrations, paid via GPay against
+  PhonePe's UAT sandbox (a test card also works with no app needed:
+  `4242 4242 4242 4242`, OTP `123456`):
+  - Confirmed the **browser status-check fallback** path works (`GET
+    api/phonepe/status`).
+  - Confirmed the **real server-to-server webhook** path works
+    independently — checked the database directly without ever loading
+    the confirmation page after paying, and saw PhonePe's own server call
+    the Netlify webhook, verify the SHA signature, and update the shared
+    Supabase database (local dev server and Netlify both read/write the
+    same Supabase project — that's what makes this work across the two
+    different servers).
+  - **Two real bugs found and fixed along the way:**
+    1. PhonePe's webhook-creation form validates the URL with what looks
+       like a plain `GET` before saving it; our webhook route only
+       exported `POST`, so it 405'd and PhonePe's dashboard showed a
+       generic `404 Not Found`. Fixed with a no-op `GET` handler on
+       `src/app/api/phonepe/webhook/route.ts` — the real POST +
+       signature-checked callback logic is unchanged.
+    2. The webhook correctly marked a test registration `verified` but
+       `ticket_sent_at` stayed `null` — Netlify's `TICKET_FROM_EMAIL` had
+       never been updated after the Resend domain verification (still
+       `onboarding@resend.dev` from the original `netlify env:import` on
+       2026-09-08), so `sendTicketEmail` hit the same sandbox-sender `403
+       validation_error` from [[BACKLOG.md]] item 7, just on Netlify
+       instead of local. Fixed with `netlify env:set TICKET_FROM_EMAIL
+       tickets@rkmhalasuru.simplicie.com` + redeploy; re-tested and
+       confirmed the ticket email now sends. **General lesson**: local
+       (`0_SECRETS/env.local`) and Netlify env vars are separate stores
+       that don't auto-sync — any future local credential change needs a
+       matching `netlify env:set` or it drifts silently like this one did.
+  - Also used this session's draft deploy to fix a **stale build-cache
+    crash** on the local dev server (`Cannot find module './331.js'`) —
+    caused by running `npm run build` while `next dev` was also running
+    against the same `.next` directory; fixed with `scripts/server.sh
+    restart`. Not a code bug, just a "don't build and dev concurrently"
+    gotcha worth remembering.
+  - See [[BACKLOG.md]] item 6 for the full writeup. **This closes item 6**
+    for sandbox purposes — production PhonePe (a real merchant account)
+    remains separately out of scope.
 - **2026-09-09 (PhonePe rewritten V1 → V2 — the "bigger task" from a
   previous session, correcting a gap where it had been documented as a
   known bug but never actually fixed).** `src/lib/payment/phonepe.ts`

@@ -93,8 +93,8 @@ Update this whenever something is skipped for time — don't let it get lost.
       (`supabase/migrations/0002_reject_and_release_seat.sql`), same
       single-UPDATE-with-guard shape as `register_attendee` — see
       [[architecture.md]].
-6. **PhonePe sandbox integration — rewritten to V2 (2026-09-09), still
-   blocked on credentials, not yet tested live.** Originally built
+6. **PhonePe sandbox integration — rewritten to V2 and confirmed working
+   live end-to-end (2026-09-09).** Originally built
    2026-09-08 against PhonePe's **V1** PG API (salt-key/checksum auth,
    `PGTESTPAYUAT` public test credentials). Live end-to-end test on
    2026-09-09 hit `POST /api/phonepe/initiate` returning `"Key not found
@@ -116,23 +116,54 @@ Update this whenever something is skipped for time — don't let it get lost.
      developer.phonepe.com on 2026-09-09 (not written from memory — see
      [[architecture.md]] "Payment Module Boundary" for the exact doc
      pages), specifically to avoid repeating how the V1 implementation went
-     stale unnoticed. `npm run build` clean; **not yet exercised against a
-     live PhonePe call** — see next bullet for why.
-   - **New, real blocker found during the rewrite, distinct from the
-     V1-deprecation issue**: unlike V1, PhonePe **V2 has no publicly shared
-     sandbox credential**. Every integrator — even in Test Mode — must sign
-     up at `business.phonepe.com/pg/register`, enable the Test Mode toggle,
-     and pull their own Client ID/Secret from Developer Settings. That
-     signup has not happened for this project. So this is no longer purely
-     "independent of the real-merchant-account blocker" the way the old
-     V1 assessment claimed — a signup (albeit a lightweight, sandbox-only
-     one, not the full Adhyaksha-approval merchant onboarding) is now a
-     hard prerequisite before any of this can be tested end-to-end. Env
-     vars are wired up and documented (`.env.local.example`:
-     `PHONEPE_ENV`, `PHONEPE_SANDBOX_CLIENT_ID/SECRET/CLIENT_VERSION`,
-     `PHONEPE_PRODUCTION_CLIENT_ID/SECRET/CLIENT_VERSION`,
-     `PHONEPE_WEBHOOK_USERNAME/PASSWORD`) — someone just needs to fill them
-     in once the sandbox account exists.
+     stale unnoticed. `npm run build` clean.
+   - **New blocker found during the rewrite, distinct from the
+     V1-deprecation issue, and since resolved**: unlike V1, PhonePe **V2
+     has no publicly shared sandbox credential**. Every integrator — even
+     in Test Mode — must sign up at `business.phonepe.com/pg/register`,
+     enable the Test Mode toggle, and pull their own Client ID/Secret from
+     Developer Settings. **The project owner did this signup on
+     2026-09-09** — confirmed it needs only email/phone verification, no
+     GST/PAN/business documents (those are only enforced later, at
+     go-live). Client ID/Secret and a SHA-auth webhook (username/password)
+     were created and are now in `0_SECRETS/env.local`
+     (`PHONEPE_SANDBOX_CLIENT_ID/SECRET`,
+     `PHONEPE_WEBHOOK_USERNAME/PASSWORD`) and on Netlify (`netlify env:set`,
+     all contexts).
+   - **Both confirmation paths tested live end-to-end, 2026-09-09** — three
+     real test registrations, paid via GPay against PhonePe's UAT sandbox
+     (test card `4242 4242 4242 4242` also works, no app needed; OTP
+     `123456`):
+     - **Browser status-check path**: confirmed working (`GET
+       api/phonepe/status` correctly read a real order and marked a
+       registration verified + sent the ticket email). Also caught a real,
+       separate bug in the process: a `netlify deploy --build --alias demo`
+       draft's webhook URL 404'd during PhonePe's own webhook-creation
+       validation, because our route only exported `POST` — fixed with a
+       no-op `GET` handler on `api/phonepe/webhook/route.ts` (dashboard
+       validators commonly probe with GET; the real S2S callback logic is
+       unchanged, still POST + signature-checked).
+     - **Real S2S webhook path**: confirmed working independently (checked
+       the database directly, without ever loading the confirmation page,
+       after paying) — PhonePe's own server called the Netlify webhook,
+       which verified the SHA signature and updated the shared Supabase
+       database.
+     - **Found and fixed along the way**: the webhook test's first run
+       showed `status: verified` but `ticket_sent_at: null` — root cause
+       was that Netlify's `TICKET_FROM_EMAIL` env var was never updated
+       after the Resend domain verification (still the old
+       `onboarding@resend.dev`, imported once back on 2026-09-08), so
+       `sendTicketEmail` hit the same `403 validation_error` sandbox-sender
+       restriction described in item 7, just on Netlify instead of local.
+       Fixed with `netlify env:set TICKET_FROM_EMAIL
+       tickets@rkmhalasuru.simplicie.com` + redeploy; re-tested and
+       confirmed `ticket_sent_at` now populates correctly. **Worth
+       remembering**: local (`0_SECRETS/env.local`) and Netlify env vars
+       are two separate stores that don't auto-sync — any future local env
+       change (new credential, rotated key) needs a matching `netlify
+       env:set` or it'll silently drift like this one did.
+   - Production PhonePe (real merchant account, `PHONEPE_PRODUCTION_*`
+     vars) is still unset and out of scope — see below.
    - Two other real bugs found and fixed getting this far: (a)
      `service_role` had no `UPDATE` grant on `events`
      (`supabase/migrations/0005_grant_events_update.sql`, since the

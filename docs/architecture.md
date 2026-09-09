@@ -86,7 +86,7 @@ call, no read-then-write gap there either.
 for **synchronous** verification, implemented by `src/lib/payment/manual.ts`
 (production path today — admin clicks Verify).
 
-> [!note] Rewritten to V2, still untestable — confirmed 2026-09-09
+> [!note] Rewritten to V2 and confirmed working live — 2026-09-09
 > `src/lib/payment/phonepe.ts` originally targeted PhonePe's **V1** PG API
 > (salt-key/checksum auth), which PhonePe has since deprecated entirely —
 > see [[BACKLOG.md]] item 6 for that postmortem. It has been rewritten to
@@ -95,12 +95,16 @@ for **synchronous** verification, implemented by `src/lib/payment/manual.ts`
 > `checkout/v2/order/{id}/status` endpoints, and SHA(username:password)
 > webhook auth instead of an `X-VERIFY` checksum header. Endpoints and
 > shapes were verified directly against developer.phonepe.com, not written
-> from memory. **Still can't be exercised end-to-end**: unlike V1, PhonePe
-> V2 has no publicly shared sandbox credential — every integrator, even in
-> Test Mode, must sign up at business.phonepe.com and pull their own
-> Client ID/Secret from Developer Settings, and that signup hasn't happened
-> for this project. See [[BACKLOG.md]] item 6 for what's left. Manual
-> verification (the production path) is entirely unaffected.
+> from memory. The project owner signed up for a PhonePe sandbox account
+> (business.phonepe.com, email/phone verification only — no GST/PAN
+> needed for Test Mode) and both confirmation paths — the browser
+> status-check fallback and the real server-to-server webhook — were
+> tested against real GPay payments in PhonePe's UAT sandbox, including a
+> ticket email arriving. See [[BACKLOG.md]] item 6 for the full test
+> writeup and two real bugs it caught along the way (a webhook-URL 404
+> during PhonePe's own validation, and a stale `TICKET_FROM_EMAIL` on
+> Netlify). Manual verification (the production path) is entirely
+> unaffected throughout.
 
 `src/lib/payment/phonepe.ts` is **not** a synchronous `PaymentModule`
 implementation, since PhonePe is two-phase/webhook-driven with no shared
