@@ -27,6 +27,8 @@ updated: 2026-09-08
 - [[technical-concepts.md]] — plain-language Q&A log for the project owner's
   own reference (not instructions for Claude); add to it as such questions
   come up
+- [[dev-accounts.md]] — which personal email plays which role (webadmin/
+  infra, public contact, test customers) during dev mode
 
 ## Where things live in the repo
 

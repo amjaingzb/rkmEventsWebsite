@@ -17,13 +17,10 @@ Update this whenever something is skipped for time — don't let it get lost.
 >   originally planned Vercel — see [[nextSteps.md]] "Recently completed"
 >   for why). Not git-linked yet, so deploys are manual via the Netlify CLI;
 >   pushing to `main` does not auto-deploy.
-> - **Resend domain not verified** — `TICKET_FROM_EMAIL` is still the shared
->   `onboarding@resend.dev` sandbox sender, which only delivers to the Resend
->   account owner's own email (see item 7 below). Blocks ticket delivery to
->   everyone else. Blocked on an external person handing over subdomain
->   access (project owner, 2026-09-08) — not an actionable Claude task right
->   now. Note: unrelated to site hosting — the site can stay on a free
->   `*.netlify.app` domain regardless of which domain email sends from.
+> - ~~**Resend domain not verified**~~ — **done (2026-09-09).** Domain
+>   `rkmhalasuru.simplicie.com` verified in Resend; `TICKET_FROM_EMAIL`
+>   updated and confirmed delivering to non-owner inboxes with no
+>   `403 validation_error`. See [[nextSteps.md]] item 3.
 > - **No rate limiting on `/api/register`** (item 11) — a scripted flood
 >   could exhaust the 500-seat cap with junk entries.
 > - **Duplicate submissions unblocked** (item 2) — same person can claim a
@@ -154,17 +151,16 @@ Update this whenever something is skipped for time — don't let it get lost.
    calling route without a retry path (as of 2026-09-08 both now check the
    Resend SDK's `{data, error}` response and throw on `error` — previously
    the `error` field was silently ignored, so a rejected send looked like
-   success). **Live blocker found 2026-09-08**: `TICKET_FROM_EMAIL` is still
-   `onboarding@resend.dev`, Resend's shared unverified-domain sender —
-   Resend restricts that sender to delivering **only** to the email address
-   that owns the API key (confirmed live: sending to a second test address
-   returned `403 validation_error`, "You can only send testing emails to
-   your own email address"). Until a real domain is verified at
-   resend.com/domains and `TICKET_FROM_EMAIL` points at an address on it,
-   only the Resend account's own signup email can receive any ticket/status
-   email — every other recipient will get a thrown 500 now (previously:
-   silently nothing). Test inboxes available meanwhile: see
-   [[nextSteps.md]].
+   success). **Live blocker found 2026-09-08, resolved 2026-09-09**:
+   `TICKET_FROM_EMAIL` was `onboarding@resend.dev`, Resend's shared
+   unverified-domain sender, which restricted delivery to only the email
+   address that owns the API key (confirmed live: sending to a second test
+   address returned `403 validation_error`, "You can only send testing
+   emails to your own email address"). `rkmhalasuru.simplicie.com` is now
+   verified in Resend and `TICKET_FROM_EMAIL` points at
+   `tickets@rkmhalasuru.simplicie.com` — confirmed live delivering to a
+   non-owner inbox with no error. Retry/bounce handling itself is still not
+   built, that part of this item remains open.
 8. **Multi-seat overflow behavior** — a booking with `numAttendees > 1` that
    would exceed the cap falls entirely to waitlist rather than partially
    filling remaining seats. Documented as intentional simplification in

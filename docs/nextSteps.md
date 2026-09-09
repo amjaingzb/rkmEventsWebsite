@@ -74,9 +74,21 @@ manual/on-request).
    ahead of `origin/main` (check `git status -sb` for the exact count, it
    shifts each session). Push from your own machine, or ask Claude to set
    up credentials in-session.
-3. **Resend domain verification — IN PROGRESS, checkpointed 2026-09-09.**
-   Not blocked anymore — the project owner has direct Cloudflare DNS access
-   via their brother's account for `simplicie.com`, and is verifying
+3. **Resend domain verification — DONE, confirmed 2026-09-09.** Resend now
+   shows "Domain verified: Your domain is ready to send emails." for
+   `rkmhalasuru.simplicie.com`. `TICKET_FROM_EMAIL` updated in
+   `0_SECRETS/env.local` from `onboarding@resend.dev` to
+   `tickets@rkmhalasuru.simplicie.com`, dev server restarted, and confirmed
+   live end-to-end: registered + verified a test entry
+   (`bhikajicama09@gmail.com`, seat 6, "Resend Verify Test") through the
+   admin dashboard, ticket email delivered with no `403 validation_error`
+   and no error in the dev server log — the sandbox-sender restriction
+   ([[BACKLOG.md]] item 7) is resolved. That test registration was left in
+   place (verified, harmless) rather than deleted — see the existing
+   "smaller open item" below about clearing test registrations before real
+   ones start coming in.
+   Background — the project owner has direct Cloudflare DNS access
+   via their brother's account for `simplicie.com`, and verified
    `rkmhalasuru.simplicie.com` directly (subdomain, not `amit.simplicie.com`
    as originally guessed — see [[technical-concepts.md]] for the DNS/Resend
    background Q&A this walkthrough built up).
@@ -100,12 +112,6 @@ manual/on-request).
      to something like `tickets@rkmhalasuru.simplicie.com`, restart the dev
      server, and send a real test registration to a second inbox (not the
      Resend account owner's) to confirm the `403 validation_error` is gone.
-   - Until verified, `TICKET_FROM_EMAIL` stays `onboarding@resend.dev` (only
-     delivers to the API-key owner's own address — confirmed live, `403
-     validation_error` otherwise, see [[BACKLOG.md]] item 7). Four real
-     inboxes for dev testing meanwhile: `amjain.gzb@gmail.com`,
-     `bhikajicama09@gmail.com`, `ruchisai197518@gmail.com`,
-     `sairam_197518@yahoo.in`.
    - **Netlify custom domain — DONE (2026-09-09).**
      `rkmhalasuru.simplicie.com` is now the Netlify project's Primary
      domain, HTTPS enabled with a valid Let's Encrypt certificate (issued
