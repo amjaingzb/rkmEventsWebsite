@@ -62,3 +62,31 @@ In that hypothetical, you could host a site there and send/receive email through
 The only reason your brother's real `simplicie.com` situation is different is that he separately has a **Cloudflare account** controlling its DNS/nameservers, independent of whatever hosting or email he uses on top. That DNS panel is what unlocks adding Resend's (or anyone else's) verification records. Bundled hosting+email with no exposed DNS control — which is most cheap all-in-one platforms, and is exactly Netlify's `netlify.app` subdomain — leaves you stuck exactly where we are now with Resend.
 
 **One-line rule:** it's not about what services a domain provides you — it's about whether you personally hold the keys to its DNS records.
+
+---
+
+## Q: What are we actually doing when we add Resend's DKIM/SPF/DMARC records — and why do these all serve the same goal?
+
+`#dns` `#resend` `#email` `#dkim` `#spf` `#dmarc`
+
+**All three are outbound-authentication layers with the same goal: prove to receiving mail servers that mail from this domain is legitimate, so it doesn't land in spam (and so Resend unlocks sending to any recipient, not just the account owner's own inbox).** They don't do different jobs — they add independent signals that stack:
+
+- **DKIM** — cryptographic signature. Resend publishes a public key as a TXT record (`resend._domainkey...`); every email they send on your behalf is signed with the matching private key. Receiving servers check the signature against the DNS-published key to confirm the content wasn't forged or tampered with.
+- **SPF** — a simpler allowlist: "which mail servers are authorized to send as this domain?" Published as a TXT record listing allowed senders (e.g. Amazon SES's servers, ending `~all`).
+- **DMARC** (optional) — a policy layer telling receivers what to do if DKIM/SPF *fail* (e.g. `p=none` = do nothing special yet, just monitor — the least strict setting).
+
+**Important: none of this enables *receiving* email at the domain.** That's a separate concern requiring an MX record pointed at a real mailbox provider (see the Gmail/Workspace MX question above). DKIM/SPF/DMARC only affect whether outbound mail *sent from* this domain is trusted by the recipient's spam filter.
+
+---
+
+## Q: Resend's SPF setup also asked for an MX record (`send.rkmhalasuru → feedback-smtp...amazonses.com`). Doesn't that contradict "these records are only about sending, not receiving"?
+
+`#dns` `#mx-records` `#spf` `#resend` `#amazon-ses`
+
+**No contradiction — this MX record is part of the SPF sending mechanism itself, not a "receive email here" setup.** It's easy to conflate with the earlier Gmail/Workspace MX record because it's the same *kind* of DNS record, but it solves a completely different problem.
+
+- SPF doesn't actually check the visible "From:" address you see in your inbox — it checks the **envelope sender / Return-Path**, a lower-level technical address used for bounce/delivery-failure handling.
+- Resend's underlying delivery provider (Amazon SES) sets up a dedicated **"MAIL FROM" domain** for this — here, `send.rkmhalasuru.simplicie.com` — as the Return-Path domain for all mail it sends on your behalf.
+- Internet mail standards (RFC 5321) require that any domain used as a Return-Path/MAIL FROM address **must have an MX record**, so that if a bounce needs to be generated, there's a defined place to route it. That's the only purpose of this record — it points to Amazon's own bounce-handling server, not to any inbox you own.
+
+Nobody will ever send a normal email *to* `send.rkmhalasuru.simplicie.com`, and no mailbox exists there. It's internal plumbing required by the SPF/bounce-handling spec — still squarely in "sending" territory, not a parallel receiving setup.

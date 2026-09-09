@@ -93,19 +93,62 @@ Update this whenever something is skipped for time — don't let it get lost.
       (`supabase/migrations/0002_reject_and_release_seat.sql`), same
       single-UPDATE-with-guard shape as `register_attendee` — see
       [[architecture.md]].
-6. **PhonePe sandbox integration — built (2026-09-08)**, wired into the
-   real registration flow (not an isolated demo page) and gated behind an
-   admin-toggleable `events.payment_mode` switch — see
-   [[architecture.md]] "Payment Module Boundary" for the full design.
-   Uses PhonePe's public sandbox test credentials (no merchant account
-   needed). `supabase/migrations/0004_phonepe_and_payment_mode.sql` has
-   been run against the live Supabase project (2026-09-09) — registration
-   and the payment-mode toggle work end to end from `npm run dev`. Still
-   needs a Netlify draft deploy to test the real inbound webhook (can't
-   reach `localhost`).
-   **Production PhonePe integration remains out of scope** — merchant
-   account not set up, sandbox test credentials are public/shared and
-   must never be treated as a real payment guarantee.
+6. **PhonePe sandbox integration — BROKEN, needs a real rewrite (found
+   2026-09-09).** Built 2026-09-08 against PhonePe's **V1** PG API
+   (salt-key/checksum auth, `PGTESTPAYUAT` public test credentials). Live
+   end-to-end test on 2026-09-09 (after fixing two blockers along the
+   way — see below) hit `POST /api/phonepe/initiate` returning
+   `"Key not found for the merchant"` directly from PhonePe. Root cause,
+   confirmed via web search: **PhonePe has deprecated the entire V1 flow**
+   — V1 salt-key credentials no longer work against any current PhonePe
+   backend, sandbox included, regardless of which key/index values are
+   used. PhonePe now requires their **V2 "Standard Checkout" API**, a
+   different auth model (OAuth-style `client_id`/`client_secret` from the
+   PhonePe dashboard's Developer Settings) and different request/response
+   shapes — see PhonePe's [UAT Sandbox
+   docs](https://developer.phonepe.com/payment-gateway/uat-testing-go-live/uat-sandbox).
+   `src/lib/payment/phonepe.ts` needs a real rewrite to V2 before this can
+   work at all — not a config fix. Independent of the real-merchant-account
+   blocker (Adhyaksha approval + PhonePe onboarding) — the sandbox rewrite
+   is doable now, just not done yet.
+   - Two other real bugs found and fixed getting this far: (a)
+     `service_role` had no `UPDATE` grant on `events`
+     (`supabase/migrations/0005_grant_events_update.sql`, since the
+     payment-mode toggle is the first code path to write to `events`
+     directly rather than through a `SECURITY DEFINER` function) — see
+     [[nextSteps.md]]; (b) none, that was the only toggle-blocking bug —
+     the V1/V2 issue is separate, hit only once actually submitting a
+     `phonepe_sandbox`-mode registration.
+   - **Separate, real UX bug found in the same testing pass**: in
+     `phonepe_sandbox` mode, `RegistrationForm.tsx` shows the copy "pay
+     securely via PhonePe below" directly above the same generic,
+     always-shown Math UPI QR/deep-link block (`UpiPaymentInfo.tsx`,
+     works with any UPI app) — that QR has nothing to do with the actual
+     PhonePe flow, which happens via a separate "Pay via PhonePe" button
+     that redirects off-site. Misleading regardless of the V1/V2 break.
+     Not fixed yet (project owner's call, 2026-09-09 — this round was
+     documentation-only); fast follow whenever wanted.
+   - Manual verification (production path) is completely unaffected by any
+     of this — only `phonepe_sandbox` mode is broken.
+   - **Research absorbed, decision recorded (2026-09-09):** the project
+     owner's own PhonePe research
+     (`delme-clipboard/phonepe_integration_thoughts.md`) — merchant
+     onboarding/pricing facts and the hosted-checkout UPI-only limitation —
+     is now folded into [[architecture.md]] "Payment Module Boundary"
+     (onboarding/pricing + UI-limitation subsections), so that clipboard
+     file can be deleted. Also recorded there: the confirmed design for
+     sandbox-vs-live once V2 is built — admin dashboard keeps exactly 2
+     visible options (`manual`/`phonepe`, no 3rd dropdown entry), with
+     sandbox-vs-live decided by a separate env-var config
+     (`PHONEPE_ENV=sandbox|live`) rather than a user-facing toggle, since
+     V2's auth/shapes are identical across environments (only base URL +
+     client credentials differ) — see [[architecture.md]] "Future: sandbox
+     vs. live config shape" for the full note. This BACKLOG item plus that
+     architecture.md section are now the source of truth for PhonePe
+     status; nothing further needs to be pulled from the clipboard file.
+   **Production PhonePe integration remains out of scope** regardless —
+   merchant account not set up, and even a fixed V2 sandbox must never be
+   treated as a real payment guarantee.
 7. **Email deliverability** — no bounce handling or retry on send failure;
    a failed `sendTicketEmail`/`sendStatusEmail` call throws inside the
    calling route without a retry path (as of 2026-09-08 both now check the
@@ -172,3 +215,19 @@ Not needed for the prototype demo; revisit once the site is past that stage.
     `register_attendee` stays the source of truth either way — this is purely
     UX (catch the mistake before submit, don't rely on client validation for
     correctness).
+16. **Rename Netlify project** `rkm-halasuru-registration` →
+    `rkm-halasuru-events` (project owner preference, 2026-09-09) — purely
+    cosmetic, doesn't matter functionally since the demo will run under the
+    `rkmhalasuru.simplicie.com` custom domain anyway (see [[nextSteps.md]]
+    item 3, Part 2). If ever done: rename in Netlify's site settings, then
+    update the `rkmhalasuru` CNAME target in Cloudflare from
+    `rkm-halasuru-registration.netlify.app` to
+    `rkm-halasuru-events.netlify.app`, and find/replace the old URL across
+    `docs/` (`nextSteps.md`, `netlify.md`). Confirmed isolated: does not
+    touch or require changes to any of the Resend DNS records (DKIM/SPF/
+    DMARC live under `send.rkmhalasuru`/`resend._domainkey`/`_dmarc`,
+    unrelated to the Netlify project name) or the Netlify ownership-
+    verification TXT record. Only re-check needed if a PhonePe sandbox
+    webhook URL was ever registered against the old `.netlify.app` URL
+    directly (see [[architecture.md]] Payment Module Boundary) — would need
+    re-registering with the new URL.

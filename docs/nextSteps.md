@@ -15,6 +15,24 @@ updated: 2026-09-08
 
 ## Next action
 
+> [!warning] Production deploy gate before the demo — confirmed 2026-09-09
+> A production Netlify deploy (`netlify deploy --build --prod`) is a
+> **required task before the Adhyaksha Maharaj demo**, but the project
+> owner has deliberately deferred it — Netlify prod deploys cost credits
+> (15 each, see [[netlify.md]]), and they don't want to burn multiple
+> redeploys while still iterating locally. **Do not deploy to production
+> proactively** — wait until both: (1) local development work is actually
+> done/frozen for the demo, and (2) an appointment with Adhyaksha Maharaj is
+> confirmed/scheduled. Only then deploy the final commit. Until that
+> trigger, keep working locally (`npm run dev`) as normal; a draft deploy
+> (`--alias demo`, not `--prod`) remains fine anytime it's actually needed
+> to test something real deploy-only (e.g. the PhonePe webhook, see item 0
+> below) since draft deploys don't cost production credits the same way.
+> Currently deployed prod build is commit `25fdd96` — local `main` is
+> already ahead of that (PhonePe integration, Resend/Netlify domain setup
+> docs, etc.), so the gap between deployed-vs-latest will keep growing
+> until this gate is lifted.
+
 > [!note] Working mode, confirmed 2026-09-08
 > Back to local-only development (`npm run dev` / `scripts/server.sh`).
 > Claude deploys to Netlify — draft or production — **only when explicitly
@@ -56,14 +74,56 @@ manual/on-request).
    ahead of `origin/main` (check `git status -sb` for the exact count, it
    shifts each session). Push from your own machine, or ask Claude to set
    up credentials in-session.
-3. **Resend domain verification is blocked on an external person**, not an
-   open task for Claude — waiting on someone else to hand over subdomain
-   access to verify at resend.com/domains. Until that lands,
-   `TICKET_FROM_EMAIL` stays `onboarding@resend.dev` (only delivers to the
-   API-key owner's own address — confirmed live, `403 validation_error`
-   otherwise, see [[BACKLOG.md]] item 7). Four real inboxes for dev testing
-   meanwhile: `amjain.gzb@gmail.com`, `bhikajicama09@gmail.com`,
-   `ruchisai197518@gmail.com`, `sairam_197518@yahoo.in`.
+3. **Resend domain verification — IN PROGRESS, checkpointed 2026-09-09.**
+   Not blocked anymore — the project owner has direct Cloudflare DNS access
+   via their brother's account for `simplicie.com`, and is verifying
+   `rkmhalasuru.simplicie.com` directly (subdomain, not `amit.simplicie.com`
+   as originally guessed — see [[technical-concepts.md]] for the DNS/Resend
+   background Q&A this walkthrough built up).
+   - **Domain added in Resend**, region ap-northeast-1 (not ap-south-1 —
+     that's just what Resend assigned, no functional issue).
+   - **All 4 DNS records added in Cloudflare**, confirmed via screenshot,
+     all "DNS only" (not proxied): DKIM TXT (`resend._domainkey.rkmha...`),
+     SPF MX (`send.rkmhalasuru` → `feedback-smtp.ap-northeast-1.amazonses.com`,
+     priority 10), SPF TXT (`send.rkmhalasuru` → `v=spf1
+     include:amazonses.com ~all`), DMARC TXT (`_dmarc` → `v=DMARC1;
+     p=none;`). Existing records on the same zone (brother's Gmail/Workspace
+     MX + DKIM) were left untouched — confirmed via screenshot.
+   - Clicked "I've already added the records" in Resend — as of 2026-09-09
+     all 3 checks show **pending**, Resend's banner says DNS propagation
+     "may take a few hours." **Next action to resume:** go back to
+     resend.com/domains → the `rkmhalasuru.simplicie.com` domain, check if
+     it now shows verified; if still pending after a few hours, re-check
+     Cloudflare records are unchanged and re-click "I've already added the
+     records." Once verified, update `TICKET_FROM_EMAIL` (in
+     `0_SECRETS/env.local` and wherever mirrored) from `onboarding@resend.dev`
+     to something like `tickets@rkmhalasuru.simplicie.com`, restart the dev
+     server, and send a real test registration to a second inbox (not the
+     Resend account owner's) to confirm the `403 validation_error` is gone.
+   - Until verified, `TICKET_FROM_EMAIL` stays `onboarding@resend.dev` (only
+     delivers to the API-key owner's own address — confirmed live, `403
+     validation_error` otherwise, see [[BACKLOG.md]] item 7). Four real
+     inboxes for dev testing meanwhile: `amjain.gzb@gmail.com`,
+     `bhikajicama09@gmail.com`, `ruchisai197518@gmail.com`,
+     `sairam_197518@yahoo.in`.
+   - **Netlify custom domain — DONE (2026-09-09).**
+     `rkmhalasuru.simplicie.com` is now the Netlify project's Primary
+     domain, HTTPS enabled with a valid Let's Encrypt certificate (issued
+     2026-09-09, auto-renews before Dec 8). Cloudflare CNAME
+     `rkmhalasuru.simplicie.com → rkm-halasuru-registration.netlify.app`,
+     left "DNS only" (not proxied). Along the way: had to also add a
+     one-time Netlify domain-ownership-verification TXT record
+     (`subdomain-owner-verific...`) because `simplicie.com`'s root was
+     already registered to a Netlify project elsewhere; and deleted a
+     leftover unused `amit.simplicie.com` CNAME from a prior attempt
+     (same target, tagged "Amit-unused") to avoid multiple aliases pointing
+     at the same site. **Not yet done:** actually load
+     `https://rkmhalasuru.simplicie.com` in a browser to confirm the site
+     renders correctly end-to-end (cert is confirmed valid, but the live
+     page load itself hasn't been checked yet).
+   - See [[BACKLOG.md]] item 16 for a deferred, purely-cosmetic follow-up
+     (renaming the Netlify project itself) — confirmed not to affect any of
+     the records above.
 4. Run [[setup.md]]'s concurrency load test against a test event to confirm
    the atomic seat-cap RPC behaves correctly under concurrent requests.
 

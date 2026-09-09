@@ -86,8 +86,19 @@ call, no read-then-write gap there either.
 for **synchronous** verification, implemented by `src/lib/payment/manual.ts`
 (production path today — admin clicks Verify).
 
-`src/lib/payment/phonepe.ts` (built 2026-09-08) is a real, working PhonePe
-PG v1 sandbox integration — **not** a synchronous `PaymentModule`
+> [!warning] Broken as of 2026-09-09 — PhonePe deprecated V1
+> `src/lib/payment/phonepe.ts` (built 2026-09-08) targets PhonePe's **V1**
+> PG API (salt-key/checksum auth, `X-VERIFY` header). Live testing on
+> 2026-09-09 confirmed PhonePe has since deprecated the entire V1 flow —
+> it fails with `"Key not found for the merchant"` regardless of which V1
+> credentials are used, in sandbox or production. A working integration
+> needs a rewrite to PhonePe's **V2 "Standard Checkout"** API (OAuth
+> `client_id`/`client_secret` token exchange instead of salt-key checksums,
+> different request/response shapes, different webhook verification) — not
+> a config fix. Full root-cause writeup: [[BACKLOG.md]] item 6. Manual
+> verification (the production path) is entirely unaffected.
+
+`src/lib/payment/phonepe.ts` is **not** a synchronous `PaymentModule`
 implementation, since PhonePe is two-phase/webhook-driven with no shared
 request context between initiate and verify. It exports
 `initiatePhonePePayment` (called by `POST api/phonepe/initiate`),
@@ -109,7 +120,40 @@ PhonePe's request/checksum shapes.
 Uses PhonePe's public sandbox test credentials (merchant id `PGTESTPAYUAT`)
 as the built-in fallback default — no merchant account needed, sandbox
 demo only, never treat as a real payment guarantee. See the loud comment
-atop `phonepe.ts`.
+atop `phonepe.ts`. (These are V1 credentials — see the deprecation warning
+above; they no longer work against any current PhonePe environment.)
+
+### Merchant onboarding & pricing (for whenever a real account happens)
+
+From the project owner's own research (absorbed here 2026-09-09, previously
+a standalone note):
+
+- **Approval timeline:** ~3–5 business days for Trust/NGO accounts.
+- **Approval likelihood:** near-certain given Ramakrishna Math's established
+  legal standing — but contingent on exact name matching across the Trust
+  PAN, Trust Deed, and bank account statement; mismatches are the main
+  rejection cause.
+- **Pricing:** UPI and RuPay debit transactions are **0% fee** (free,
+  indefinitely, no setup/maintenance charge); cards (Visa/Mastercard) are
+  1.85–1.99% + GST if ever enabled.
+- **Takeaway:** restricting checkout to UPI only keeps the entire payment
+  pipeline free for the Math — a real reason to prefer a UPI-only UI over
+  enabling card/net-banking options, independent of the V1/V2 issue above.
+
+### UI limitation: hosted checkout isn't UPI-only
+
+PhonePe's hosted checkout page (what `initiatePhonePePayment`'s
+`redirectUrl` currently points at) **cannot be restricted to UPI-only** —
+card and net-banking tabs render regardless of constraints passed in the
+request. To get a true UPI-only experience matching this site's actual
+payment story (UPI/bank transfer, see the static UPI display below), the
+recommended approach — from the same research, not yet implemented — is to
+call PhonePe's direct QR/VPA generation endpoint and render the raw
+`upi://pay?...` QR string in-page instead of redirecting to hosted
+checkout, or rely on the mobile intent flow (opening the registration page
+on a phone lets PhonePe launch a UPI app directly, bypassing the
+instrument-selection page natively). Worth designing in alongside the V2
+rewrite above, not as a separate pass.
 
 ### Payment mode switch
 
@@ -120,6 +164,23 @@ redeploy needed, so both flows can be demoed live in one sitting. `/` is
 `force-dynamic` specifically so this takes effect immediately (a
 statically-prerendered homepage would otherwise bake in whatever mode was
 active at build time).
+
+> [!note] Future: sandbox vs. live config shape (decided 2026-09-09, not
+> built yet)
+> Once the V2 rewrite above happens, the **admin-visible** `payment_mode`
+> stays exactly 2 options — `manual` and `phonepe` (today's `phonepe_sandbox`
+> label just becomes `phonepe`) — never a 3rd dropdown entry for
+> sandbox-vs-live. Sandbox vs. live is decided by a separate,
+> non-user-facing config (e.g. `PHONEPE_ENV=sandbox|live`), because V2's
+> auth model and request/response shapes are identical across both
+> environments — only the base URL and `client_id`/`client_secret` differ.
+> Concretely: `manual` → real UPI verification (unchanged); `phonepe` →
+> PhonePe checkout, routed to sandbox or live purely by `PHONEPE_ENV`. The
+> webhook handler, `applyConfirmedPhonePeSuccess`, and everything
+> downstream of it need zero changes between sandbox and live under this
+> design — that symmetry only holds once V2 is in place, not for today's
+> broken V1 code. Recorded here so the eventual rewrite doesn't have to
+> re-derive this decision.
 
 ### Static UPI display
 
