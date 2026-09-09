@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthenticated" }, { status: 401 });
   }
 
-  const { fullName, email, phone, numAttendees, paymentAmount, paymentReference } =
+  const { fullName, email, phone, numAttendees, paymentAmount, paymentReference, allowDuplicate } =
     await req.json();
 
   if (!fullName || !email || !phone) {
@@ -31,33 +31,43 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  let reg: { id: string; status: "pending" | "waitlisted" };
+  let result: Awaited<ReturnType<typeof registerAttendee>>;
   try {
-    reg = await registerAttendee({
+    result = await registerAttendee({
       fullName,
       email,
       phone,
       numAttendees: numAttendees ?? 1,
       paymentReference: (paymentReference?.trim() || `CASH-${Date.now()}`) as string,
       paymentAmount: paymentAmount ?? null,
+      allowDuplicate: allowDuplicate ?? false,
     });
   } catch (err) {
     return NextResponse.json({ error: (err as Error).message }, { status: 500 });
   }
+
+  if (result.duplicate) {
+    return NextResponse.json(
+      { duplicate: true, existingRegistrationId: result.existingRegistrationId },
+      { status: 409 }
+    );
+  }
+
+  const reg = result;
 
   if (reg.status !== "pending") {
     // Cap was full at the moment of claim -- no seat to issue a ticket for.
     return NextResponse.json({ id: reg.id, status: reg.status });
   }
 
-  const result = await manualPaymentModule.verifyPayment({
+  const verifyResult = await manualPaymentModule.verifyPayment({
     registrationId: reg.id,
     paymentReference: paymentReference ?? "",
     amount: paymentAmount ?? 0,
     method: "manual",
   });
-  result.verifiedBy = adminUserId;
-  await markVerifiedAndIssueTicket(reg.id, result);
+  verifyResult.verifiedBy = adminUserId;
+  await markVerifiedAndIssueTicket(reg.id, verifyResult);
 
   return NextResponse.json({ id: reg.id, status: "verified" });
 }

@@ -11,13 +11,50 @@ export default function AdminManualRegisterForm({
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [duplicate, setDuplicate] = useState<{
+    existingRegistrationId: string;
+    payload: Record<string, unknown>;
+  } | null>(null);
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
+  async function submitPayload(
+    payload: Record<string, unknown>,
+    formEl: HTMLFormElement | null
+  ) {
     setSubmitting(true);
     setError(null);
     setResult(null);
 
+    const res = await fetch("/api/admin/manual-register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+
+    setSubmitting(false);
+
+    if (res.status === 409 && data.duplicate) {
+      setDuplicate({ existingRegistrationId: data.existingRegistrationId, payload });
+      return;
+    }
+
+    if (!res.ok) {
+      setError(data.error ?? "Registration failed");
+      return;
+    }
+
+    setDuplicate(null);
+    if (data.status === "verified") {
+      setResult("Ticket issued and emailed.");
+      formEl?.reset();
+    } else {
+      setResult("Cap was full — added to the waitlist instead (no ticket issued).");
+    }
+    onDone();
+  }
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
     const form = new FormData(e.currentTarget);
     const payload = {
       fullName: String(form.get("fullName") ?? "").trim(),
@@ -29,28 +66,12 @@ export default function AdminManualRegisterForm({
         : null,
       paymentReference: String(form.get("paymentReference") ?? "").trim(),
     };
+    await submitPayload(payload, e.currentTarget);
+  }
 
-    const res = await fetch("/api/admin/manual-register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    const data = await res.json();
-
-    setSubmitting(false);
-
-    if (!res.ok) {
-      setError(data.error ?? "Registration failed");
-      return;
-    }
-
-    if (data.status === "verified") {
-      setResult("Ticket issued and emailed.");
-      (e.target as HTMLFormElement).reset();
-    } else {
-      setResult("Cap was full — added to the waitlist instead (no ticket issued).");
-    }
-    onDone();
+  async function handleRegisterAnyway() {
+    if (!duplicate) return;
+    await submitPayload({ ...duplicate.payload, allowDuplicate: true }, null);
   }
 
   if (!open) {
@@ -110,6 +131,22 @@ export default function AdminManualRegisterForm({
           {result && <span className="text-green-700 text-sm">{result}</span>}
           {error && <span className="text-red-600 text-sm">{error}</span>}
         </div>
+        {duplicate && (
+          <div className="col-span-2 flex items-center gap-3 bg-amber-50 border border-amber-300 rounded px-3 py-2">
+            <span className="text-amber-800 text-sm">
+              This email/phone already has a registration (ID{" "}
+              {duplicate.existingRegistrationId}). Register anyway?
+            </span>
+            <button
+              type="button"
+              onClick={handleRegisterAnyway}
+              disabled={submitting}
+              className="bg-amber-800 text-white px-3 py-1 rounded disabled:opacity-50 whitespace-nowrap"
+            >
+              {submitting ? "Working..." : "Register anyway"}
+            </button>
+          </div>
+        )}
       </form>
     </div>
   );

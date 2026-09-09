@@ -4,7 +4,11 @@ import type { PaymentVerificationResult } from "@/lib/payment/types";
 import { STATUS_MESSAGE, type RegistrationStatus } from "@/lib/registration/statusMessages";
 
 const REG_WITH_EVENT_SELECT =
-  "*, events(slug, title, event_date, start_time, end_time, venue_name)";
+  "*, events(slug, title, event_date, start_time, end_time, venue_name, payment_mode)";
+
+const MANUAL_SLA_NOTE =
+  "Manual verification can take up to 5 days. If you haven't heard back " +
+  "by then, please contact us with your payment proof.";
 
 interface RegistrationWithEvent {
   id: string;
@@ -21,6 +25,7 @@ interface RegistrationWithEvent {
     start_time: string;
     end_time: string;
     venue_name: string;
+    payment_mode: string;
   };
 }
 
@@ -132,13 +137,18 @@ export async function sendStatusUpdateEmail(registrationId: string) {
 
   const r = reg as unknown as RegistrationWithEvent & { status: RegistrationStatus };
 
+  let message = STATUS_MESSAGE[r.status];
+  if (r.status === "pending" && r.events.payment_mode === "manual") {
+    message = `${message} ${MANUAL_SLA_NOTE}`;
+  }
+
   await sendStatusEmail({
     toEmail: r.email,
     fullName: r.full_name,
     eventTitle: r.events.title,
     eventDate: r.events.event_date,
     regId: r.id,
-    message: STATUS_MESSAGE[r.status],
+    message,
   });
 
   return { ok: true as const };

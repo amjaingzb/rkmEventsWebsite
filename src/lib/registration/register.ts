@@ -1,5 +1,6 @@
 import { createServiceClient } from "@/lib/supabase/server";
 import { computeAmountInr } from "@/lib/payment/pricing";
+import { normalizePhone } from "@/lib/phone";
 
 const EVENT_SLUG = process.env.EVENT_SLUG ?? "halasuru-sarvapriyananda-2026";
 
@@ -10,6 +11,43 @@ interface RegisterAttendeeInput {
   numAttendees?: number;
   paymentReference?: string;
   paymentAmount?: number | null;
+  /** Skip the duplicate check — set by the admin walk-in flow's "register anyway" confirm. */
+  allowDuplicate?: boolean;
+}
+
+export type RegisterAttendeeResult =
+  | { duplicate: true; existingRegistrationId: string }
+  | { duplicate: false; id: string; status: "pending" | "waitlisted" };
+
+/**
+ * Duplicate check shared by the public and admin registration paths — a
+ * plain read-then-compare (not a SQL filter, since there's no
+ * normalized/generated column for email/phone) against pending/verified
+ * rows for the event, comparing normalized email OR normalized phone.
+ * Deliberately excludes waitlisted/EOI rows — see registration-integrity.md
+ * Item 1's decided match scope.
+ */
+async function findDuplicateRegistration(
+  supabase: ReturnType<typeof createServiceClient>,
+  eventId: string,
+  email: string,
+  phone: string
+): Promise<string | null> {
+  const { data: candidates } = await supabase
+    .from("registrations")
+    .select("id, email, phone")
+    .eq("event_id", eventId)
+    .in("status", ["pending", "verified"]);
+
+  const normalizedEmail = email.trim().toLowerCase();
+  const normalizedPhone = normalizePhone(phone);
+
+  const match = candidates?.find(
+    (c) =>
+      c.email.trim().toLowerCase() === normalizedEmail ||
+      normalizePhone(c.phone) === normalizedPhone
+  );
+  return match?.id ?? null;
 }
 
 /**
@@ -23,7 +61,9 @@ interface RegisterAttendeeInput {
  * defaults to the computed fixed price if not explicitly overridden (the
  * admin walk-in/cash form still passes its own actual-cash-received amount).
  */
-export async function registerAttendee(input: RegisterAttendeeInput) {
+export async function registerAttendee(
+  input: RegisterAttendeeInput
+): Promise<RegisterAttendeeResult> {
   const supabase = createServiceClient();
 
   const { data: event, error: eventError } = await supabase
@@ -38,6 +78,18 @@ export async function registerAttendee(input: RegisterAttendeeInput) {
 
   if (event.payment_mode === "manual" && !input.paymentReference) {
     throw new Error("paymentReference is required");
+  }
+
+  if (!input.allowDuplicate) {
+    const existingId = await findDuplicateRegistration(
+      supabase,
+      event.id,
+      input.email,
+      input.phone
+    );
+    if (existingId) {
+      return { duplicate: true, existingRegistrationId: existingId };
+    }
   }
 
   const numAttendees = input.numAttendees ?? 1;
@@ -59,5 +111,6 @@ export async function registerAttendee(input: RegisterAttendeeInput) {
     throw new Error(error?.message ?? "Registration failed");
   }
 
-  return reg as { id: string; status: "pending" | "waitlisted" };
+  const row = reg as { id: string; status: "pending" | "waitlisted" };
+  return { duplicate: false, id: row.id, status: row.status };
 }

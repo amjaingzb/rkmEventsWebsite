@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CONTACT_EMAIL } from "@/lib/contact";
 import { computeAmountInr } from "@/lib/payment/pricing";
+import { MAX_ATTENDEES_PER_SUBMISSION } from "@/lib/registration/limits";
 import UpiPaymentInfo from "./UpiPaymentInfo";
 
 export default function RegistrationForm({ paymentMode }: { paymentMode: string }) {
@@ -39,6 +40,13 @@ export default function RegistrationForm({ paymentMode }: { paymentMode: string 
 
     if (!res.ok) {
       setSubmitting(false);
+      if (data.duplicate) {
+        setError(
+          `You already have a registration (ID ${data.existingRegistrationId}). ` +
+            `Contact us at ${CONTACT_EMAIL} if you need to change it.`
+        );
+        return;
+      }
       setError(
         data.error
           ? `${data.error} If this continues, contact us at ${CONTACT_EMAIL}.`
@@ -102,17 +110,21 @@ export default function RegistrationForm({ paymentMode }: { paymentMode: string 
         <label className="block text-sm font-medium mb-1">
           Number of attendees
         </label>
-        <input
-          type="number"
+        <select
           name="numAttendees"
-          min={1}
           value={numAttendees}
-          onChange={(e) =>
-            setNumAttendees(Math.max(1, Number(e.target.value) || 1))
-          }
+          onChange={(e) => setNumAttendees(Number(e.target.value))}
           required
           className="w-full border border-gold/30 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-saffron/50"
-        />
+        >
+          {Array.from({ length: MAX_ATTENDEES_PER_SUBMISSION }, (_, i) => i + 1).map(
+            (n) => (
+              <option key={n} value={n}>
+                {n}
+              </option>
+            )
+          )}
+        </select>
       </div>
 
       <div className="border-t border-gold/30 pt-4 space-y-3">

@@ -13,14 +13,22 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const reg = await registerAttendee({
+    const result = await registerAttendee({
       fullName,
       email,
       phone,
       numAttendees,
       paymentReference,
     });
-    return NextResponse.json({ id: reg.id, status: reg.status });
+
+    if (result.duplicate) {
+      return NextResponse.json(
+        { duplicate: true, existingRegistrationId: result.existingRegistrationId },
+        { status: 409 }
+      );
+    }
+
+    return NextResponse.json({ id: result.id, status: result.status });
   } catch (err) {
     return NextResponse.json(
       { error: (err as Error).message },

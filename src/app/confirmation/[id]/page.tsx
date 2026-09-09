@@ -66,6 +66,11 @@ export default async function ConfirmationPage({
 
       {isPending && paymentMode !== "phonepe_sandbox" && (
         <div className="mt-6 text-left">
+          <p className="text-sm text-gray-500 mb-3">
+            Manual verification can take up to 5 days. If you haven&apos;t
+            heard back by then, contact us at {CONTACT_EMAIL} with your
+            payment proof.
+          </p>
           <UpiPaymentInfo amountInr={computeAmountInr(reg.num_attendees)} />
         </div>
       )}

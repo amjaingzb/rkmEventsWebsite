@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import AdminManualRegisterForm from "./AdminManualRegisterForm";
 import { STATUS_MESSAGE, type RegistrationStatus } from "@/lib/registration/statusMessages";
+import { normalizePhone } from "@/lib/phone";
 
 type Status = RegistrationStatus;
 
@@ -33,12 +34,6 @@ const TABS: { label: string; value: Status | "all" }[] = [
   { label: "Waitlisted", value: "waitlisted" },
   { label: "Rejected", value: "rejected" },
 ];
-
-function normalizePhone(phone: string): string {
-  const digits = phone.replace(/\D/g, "");
-  if (digits.length === 10) return `91${digits}`;
-  return digits;
-}
 
 function whatsappLink(r: Registration, event: EventInfo | null): string {
   const context = event
