@@ -6,6 +6,15 @@ import {
   applyConfirmedPhonePeSuccess,
 } from "@/lib/payment/phonepe";
 
+// PhonePe's dashboard appears to probe the webhook URL with a plain GET
+// before saving it (a POST-only route 405'd, which showed up in the
+// dashboard as a generic "404 Not Found"). This has no security role — the
+// real callback is always POST + signature-checked below — it just needs
+// to answer something other than 404/405 so the dashboard accepts the URL.
+export async function GET() {
+  return NextResponse.json({ ok: true });
+}
+
 // PhonePe's S2S callback. Always returns 200 once the signature has been
 // checked — PhonePe retries on non-2xx, and a not-found/mismatch is logged
 // server-side rather than surfaced in the response (no info leak to a
