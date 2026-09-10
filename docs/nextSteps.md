@@ -115,15 +115,24 @@ updated: 2026-09-10
 > (same stale-`.next` gotcha as always), `demo` draft alias redeployed
 > with all of this.
 >
-> **Cleanup needed before the demo** (harmless test/dev clutter left in
-> the real event from this session's testing — same pattern as prior
-> sessions, not done here): a rejected "a" row (blank reason, was
-> pending row `ee4e81b4-...`), a rejected "PhonePe Gate Test" row, an
-> "abcd" pending row still sitting there, and the two verified rows from
-> earlier reject-reinstate testing ("Ruchi Sai" Reg. No. 1, "Reject
-> Reason Test" Reg. No. 2). Payment mode was switched to `phonepe_sandbox`
-> mid-testing and switched back to `manual` before finishing — confirm
-> it's still in the mode you want before the demo.
+> **Cleanup done (2026-09-10, later same day).** By the time this was
+> revisited, the table held 10 rows total — not just the ones listed
+> above but further clutter from later testing sessions too (PhonePe
+> gate/failure test identities, a walk-in test, EOI test rows, etc.).
+> Project owner ran `select reset_event_registrations('halasuru-sarvapriyananda-2026');`
+> directly in the SQL editor (wipes all registrations + zeroes
+> `seats_taken`) plus a manual `update events set guaranteed_seat_cap =
+> 500 ...` — the reset function only zeroes `seats_taken`, it does **not**
+> touch `guaranteed_seat_cap`, which had drifted to 40 from earlier
+> capacity/EOI testing and needed a separate statement. Confirmed
+> `waitlist_alert_threshold` (buffer) was untouched at its default of 10.
+> Reseeded via the real public form + admin Verify button (same pattern as
+> the 2026-09-09 reseed, using the [[dev-accounts.md]] test-customer
+> identities): **Ruchi Jain** (Reg. No. 1, verified, ticket sent),
+> **Sai Ram** (Reg. No. 3, 2 attendees, verified, ticket sent), **Lakshmi
+> Iyer** (`ruchisai197518+lakshmi@gmail.com`, pending) — final state
+> confirmed directly against Supabase: `seats_taken: 3`,
+> `guaranteed_seat_cap: 500`, `payment_mode: manual`.
 
 > [!warning] Demo postponed to tomorrow (2026-09-11) — ~10 hrs of runway left, cutoff 7 PM today (2026-09-10)
 > Originally leaving for the demo within 1-2 hours (see the triage below,
@@ -460,39 +469,33 @@ manual/on-request).
    `events.<yourdomain>`), likely `rkm-halasuru-registration.netlify.app`
    but needs confirming there, not guessed. The Resend TXT/CNAME part of
    that same message is unaffected and can stay as originally planned.
-1. **Push local commits to `origin/main`** — local `main` is currently
-   ahead of `origin/main` (check `git status -sb` for the exact count, it
-   shifts each session). Push from your own machine, or ask Claude to set
-   up credentials in-session.
+1. ~~Push local commits to `origin/main`~~ — **stale, already done.**
+   Confirmed 2026-09-10: `git rev-list --left-right --count
+   origin/main...HEAD` reads `0 0`, local `main` and `origin/main` are
+   identical. Superseded by the many commits since this item was written.
 2. ~~Run [[setup.md]]'s concurrency load test~~ — **done (2026-09-09).**
    See "Recently completed" below. `EVENT_SLUG` confirmed back to
    `halasuru-sarvapriyananda-2026`.
-3. **Manual mobile test pass — not yet done, needed before the demo
-   (added 2026-09-09).** Project owner wants to physically test on a phone:
-   - Open the registration flow on mobile and confirm tapping the PhonePe
-     button actually opens/deep-links into a UPI app correctly (this is a
-     real device/OS behavior that local `npm run dev` desktop testing
-     can't confirm).
+3. **Manual mobile test pass — partially done 2026-09-10, still open.**
+   Project owner tried the **admin dashboard** on a phone and found it
+   genuinely bad — see [[BACKLOG.md]] item 25 (logged, deliberately
+   deferred past the demo, not a quick fix). The **public** registration
+   flow has *not* yet been separately confirmed on a real phone — still
+   open, in particular:
+   - Tapping the PhonePe button actually opens/deep-links into a UPI app
+     correctly (a real device/OS behavior local `npm run dev` desktop
+     testing can't confirm).
    - General "does the site look/behave broken on mobile" pass across the
-     main pages (landing page, registration form, confirmation page,
-     admin dashboard) — layout, tap targets, no horizontal scroll, etc.
-   - No specific bug reported yet — this is a first look, not a fix for a
-     known issue.
-4. **Cosmetic fixes — trivial but flagged as important for the Adhyaksha
-   Maharaj demo (added 2026-09-09).** Project owner's own visual review:
-   - Whitespace showing behind/around the main hero photo at the top of
-     the landing page (`src/components/static/Hero.tsx`) — likely an
-     image-sizing/object-fit or container-padding issue, needs a look.
-   - Speaker photo crops the face slightly
-     (`src/components/static/SpeakerSection.tsx`) — likely an `object-fit`/
-     `object-position` fix on the image, not a new asset (unless the source
-     image itself doesn't have enough headroom).
-   - Project owner's broader read: the site "still looks a bit bland" —
-     open-ended, not a specific bug. Their suggestion: consider a **mock
-     screens pass first** (e.g. the `design` skill's canvas) to explore
-     visual direction before sinking time into incremental CSS tweaks — not
-     decided yet, raise with the project owner before starting a redesign
-     pass.
+     public pages (landing page, registration form, confirmation page) —
+     layout, tap targets, no horizontal scroll, etc. (The admin dashboard
+     is now a known-bad, deferred case — don't re-test it here, item 25
+     already covers it.)
+4. ~~Cosmetic fixes (hero whitespace, speaker photo crop)~~ — **stale,
+   already done.** Confirmed via `git log`: `d2698c3` "Swap in real hero
+   photo, logo, and fix speaker photo crop" (2026-09-09) addressed both.
+   The broader "site looks a bit bland" / mock-screens-pass question was
+   never picked up separately and remains open only if the project owner
+   wants to raise it again — not a specific bug to chase.
 5. **Attendance/QR-scanning — webapp, not a separate "sevaConnect" Android
    app (corrected 2026-09-09; superseded an earlier, incompatible note in
    this same slot).** Per [[BACKLOG.md]] item 9's "Direction change under
@@ -590,6 +593,27 @@ Full rationale and the complete deferred-items list: [[BACKLOG.md]].
      and the confirmation page).
   Deferred to [[BACKLOG.md]] per the tester's own notes: EOI→capacity
   re-invite flow, email/WhatsApp templating.
+
+- **2026-09-10 (PhonePe auto-reject fix confirmed end-to-end against the
+  real webhook, on the `demo` draft deploy).** The fix (item 3 above) had
+  only ever been tested locally, and PhonePe's webhook is configured to
+  call the Netlify URL, not `localhost` — so a local run only ever
+  exercised the `/api/phonepe/status` reconciliation fallback, never the
+  real server-to-server webhook. Redeployed `main` to the `demo` alias,
+  switched `payment_mode` to `phonepe_sandbox`, submitted a real
+  registration, and deliberately failed the PhonePe UAT checkout.
+  Confirmed directly against Supabase: `status: rejected`, `rejected_by:
+  null` (automated, not an admin click), `rejected_at` 18 seconds after
+  `created_at`, `rejection_reason: "PhonePe payment failed"`,
+  `registration_number`/`ticket_sent_at` both null — no seat claimed, no
+  ticket issued. Registrant correctly got two emails: the submission
+  acknowledgement (fires on every registration, unrelated feature) and
+  then the rejection email once PhonePe reported failure — not a bug, both
+  expected. This closes the "never fired against a real PhonePe" gap.
+  **`payment_mode` was left at `phonepe_sandbox` after this test — not yet
+  switched back to `manual`** — and a second leftover test row
+  (`test.phonepe.failure`, still `pending`) needs clearing. Both need
+  attention before the demo if manual mode is what's being shown.
 
 - **2026-09-09 (implemented all of registration-integrity.md — duplicate
   detection, per-submission cap, seat_number rename, verification-time
