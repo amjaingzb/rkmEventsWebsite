@@ -1,6 +1,7 @@
-// Letters (any script), spaces, apostrophes, and dashes (for hyphenated
-// names) — rejects digits and symbols like "@" or "/".
-const NAME_ALLOWED_RE = /^[\p{L}\s'-]+$/u;
+// English letters, spaces, and periods (for initials like "A.K. Sharma")
+// only — deliberately no digits, no other symbols (rejects "@"/"/"/etc.),
+// and no non-Latin scripts, per project owner's explicit call.
+const NAME_ALLOWED_RE = /^[A-Za-z .]+$/;
 
 /** Strips a +91 prefix, or a bare 91 prefix only when it's part of a
  * 12-digit country-code+number string — a plain 10-digit number that
@@ -15,7 +16,7 @@ export function normalizePhone(raw: string): string {
 export function validateFullName(fullName: string): string | undefined {
   if (!fullName) return "Please enter your full name.";
   if (!NAME_ALLOWED_RE.test(fullName)) {
-    return "Name should only contain letters, spaces, and dashes.";
+    return "Name should only contain letters, spaces, and periods.";
   }
   return undefined;
 }
