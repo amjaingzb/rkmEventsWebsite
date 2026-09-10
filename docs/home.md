@@ -39,6 +39,8 @@ updated: 2026-09-08
   infra, public contact, test customers) during dev mode
 - [[git-label-strategy.md]] — when (and when not) to create a git tag;
   Claude should proactively suggest tagging at real milestones
+- [[manual-test-checklist.md]] — short pre-demo manual test checklist
+  (feature/admin/negative cases), created 2026-09-10
 
 ## Where things live in the repo
 
