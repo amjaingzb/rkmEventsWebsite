@@ -553,6 +553,17 @@ Full rationale and the complete deferred-items list: [[BACKLOG.md]].
 
 ## Recently completed
 
+- **2026-09-10 (disabled the Hero/Speaker "photo URL" fields in the admin
+  content editor).** Follow-up from the manual-test round below: the
+  fields' old label implied a volunteer could self-serve a new photo,
+  which wasn't actually true either way (see [[BACKLOG.md]] item 24 for
+  the full reasoning, and [[content-editability-design.md]]'s "Photo
+  hosting decision" for the original context). Project owner decided
+  against building the real fix (Supabase Storage upload) right now —
+  that bucket would live under their own account/billing with no abuse
+  guardrails yet — so both fields are disabled/read-only in
+  `AdminContentEditor.tsx` until it is built.
+
 - **2026-09-10 (fixed 5 bugs from the first manual-test round, see
   `delme-clipboard/manualtestFeedback/testing_notes.md`).**
   1. `getStatusTitle`/`getStatusMessage` (statusMessages.ts) no longer say
