@@ -307,9 +307,12 @@ bucket + upload path to the shape-design step below; not yet designed.
    nothing regresses once the fetch moves server-side (step 4). Contact
    phone/WhatsApp (`9731007760`, project owner-provided — didn't exist
    anywhere in the codebase before this) backfilled for both fields.
-   **Not yet applied to the live Supabase project** — needs to be run in
-   the Supabase SQL editor, same as every other pending migration tracked
-   in [[nextSteps.md]]. `hero_photo_url`/`speaker_json.photoUrl` still
+   **Applied to the live Supabase project and verified (2026-09-10)** — ran
+   by the project owner in the Supabase SQL editor; read back directly via
+   the service-role key afterward and confirmed all counts match the
+   source JSX exactly (4 agenda rows, 3 speaker highlights + 3 bio
+   paragraphs, 3 FAQ categories / 11 items, 3 parking bullets, plus every
+   Hero/Contact scalar field set). `hero_photo_url`/`speaker_json.photoUrl` still
    point at the existing `public/images/` paths as an interim value — the
    actual Supabase Storage bucket for photos (red flag/decision above)
    is separate infra, not yet created; swap those URLs once it exists.

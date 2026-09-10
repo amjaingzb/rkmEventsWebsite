@@ -46,8 +46,10 @@ updated: 2026-09-10
 > columns on the existing `events` row; Footer and Navbar stay hardcoded as
 > components. `supabase/migrations/0012_content_editability.sql` has the
 > schema + a backfill of the real current copy into the live event row —
-> **written but not yet applied** to the live Supabase project (needs the
-> SQL editor, like every other pending migration here). Hero/speaker photos
+> **applied to the live Supabase project and verified (2026-09-10)**: read
+> back directly afterward, all counts (agenda rows, FAQ categories/items,
+> speaker highlights/bio paragraphs, parking bullets) match the source JSX
+> exactly. Hero/speaker photos
 > still point at their existing `public/images/` paths as an interim value;
 > the actual Supabase Storage bucket for photos is separate infra, not yet
 > created. Steps 4-6 (move fetch server-side → wire caching → decide the
