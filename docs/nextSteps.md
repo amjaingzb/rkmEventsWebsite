@@ -28,53 +28,57 @@ updated: 2026-09-10
 > deploy, (3) smoke-test the live site (registration flow, admin verify,
 > ticket email) before the demo, not just locally.
 
-> [!note] Content-editability: caching wired, edit front door not decided
+> [!note] Content-editability: all 6 implementation-plan steps done
 > > (2026-09-10)
-> Full architecture discussion in [[content-editability-design.md]] — DB-
-> backed content, tag-based cache invalidation (`revalidateTag`, confirmed
-> supported on Netlify and cheap relative to a production deploy), the
-> rejected `whatChanged` polling-flag alternative and why, the full cost
-> model, and red flags to resolve before starting (notably: a direct
-> Supabase table-editor edit does **not** auto-trigger revalidation — needs
-> a decision before relying on that for last-minute demo fixes).
-> **Steps 1-4 (inventory → shape design → backfill → move fetch
-> server-side) are now done**, worked
-> through collaboratively with the project owner — see that doc's
-> "Inventory pass" and "Implementation plan" sections for the full detail.
-> Short version: Hero, Agenda, Speaker bio, FAQ, Venue & Parking, and a new
-> shared Contact settings area (email/phone/WhatsApp, replacing the
-> `CONTACT_EMAIL` constant everywhere it's used) go DB-backed as new
-> columns on the existing `events` row; Footer and Navbar stay hardcoded as
-> components. `supabase/migrations/0012_content_editability.sql` has the
-> schema + a backfill of the real current copy into the live event row —
-> **applied to the live Supabase project and verified (2026-09-10)**: read
-> back directly afterward, all counts (agenda rows, FAQ categories/items,
-> speaker highlights/bio paragraphs, parking bullets) match the source JSX
-> exactly. Hero/speaker photos
-> still point at their existing `public/images/` paths as an interim value;
-> the actual Supabase Storage bucket for photos is separate infra, not yet
-> created. `src/app/page.tsx` now fetches all this via new
-> `src/lib/content/getEventContent.ts` and passes it as props into
-> Hero/Agenda/Speaker/Venue/FAQ/Footer — `0013_hero_display_labels.sql`
-> (also applied and verified live) added separate free-text labels for
-> Hero's date/time/venue chips after reusing `venue_name` directly turned
-> out to visibly change the chip text. `npm run build`/`lint` clean,
-> verified live via the dev server. **Not done yet**: `CONTACT_EMAIL`
-> (`src/lib/contact.ts`) is still used as-is in 5 other places outside the
-> homepage Footer (email templates, EoiForm, RegistrationForm, confirmation
-> page) — finishing that swap sitewide is a separate, larger follow-up.
-> **Step 5 (wire caching) now done too**: `getEventContent` does 6
-> independently `unstable_cache`-tagged reads (`content:<area>:<slug>`),
-> and a new admin-gated `POST /api/admin/revalidate-content` calls
-> `revalidateTag` for one area — addresses red flag 1 (a direct Supabase
-> table edit can now be followed by one authenticated call instead of
-> waiting on the 5-minute backstop). Not wired to any UI button yet — that
-> and picking the actual edit front door are both step 6, not started.
-> Also not yet verified: a real end-to-end edit → revalidate → homepage-
-> updates check with an actual admin session (only the 401-when-
-> unauthenticated behavior has been confirmed so far). Not a demo
-> blocker, no rush.
-> Read that doc before picking this back up.
+> Full design in [[content-editability-design.md]] — read it before
+> touching this area again, especially the "Implementation plan" section
+> (each step's done-state and verification notes) and [[BACKLOG.md]]
+> item 17 (role hierarchy, deliberately deferred, see below).
+>
+> **What shipped**: Hero, Agenda, Speaker bio, FAQ, Venue & Parking, and a
+> new Contact settings area (email/phone/WhatsApp) are DB-backed as new
+> columns on the existing `events` row (`0012_content_editability.sql`,
+> `0013_hero_display_labels.sql` — both applied to the live Supabase
+> project and verified by reading rows back). `src/app/page.tsx` fetches
+> all of it through 6 independently `unstable_cache`-tagged reads
+> (`content:<area>:<slug>`, `src/lib/content/getEventContent.ts`) and
+> passes it as props into Hero/Agenda/Speaker/Venue/FAQ/Footer — those
+> components no longer own their own copy. A new **`/admin/content`** page
+> (linked from `/admin/dashboard`'s "Site content" button, behind the
+> same single existing admin login — not a new role) lets the project
+> owner edit any area and save; `PATCH /api/admin/content` writes the DB
+> and calls `revalidateTag` in the same request, so edits go live
+> immediately, no deploy, no waiting on the 5-minute cache backstop.
+> Footer/Navbar stayed hardcoded as components per the original inventory
+> call.
+>
+> **Verified live end-to-end** via the chrome-devtools sidecar with the
+> real admin account: all 6 editor tabs render the actual current content
+> correctly, an edit (Contact phone number) saved and appeared on the
+> public homepage's footer instantly with zero console/server errors, then
+> was reverted and re-confirmed. `npm run build`/`lint` clean throughout.
+>
+> **Not done, explicitly out of scope for this pass**:
+> - The `CONTACT_EMAIL` constant (`src/lib/contact.ts`) is still used
+>   as-is in 5 places outside the homepage Footer (email templates,
+>   EoiForm, RegistrationForm, confirmation page) — only the Footer reads
+>   the new DB-backed contact settings so far. A separate, larger
+>   follow-up to swap it sitewide.
+> - Hero/speaker photo URLs still point at the existing `public/images/`
+>   paths — the Supabase Storage bucket decided on for photo hosting is
+>   separate infra, not yet created.
+> - **Role hierarchy** — raised while deciding the edit front door;
+>   project owner wants future lower-privilege admin roles (e.g. a
+>   content-only editor). Confirmed **additive**: today's single admin
+>   role stays a permanent super-user, new roles layer in alongside it.
+>   Deliberately deferred as its own separate design discussion — see
+>   [[BACKLOG.md]] item 17.
+> - No client-side validation on the new editor's phone/email fields yet
+>   (accepts anything, same gap the public form had before
+>   [[BACKLOG.md]] item 15).
+>
+> None of this was a demo blocker and there was no rush — it's simply
+> done now.
 
 > [!note] Rounded favicon — done, switched to a different logo (2026-09-10)
 > The Halasuru/Ulsoor-style shield badge previously in `icon.png`/

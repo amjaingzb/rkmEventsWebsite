@@ -315,7 +315,22 @@ Not needed for the prototype demo; revisit once the site is past that stage.
     `register_attendee` stays the source of truth either way — this is purely
     UX (catch the mistake before submit, don't rely on client validation for
     correctness).
-16. **Rename Netlify project** `rkm-halasuru-registration` →
+17. **Hierarchical admin roles** — raised 2026-09-10 while discussing
+    [[content-editability-design.md]] step 6 (the edit front door). Today
+    there is exactly one admin role: any Supabase Auth user who can log in
+    sees/does everything (`requireAdminSession()` in
+    `src/lib/supabase/server.ts` only checks "is there a session," no role
+    distinction). Project owner wants additional, lower-privilege roles in
+    the future (e.g. a content-editor role that can touch FAQ/Agenda/
+    Speaker/Hero/Venue/Contact but not registrant PII/payment verification/
+    CSV export) — **confirmed additive, not a replacement**: today's admin
+    role stays a permanent super-user seeing everything, new roles are
+    narrower slices carved out alongside it, not instead of it. Deliberately
+    **not designed yet** — deferred as its own separate discussion, not
+    bundled into content-editability. For now, the new admin content tab
+    (step 6 of that doc) reuses the single existing admin login with no new
+    role.
+18. **Rename Netlify project** `rkm-halasuru-registration` →
     `rkm-halasuru-events` (project owner preference, 2026-09-09) — purely
     cosmetic, doesn't matter functionally since the demo will run under the
     `rkmhalasuru.simplicie.com` custom domain anyway (see [[nextSteps.md]]

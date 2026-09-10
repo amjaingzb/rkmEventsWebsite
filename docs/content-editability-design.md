@@ -364,13 +364,44 @@ bucket + upload path to the shape-design step below; not yet designed.
    verified**: an actual end-to-end edit → `revalidateTag` call →
    homepage-updates round trip with a real admin session (needs either a
    browser login or someone to hand-test after step 6 picks a front door).
-6. **Decide and build the actual edit front door** — direct Supabase table
-   edits (fast, zero build) vs. a monk-facing admin content tab (more
-   build effort, removes the project owner from the editing loop
-   permanently) — a deliberate, separate decision per red flag 6, not
-   bundled into steps 1-5. Should also decide whether/how
-   `POST /api/admin/revalidate-content` gets a UI button here, since step 5
-   only built the endpoint, not a way to trigger it without curl/Postman.
+6. ~~**Decide and build the actual edit front door**~~ — **done
+   (2026-09-10)**. Project owner chose (b), an admin content tab, over (a)
+   direct Supabase table edits — raw JSON editing for the FAQ/Agenda/
+   Speaker shapes was judged too error-prone with no validation/preview.
+   New `/admin/content` (linked from `/admin/dashboard`'s new "Site
+   content" button), behind the **same single existing admin login** —
+   explicitly not a new role. A real role hierarchy (content-editor vs.
+   full admin) was raised in the same discussion and deliberately deferred
+   as its own separate piece of work, confirmed **additive**: today's
+   admin role stays a permanent super-user, any new narrower role is
+   layered in later, not a replacement — see [[BACKLOG.md]] item 17.
+   New `AdminContentEditor.tsx` — one tab per area, with list-editing
+   (add/remove rows) for the array-shaped areas (Agenda, FAQ
+   categories/items, Speaker highlights/bio, Parking bullets) — calls
+   `PATCH /api/admin/content` (`{area, data}`, admin-session-gated,
+   whitelists writable columns per area via `AREA_COLUMNS` so a client
+   can't write arbitrary columns) which saves and calls `revalidateTag` in
+   the same request. The manual `/api/admin/revalidate-content` from step 5
+   remains as the fallback for a direct Supabase table edit, now genuinely
+   optional for the normal editing path. New `getRawEventContent()`
+   (uncached, all-columns) feeds the editor's initial values — deliberately
+   bypasses the per-area cache reads, since an editor must show the true
+   current value, not a stale one.
+   **Verified live end-to-end**, not just build/lint: logged into
+   `/admin/content` via the chrome-devtools sidecar with the real admin
+   account, confirmed all 6 tabs render the actual current content
+   correctly (Hero fields, all 4 Agenda rows, all 3 FAQ categories/11
+   items, both Speaker highight/bio lists, Venue/Parking fields, Contact
+   fields), edited the Contact phone number, saved, and confirmed the
+   public homepage's footer `tel:` link updated **immediately** with no
+   rebuild — then reverted the test edit back to the real number and
+   re-confirmed. Zero console errors, zero server errors in the dev log.
+   `npm run build`/`lint` clean.
+   **Still open, not part of this step**: the `CONTACT_EMAIL` constant
+   swap sitewide (flagged after step 4, unchanged), and whether client-side
+   validation should be added to the editor's phone/email fields (today it
+   accepts anything, same as the public registration form did before
+   [[BACKLOG.md]] item 15).
 
 ## Related docs
 

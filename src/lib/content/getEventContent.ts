@@ -15,6 +15,68 @@ export function contentTag(area: ContentArea, slug: string) {
   return `content:${area}:${slug}`;
 }
 
+/**
+ * Which `events` columns each area owns — used both to build each area's
+ * cached select below and, in the admin content editor, to whitelist what
+ * POST /api/admin/content is allowed to write per area (never a raw
+ * client-supplied column list).
+ */
+export const AREA_COLUMNS: Record<ContentArea, string[]> = {
+  hero: [
+    "title",
+    "hero_photo_url",
+    "hero_cta_text",
+    "hero_badge_text",
+    "hero_date_label",
+    "hero_time_label",
+    "hero_venue_label",
+  ],
+  agenda: ["agenda_json"],
+  speaker: ["speaker", "speaker_json"],
+  faq: ["faq_json"],
+  venue: ["venue_name", "venue_address", "venue_maps_embed_url", "parking_info"],
+  contact: ["contact_email", "contact_phone", "contact_whatsapp_number"],
+};
+
+export type RawContentRow = {
+  title: string;
+  speaker: string;
+  venue_name: string;
+  venue_address: string;
+  hero_photo_url: string | null;
+  hero_cta_text: string | null;
+  hero_badge_text: string | null;
+  hero_date_label: string | null;
+  hero_time_label: string | null;
+  hero_venue_label: string | null;
+  agenda_json: AgendaItem[];
+  speaker_json: { highlights: string[]; fullBio: string[]; photoUrl: string } | null;
+  faq_json: FaqCategory[];
+  venue_maps_embed_url: string | null;
+  parking_info: ParkingBullet[];
+  contact_email: string | null;
+  contact_phone: string | null;
+  contact_whatsapp_number: string | null;
+};
+
+/**
+ * Uncached, all-columns read for the admin content editor — an editor
+ * needs the true current value, never a stale cache entry, so this
+ * deliberately bypasses the per-area unstable_cache reads below.
+ */
+export async function getRawEventContent(
+  supabase: SupabaseClient,
+  slug: string
+): Promise<RawContentRow | null> {
+  const allColumns = Array.from(new Set(Object.values(AREA_COLUMNS).flat())).join(", ");
+  const { data } = await supabase
+    .from("events")
+    .select(allColumns)
+    .eq("slug", slug)
+    .single<RawContentRow>();
+  return data;
+}
+
 // 5-minute backstop only, per the design doc — not the primary
 // invalidation mechanism. The real trigger is revalidateTag(contentTag(...)),
 // called from POST /api/admin/revalidate-content after a content edit.

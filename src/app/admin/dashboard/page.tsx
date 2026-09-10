@@ -46,6 +46,12 @@ export default async function AdminDashboardPage() {
             />
           )}
           <AdminPaymentModeToggle initialMode={event?.payment_mode ?? "manual"} />
+          <a
+            href="/admin/content"
+            className="px-3 py-1 rounded text-sm border border-gray-300 bg-white hover:bg-gray-50"
+          >
+            Site content
+          </a>
           <AdminLogoutButton />
         </div>
       </div>
