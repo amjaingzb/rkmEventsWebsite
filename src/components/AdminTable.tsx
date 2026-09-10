@@ -156,6 +156,7 @@ export default function AdminTable() {
             <thead>
               <tr className="text-left border-b">
                 <th className="py-2 pr-4">Reg. No.</th>
+                <th className="py-2 pr-4">Reg. ID (registrant-facing)</th>
                 <th className="py-2 pr-4">Name</th>
                 <th className="py-2 pr-4">Contact</th>
                 <th className="py-2 pr-4">Attendees</th>
@@ -170,6 +171,9 @@ export default function AdminTable() {
               {visibleRows.map((r) => (
                 <tr key={r.id} className="border-b align-top">
                   <td className="py-2 pr-4">{r.registration_number ?? "—"}</td>
+                  <td className="py-2 pr-4 font-mono text-xs text-gray-500 break-all max-w-[10rem]">
+                    {r.id}
+                  </td>
                   <td className="py-2 pr-4">{r.full_name}</td>
                   <td className="py-2 pr-4">
                     {r.email}

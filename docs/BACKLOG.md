@@ -376,7 +376,18 @@ Not needed for the prototype demo; revisit once the site is past that stage.
     directly (see [[architecture.md]] Payment Module Boundary) — would need
     re-registering with the new URL.
 20. **Registration ID shown to registrants — question raised 2026-09-10,
-    not decided.** The confirmation page (`src/app/confirmation/[id]/page.tsx`)
+    not decided. Real-world support gap confirmed same day**: a registrant
+    reading their confirmation page's UUID over a phone call to the
+    admin/monk had no way to be located in the admin dashboard, because
+    the table only showed the separate, verification-time-only
+    `registration_number` ("Reg. No.", blank until verified) — never the
+    UUID itself. **Quick mitigation done**: `AdminTable.tsx` now has a
+    "Reg. ID (registrant-facing)" column showing the full `registrations.id`
+    (search already matched on it — `matchesSearch()` — it just wasn't
+    visible anywhere), so the exact thing a registrant reads out now has
+    a place to be visually confirmed against. Doesn't resolve the
+    underlying awkwardness of a 36-character UUID being read aloud over a
+    phone call — that's still this item's open question. The confirmation page (`src/app/confirmation/[id]/page.tsx`)
     displays the raw `registrations.id` UUID as "Registration ID," and the
     registration form's duplicate-detection error
     (`src/components/RegistrationForm.tsx`) also surfaces it
