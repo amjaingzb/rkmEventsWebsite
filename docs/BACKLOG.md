@@ -494,3 +494,27 @@ Not needed for the prototype demo; revisit once the site is past that stage.
     (`AdminContentEditor.tsx`) rather than left editable-but-misleading —
     changing either photo currently requires a direct Supabase table edit
     (by the project owner) until this is actually built.
+25. **Admin dashboard is unusable on a narrow/mobile screen — raised
+    2026-09-10, not fixed, deliberately deferred.** Project owner tried
+    the admin dashboard on a phone (separately from the public site, which
+    they confirmed renders well on mobile already) and found it "horrible"
+    — a real worry since whichever monk actually verifies registrations at
+    the Math may not have a large monitor either. Root cause confirmed by
+    reading the code, not just guessing: `AdminTable.tsx` renders one plain
+    `<table>` with 10 columns (Reg. No., Reg. ID, Name, Contact, Attendees,
+    Mode, Payment, Status, Received, Confirmed, Actions) inside a single
+    `overflow-x-auto` wrapper — no responsive breakpoint behavior at all,
+    it's a horizontal-scroll table at every viewport width. **This is not a
+    one-setting fix** — there's no viewport-meta or Tailwind-breakpoint
+    tweak that turns a wide data table into something usable at phone
+    width; it genuinely needs a responsive redesign, e.g. a card-per-row
+    layout below a breakpoint (`md:` table / stacked-card on mobile), or a
+    column-priority scheme that collapses less-critical columns first.
+    Explicitly not attempted the night before the 2026-09-11 demo — too
+    risky to redesign the admin table's layout that close to showtime.
+    **Next step when picked up**: decide the target device (the actual
+    verifying monk's screen — phone vs. a small laptop/tablet — changes the
+    design) before choosing card-vs-collapse, and account for the
+    now-tightened Actions-column buttons (see 2026-09-10 AdminTable.tsx
+    Verify/Reject/WhatsApp sizing pass) in whatever layout replaces the
+    table.

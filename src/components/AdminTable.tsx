@@ -248,20 +248,20 @@ export default function AdminTable() {
                       {r.verified_at ? new Date(r.verified_at).toLocaleString() : "—"}
                     </td>
                     <td className="py-2 pr-4">
-                      <div className="flex flex-col gap-1 items-start">
+                      <div className="flex flex-col gap-1.5 items-start w-32">
                         {gated && (
-                          <p className="text-xs text-amber-700 max-w-[11rem]">
+                          <p className="text-xs text-amber-700">
                             Awaiting PhonePe confirmation — manual override
                             available 1 hour after submission.
                           </p>
                         )}
 
                         {showVerifyReject && !isRejectingThisRow && (
-                          <>
+                          <div className="flex gap-1.5">
                             <button
                               onClick={() => runAction(r.id, "/api/admin/verify")}
                               disabled={busyId === r.id}
-                              className="bg-black text-white px-3 py-1 rounded disabled:opacity-50"
+                              className="text-xs font-medium bg-black text-white px-2.5 py-1 rounded-md disabled:opacity-50"
                             >
                               {busyId === r.id ? "Working..." : "Verify"}
                             </button>
@@ -271,11 +271,11 @@ export default function AdminTable() {
                                 setRejectReason("");
                               }}
                               disabled={busyId === r.id}
-                              className="text-red-600 border border-red-300 px-3 py-1 rounded disabled:opacity-50"
+                              className="text-xs font-medium text-red-600 border border-red-300 px-2.5 py-1 rounded-md disabled:opacity-50"
                             >
                               Reject
                             </button>
-                          </>
+                          </div>
                         )}
 
                         {showVerifyReject && isRejectingThisRow && (
@@ -285,14 +285,14 @@ export default function AdminTable() {
                               onChange={(e) => setRejectReason(e.target.value)}
                               placeholder="Reason (optional) — included in the rejection email"
                               rows={2}
-                              className="border rounded px-2 py-1 text-xs"
+                              className="border rounded-md px-2 py-1 text-xs"
                               autoFocus
                             />
-                            <div className="flex gap-1">
+                            <div className="flex gap-1.5">
                               <button
                                 onClick={() => submitReject(r.id)}
                                 disabled={busyId === r.id}
-                                className="text-red-600 border border-red-300 px-2 py-1 rounded text-xs disabled:opacity-50"
+                                className="text-xs font-medium text-red-600 border border-red-300 px-2.5 py-1 rounded-md disabled:opacity-50"
                               >
                                 {busyId === r.id ? "Working..." : "Confirm Reject"}
                               </button>
@@ -302,7 +302,7 @@ export default function AdminTable() {
                                   setRejectReason("");
                                 }}
                                 disabled={busyId === r.id}
-                                className="text-gray-600 border border-gray-300 px-2 py-1 rounded text-xs disabled:opacity-50"
+                                className="text-xs font-medium text-gray-600 border border-gray-300 px-2.5 py-1 rounded-md disabled:opacity-50"
                               >
                                 Cancel
                               </button>
@@ -314,42 +314,48 @@ export default function AdminTable() {
                           <button
                             onClick={() => confirmRejectedVerify(r)}
                             disabled={busyId === r.id}
-                            className="bg-black text-white px-3 py-1 rounded disabled:opacity-50"
+                            className="text-xs font-medium bg-black text-white px-2.5 py-1 rounded-md disabled:opacity-50"
                           >
                             {busyId === r.id ? "Working..." : "Verify"}
                           </button>
                         )}
 
-                        {showNotifyAgain && (
-                          <button
-                            onClick={() => runAction(r.id, "/api/admin/resend")}
-                            disabled={busyId === r.id}
-                            className="border border-gray-300 px-3 py-1 rounded disabled:opacity-50"
-                          >
-                            {busyId === r.id
-                              ? "Working..."
-                              : r.status === "verified"
-                                ? "Resend ticket"
-                                : "Send email"}
-                          </button>
-                        )}
+                        <div className="flex gap-1.5 items-center">
+                          {showNotifyAgain && (
+                            <button
+                              onClick={() => runAction(r.id, "/api/admin/resend")}
+                              disabled={busyId === r.id}
+                              className="text-xs font-medium text-gray-700 border border-gray-300 px-2.5 py-1 rounded-md disabled:opacity-50 whitespace-nowrap"
+                            >
+                              {busyId === r.id
+                                ? "Working..."
+                                : r.status === "verified"
+                                  ? "Resend ticket"
+                                  : "Send email"}
+                            </button>
+                          )}
 
-                        {!gated ? (
-                          <a
-                            href={whatsappLink(r, event)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-green-700 border border-green-300 px-3 py-1 rounded inline-flex items-center gap-1.5"
-                          >
-                            <WhatsAppIcon />
-                            WhatsApp
-                          </a>
-                        ) : (
-                          <span className="text-green-700/40 border border-green-300/40 px-3 py-1 rounded cursor-not-allowed inline-flex items-center gap-1.5">
-                            <WhatsAppIcon />
-                            WhatsApp
-                          </span>
-                        )}
+                          {!gated ? (
+                            <a
+                              href={whatsappLink(r, event)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              title="Message on WhatsApp"
+                              aria-label="Message on WhatsApp"
+                              className="shrink-0 text-green-700 border border-green-300 rounded-md w-7 h-7 inline-flex items-center justify-center hover:bg-green-50"
+                            >
+                              <WhatsAppIcon className="w-4 h-4" />
+                            </a>
+                          ) : (
+                            <span
+                              title="WhatsApp unavailable while PhonePe-gated"
+                              aria-label="WhatsApp unavailable while PhonePe-gated"
+                              className="shrink-0 text-green-700/40 border border-green-300/40 rounded-md w-7 h-7 inline-flex items-center justify-center cursor-not-allowed"
+                            >
+                              <WhatsAppIcon className="w-4 h-4" />
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </td>
                   </tr>
