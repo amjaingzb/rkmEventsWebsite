@@ -16,6 +16,15 @@ export function validateFullName(fullName: string): string | undefined {
   return undefined;
 }
 
+export function validatePaymentRefLast4(raw: string): string | undefined {
+  const value = raw.trim();
+  if (!value) return "Please enter the last 4 digits of your UPI Ref. No.";
+  if (!/^\d{4}$/.test(value)) {
+    return "Enter exactly 4 digits (from your UPI Ref. No. / UTR / RRN, not the Transaction ID).";
+  }
+  return undefined;
+}
+
 export function validatePhone(rawPhone: string): string | undefined {
   if (!rawPhone.trim()) return "Please enter your phone number.";
   const digits = normalizePhone(rawPhone);

@@ -394,3 +394,35 @@ Not needed for the prototype demo; revisit once the site is past that stage.
     one-line edit. If picked up: likely replace both with a reference to
     the registrant's own phone/email (already searchable in the admin
     dashboard), consistent with how the ticket email already does this.
+21. **UPI payment reference field — quick copy/format fix done
+    (2026-09-10), fuller fix deferred.** Real, ongoing pain point at the
+    Math in manual-verification mode: registrants routinely type the
+    wrong thing into the payment reference field — often their UPI app's
+    own alphanumeric "Transaction ID" instead of the 12-digit **Ref. No.
+    (also called UTR or RRN)** that the volunteer team actually needs to
+    match against the bank statement — or leave it garbled/missing
+    entirely, which then blocks manual verification. A real payment
+    gateway (PhonePe going live for real, not just sandbox) would remove
+    this pain point entirely, but that's blocked on a real merchant
+    account (see item 6), so there's no choice but to live with manual
+    mode for now. **Done same-session**: the field
+    (`RegistrationForm.tsx`) now explicitly asks for just the **last 4
+    digits** of the Ref. No./UTR/RRN (`maxLength=4`, numeric keypad on
+    mobile via `inputMode="numeric"`), with a short explanatory line
+    distinguishing it from the Transaction ID, and client-side validation
+    requiring exactly 4 digits
+    (`validatePaymentRefLast4` in `src/lib/registration/validation.ts`).
+    **Explicitly deferred, flagged by the project owner as more than
+    can be handled before today's demo**:
+    - No server-side enforcement that `payment_reference` is 4 digits —
+      `register_attendee`/`registerAttendee()` still accept anything.
+    - No guidance in the UPI payment instructions themselves
+      (`UpiPaymentInfo.tsx`) pointing at *where* on a UPI app's payment
+      success screen the Ref. No. actually appears (varies some by app —
+      GPay/PhonePe/Paytm all label it slightly differently).
+    - The admin dashboard still stores/displays whatever was typed,
+      un-normalized — worth deciding whether admin search/matching
+      should also expect just 4 digits, or the full reference.
+    - Same treatment not applied to the admin walk-in form's payment
+      note field (`AdminManualRegisterForm.tsx`) — different context
+      (cash-in-hand, not a UPI match), left as free text on purpose.

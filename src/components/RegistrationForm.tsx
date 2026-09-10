@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { computeAmountInr } from "@/lib/payment/pricing";
 import { MAX_ATTENDEES_PER_SUBMISSION } from "@/lib/registration/limits";
-import { validateFullName, validatePhone } from "@/lib/registration/validation";
+import { validateFullName, validatePhone, validatePaymentRefLast4 } from "@/lib/registration/validation";
 import FormInput from "./FormInput";
 import UpiPaymentInfo from "./UpiPaymentInfo";
 
@@ -41,8 +41,9 @@ export default function RegistrationForm({
     else if (!EMAIL_RE.test(email)) errors.email = "Please enter a valid email address.";
     const phoneError = validatePhone(phone);
     if (phoneError) errors.phone = phoneError;
-    if (!isPhonePe && !paymentReference) {
-      errors.paymentReference = "Please enter your payment reference / transaction ID.";
+    if (!isPhonePe) {
+      const refError = validatePaymentRefLast4(paymentReference);
+      if (refError) errors.paymentReference = refError;
     }
 
     return errors;
@@ -56,8 +57,8 @@ export default function RegistrationForm({
       if (!trimmed) message = "Please enter your email.";
       else if (!EMAIL_RE.test(trimmed)) message = "Please enter a valid email address.";
     } else if (name === "phone") message = validatePhone(value);
-    else if (name === "paymentReference" && !isPhonePe && !value.trim()) {
-      message = "Please enter your payment reference / transaction ID.";
+    else if (name === "paymentReference" && !isPhonePe) {
+      message = validatePaymentRefLast4(value);
     }
 
     setFieldErrors((prev) => {
@@ -196,18 +197,27 @@ export default function RegistrationForm({
           Registration fee: <strong className="text-maroon">₹{amountInr}</strong>
           {isPhonePe
             ? " — pay securely online below (any UPI app, card, or netbanking)."
-            : " — pay via UPI/bank transfer, then enter the transaction reference below."}
+            : " — pay via UPI/bank transfer, then enter your reference number below."}
         </p>
         {!isPhonePe && <UpiPaymentInfo amountInr={amountInr} />}
         {!isPhonePe && (
           <div>
             <FormInput
-              label="Payment reference / transaction ID"
+              label="Last 4 digits of UPI Ref. No. (UTR/RRN)"
               name="paymentReference"
+              inputMode="numeric"
+              pattern="[0-9]{4}"
+              maxLength={4}
+              placeholder="e.g. 4821"
               error={fieldErrors.paymentReference}
               onBlur={handleFieldBlur}
               onChange={handleFieldChange}
             />
+            <p className="text-xs text-ink/50 mt-1">
+              Check your UPI app&apos;s payment success screen for a 12-digit
+              <strong> Ref. No. / UTR / RRN</strong> — not the app&apos;s own
+              Transaction ID. Enter just its last 4 digits.
+            </p>
             <p className="text-xs text-ink/50 mt-1">
               Your seat will show as <em>pending</em> until an organizer
               manually verifies the payment.
