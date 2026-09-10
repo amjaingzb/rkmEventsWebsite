@@ -518,3 +518,34 @@ Not needed for the prototype demo; revisit once the site is past that stage.
     now-tightened Actions-column buttons (see 2026-09-10 AdminTable.tsx
     Verify/Reject/WhatsApp sizing pass) in whatever layout replaces the
     table.
+26. **`registration_mode` race condition when `payment_mode` is toggled
+    mid-submission — found via real mobile testing 2026-09-10, not fixed.**
+    Confirmed mechanism by reading `registerAttendee()`
+    (`src/lib/registration/register.ts`): `registrationMode` is derived
+    from the event's **current** `payment_mode` at the moment the RPC
+    insert happens, not from whatever the client's form was actually
+    rendering when the registrant loaded the page. Reproduced live: a
+    registrant had the manual-payment form open (with the UPI QR/reference
+    field), the project owner flipped the dashboard's payment-mode toggle
+    to `phonepe_sandbox` while that tab sat open and unrefreshed, the
+    registrant then submitted their manual UTR reference as normal. The
+    row landed correctly in the DB with that payment reference, but
+    stamped `registration_mode: phonepe` — which wrongly triggers the
+    PhonePe gate (`src/lib/registration/phonepeGate.ts`) and blocks
+    Verify/Reject in the admin table for the row's first hour, even though
+    a legitimate manual payment reference is sitting right there and the
+    registrant never touched PhonePe checkout at all. Self-heals after the
+    1-hour manual-override window and causes no data loss — bounded, not
+    urgent — but a real correctness gap in a shared piece of global state
+    (`events.payment_mode`) being read at two different times (page load
+    vs. submit) without any consistency guard between them. Not attempted
+    the night before the demo. **Practical mitigation until a real fix**:
+    avoid toggling `payment_mode` while registrants may have the form open
+    (i.e., only change it during a lull, not mid-traffic) — project
+    owner's own suggestion. **Possible real fixes to weigh when picked
+    up**: have the client submit the payment mode it actually rendered
+    (trusting client input needs its own scrutiny), or snapshot
+    `payment_mode` server-side at a point the client can't have raced past
+    (e.g. reject the submission outright if it disagrees with what the
+    client's page believed, forcing a reload instead of silently
+    mis-tagging the row).

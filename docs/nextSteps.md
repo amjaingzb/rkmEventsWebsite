@@ -130,9 +130,19 @@ updated: 2026-09-10
 > the 2026-09-09 reseed, using the [[dev-accounts.md]] test-customer
 > identities): **Ruchi Jain** (Reg. No. 1, verified, ticket sent),
 > **Sai Ram** (Reg. No. 3, 2 attendees, verified, ticket sent), **Lakshmi
-> Iyer** (`ruchisai197518+lakshmi@gmail.com`, pending) — final state
-> confirmed directly against Supabase: `seats_taken: 3`,
+> Iyer** (`ruchisai197518+lakshmi@gmail.com`, pending) — this intermediate
+> state confirmed directly against Supabase: `seats_taken: 3`,
 > `guaranteed_seat_cap: 500`, `payment_mode: manual`.
+>
+> **Superseded later the same day** — after the mobile PhonePe testing
+> pass added more test rows (`test.phonepe.failure`, `testB.phonepe.failure`,
+> `phonepe.expiry.userB`), the project owner ran a full
+> `reset_event_registrations` wipe again rather than a targeted delete,
+> clearing those 3 demo rows too. **Confirmed intentional** — the project
+> owner wants to run the actual demo from a genuinely empty registrations
+> table, not reseeded. Final pre-demo state confirmed directly against
+> Supabase: 0 registrations, `seats_taken: 0`, `guaranteed_seat_cap: 500`,
+> `payment_mode: manual`.
 
 > [!warning] Demo postponed to tomorrow (2026-09-11) — ~10 hrs of runway left, cutoff 7 PM today (2026-09-10)
 > Originally leaving for the demo within 1-2 hours (see the triage below,
@@ -415,6 +425,26 @@ updated: 2026-09-10
 >   submission time. Test rows wiped via `reset_event_registrations`,
 >   `EVENT_SLUG` switched back to `halasuru-sarvapriyananda-2026`, dev
 >   server restarted.
+
+> [!warning] CORRECTED 2026-09-10: no production deploy for tomorrow's demo — `demo--` draft only
+> Superseded by the entry below — **production deploy is now explicitly
+> off the table for the 2026-09-11 demo**, not just deferred. Reason: the
+> PhonePe sandbox webhook is registered in the PhonePe dashboard against
+> the `demo--` draft alias's URL specifically
+> (`https://demo--rkm-halasuru-registration.netlify.app/api/phonepe/webhook`),
+> confirmed working end-to-end there (see "Recently completed" 2026-09-10,
+> PhonePe auto-reject test). A production deploy would serve from a
+> different URL whose webhook was never registered with PhonePe, silently
+> breaking the auto-verify/auto-reject flow on the URL actually being
+> demoed. **The project owner will run the demo directly from
+> `https://demo--rkm-halasuru-registration.netlify.app`.** If/when the
+> project ever does move to production for real, the PhonePe webhook URL
+> in the PhonePe Business Dashboard must be updated to the production URL
+> first — see [[BACKLOG.md]] item 6.
+>
+> Original entry below, now historical — production deploys still cost
+> Netlify credits and still shouldn't happen proactively, but the *demo*
+> specifically will never use one:
 
 > [!warning] Production deploy gate before the demo — confirmed 2026-09-09
 > A production Netlify deploy (`netlify deploy --build --prod`) is a

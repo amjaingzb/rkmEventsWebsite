@@ -92,11 +92,14 @@ When a deploy IS requested:
 |------|--------|------|-----|
 | 2026-09-08 | `25fdd96` "Switch hosting plan from Vercel to Netlify, document why" | production | https://rkm-halasuru-registration.netlify.app |
 
-Note: commits after `25fdd96` (doc-only changes) are **not yet reflected**
-in the live production deploy — they don't affect app behavior since
-`docs/` isn't part of the build, but if any future commit touches actual
-app code, remember production is pinned to `25fdd96` until the next
-explicitly-requested `--prod` deploy.
+Note: production is pinned to `25fdd96` and stays that way through the
+2026-09-11 demo — see [[nextSteps.md]] "CORRECTED 2026-09-10: no
+production deploy for tomorrow's demo". The PhonePe sandbox webhook is
+registered against the `demo--` draft alias's URL specifically, so the
+demo runs from `https://demo--rkm-halasuru-registration.netlify.app`, not
+production. A production deploy only makes sense once the PhonePe webhook
+URL is updated in the PhonePe Business Dashboard to match (see
+[[BACKLOG.md]] item 6).
 
 ## Per-context env vars (NEXT_PUBLIC_APP_MODE)
 
