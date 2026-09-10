@@ -375,3 +375,22 @@ Not needed for the prototype demo; revisit once the site is past that stage.
     webhook URL was ever registered against the old `.netlify.app` URL
     directly (see [[architecture.md]] Payment Module Boundary) — would need
     re-registering with the new URL.
+20. **Registration ID shown to registrants — question raised 2026-09-10,
+    not decided.** The confirmation page (`src/app/confirmation/[id]/page.tsx`)
+    displays the raw `registrations.id` UUID as "Registration ID," and the
+    registration form's duplicate-detection error
+    (`src/components/RegistrationForm.tsx`) also surfaces it
+    ("You already have a registration (ID ...)"). Project owner questioned
+    this: doesn't sit well with the earlier decision (see
+    [[registration-integrity.md]] and the 2026-09-09 `seat_number` →
+    `registration_number` rename) to drop the small human-friendly
+    registration/seat number from registrant-facing surfaces in favor of
+    phone number as the reference — yet this raw internal UUID, which is
+    arguably *more* opaque and less useful to a registrant than that
+    number ever was, is still shown. Explicitly flagged as **not
+    critical, only worth doing if it's not a major change** — deferred
+    rather than fixed same-session because it touches messaging in at
+    least two places (confirmation page + duplicate-check error), not a
+    one-line edit. If picked up: likely replace both with a reference to
+    the registrant's own phone/email (already searchable in the admin
+    dashboard), consistent with how the ticket email already does this.
