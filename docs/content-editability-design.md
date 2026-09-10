@@ -397,11 +397,45 @@ bucket + upload path to the shape-design step below; not yet designed.
    rebuild — then reverted the test edit back to the real number and
    re-confirmed. Zero console errors, zero server errors in the dev log.
    `npm run build`/`lint` clean.
-   **Still open, not part of this step**: the `CONTACT_EMAIL` constant
-   swap sitewide (flagged after step 4, unchanged), and whether client-side
-   validation should be added to the editor's phone/email fields (today it
-   accepts anything, same as the public registration form did before
+   **Still open, not part of this step**: whether client-side validation
+   should be added to the editor's phone/email fields (today it accepts
+   anything, same as the public registration form did before
    [[BACKLOG.md]] item 15).
+
+7. ~~**Finish the `CONTACT_EMAIL` swap sitewide**~~ — **done (2026-09-10)**,
+   same session, right after step 6 (flagged as a gap, then fixed
+   immediately once raised — no real reason to leave it split). The
+   `CONTACT_EMAIL` constant (`src/lib/contact.ts`) only ever fed Footer
+   directly after step 4; the other 5 usage sites still imported the
+   hardcoded constant, so editing Contact settings in `/admin/content`
+   silently had **no effect** on them — exactly the drift risk this area
+   was created to prevent, not actually closed until now.
+   - `getStatusMessage(status, contactEmail)` (`src/lib/registration/
+     statusMessages.ts`) replaces the old plain `STATUS_MESSAGE` map —
+     `rejected`'s copy now takes the contact email as a parameter instead
+     of baking in the constant at module load.
+   - `sendTicketEmail`/`sendStatusEmail` (`src/lib/ticket/email.ts`) take
+     `contactEmail` as an input field; `issue.ts` fetches it from the
+     `events` join (`REG_WITH_EVENT_SELECT` now includes `contact_email`)
+     and threads it through, including into the WhatsApp-message-matching
+     status email.
+   - `GET /api/admin/registrations` now also returns `contact_email` on
+     the event object so `AdminTable.tsx`'s WhatsApp deep link (client
+     component, can't call the DB directly) uses the same DB-backed value.
+   - `EoiForm`/`RegistrationForm` now take `contactEmail` as a prop from
+     `page.tsx` (`content.contactEmail`) instead of importing the constant.
+   - The confirmation page (`src/app/confirmation/[id]/page.tsx`) now
+     selects `events(payment_mode, contact_email)` in its existing query
+     (no second round trip) and uses that instead of the constant.
+   - `src/lib/contact.ts` deleted — nothing imports it anymore, per the
+     project's no-backward-compat-shims convention.
+   - `npm run build`/`lint` clean; verified live (dev server) that the
+     homepage, confirmation page, and admin dashboard all still render
+     correctly with the DB-backed email.
+   **Result**: editing the email in `/admin/content` → Contact now
+   genuinely updates every surface that shows it — footer, ticket/status
+   emails, the admin WhatsApp deep link, the public form's error copy, and
+   the confirmation page — with one save, live immediately, no deploy.
 
 ## Related docs
 

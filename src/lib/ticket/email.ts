@@ -1,6 +1,5 @@
 import { Resend } from "resend";
 import { buildQrBuffer } from "./qr";
-import { CONTACT_EMAIL } from "@/lib/contact";
 
 interface TicketEmailInput {
   toEmail: string;
@@ -16,6 +15,7 @@ interface TicketEmailInput {
   numAttendees: number;
   paymentAmount: number | null;
   verifiedAt: string;
+  contactEmail: string;
 }
 
 export async function sendTicketEmail(input: TicketEmailInput) {
@@ -50,7 +50,7 @@ export async function sendTicketEmail(input: TicketEmailInput) {
       </p>
       <img src="cid:${qrContentId}" alt="Ticket QR code" width="220" height="220" />
       <p style="color: #666; font-size: 13px; margin-top: 24px;">
-        Need help? Contact us at ${CONTACT_EMAIL}
+        Need help? Contact us at ${input.contactEmail}
       </p>
     </div>
   `;
@@ -84,13 +84,14 @@ interface StatusEmailInput {
   eventDate: string;
   regId: string;
   message: string;
+  contactEmail: string;
 }
 
 /**
  * A plain status-update email (no QR/ticket) for admin "resend" on a
  * registration that was never issued a ticket — pending/waitlisted/rejected.
  * Carries the same event-date + registration-ID detail as the WhatsApp
- * status message (STATUS_MESSAGE) so the two channels don't drift apart in
+ * status message (getStatusMessage) so the two channels don't drift apart in
  * how much context they give the recipient.
  */
 export async function sendStatusEmail(input: StatusEmailInput) {
@@ -112,7 +113,7 @@ export async function sendStatusEmail(input: StatusEmailInput) {
         <strong>Registration ID:</strong> ${input.regId}
       </p>
       <p style="color: #666; font-size: 13px; margin-top: 24px;">
-        Need help? Contact us at ${CONTACT_EMAIL}
+        Need help? Contact us at ${input.contactEmail}
       </p>
     </div>
   `;

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import AdminManualRegisterForm from "./AdminManualRegisterForm";
-import { STATUS_MESSAGE, type RegistrationStatus } from "@/lib/registration/statusMessages";
+import { getStatusMessage, type RegistrationStatus } from "@/lib/registration/statusMessages";
 import { normalizePhone } from "@/lib/phone";
 
 type Status = RegistrationStatus;
@@ -25,6 +25,7 @@ interface Registration {
 interface EventInfo {
   title: string;
   event_date: string;
+  contact_email: string | null;
 }
 
 const TABS: { label: string; value: Status | "all" }[] = [
@@ -39,7 +40,7 @@ function whatsappLink(r: Registration, event: EventInfo | null): string {
   const context = event
     ? `regarding your registration for ${event.title} on ${new Date(event.event_date).toLocaleDateString("en-IN", { dateStyle: "medium" })}: `
     : "regarding your registration: ";
-  const message = `Hi ${r.full_name}, ${context}${STATUS_MESSAGE[r.status]}`;
+  const message = `Hi ${r.full_name}, ${context}${getStatusMessage(r.status, event?.contact_email ?? "")}`;
   return `https://wa.me/${normalizePhone(r.phone)}?text=${encodeURIComponent(message)}`;
 }
 

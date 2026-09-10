@@ -1,10 +1,10 @@
 import { createServiceClient } from "@/lib/supabase/server";
 import { sendTicketEmail, sendStatusEmail } from "./email";
 import type { PaymentVerificationResult } from "@/lib/payment/types";
-import { STATUS_MESSAGE, type RegistrationStatus } from "@/lib/registration/statusMessages";
+import { getStatusMessage, type RegistrationStatus } from "@/lib/registration/statusMessages";
 
 const REG_WITH_EVENT_SELECT =
-  "*, events(slug, title, event_date, start_time, end_time, venue_name, payment_mode)";
+  "*, events(slug, title, event_date, start_time, end_time, venue_name, payment_mode, contact_email)";
 
 const MANUAL_SLA_NOTE =
   "Manual verification can take up to 5 days. If you haven't heard back " +
@@ -26,6 +26,7 @@ interface RegistrationWithEvent {
     end_time: string;
     venue_name: string;
     payment_mode: string;
+    contact_email: string | null;
   };
 }
 
@@ -45,6 +46,7 @@ function toTicketEmailInput(reg: RegistrationWithEvent) {
     paymentAmount: reg.payment_amount,
     // Only called with rows that have already been verified, so this is set.
     verifiedAt: reg.verified_at!,
+    contactEmail: reg.events.contact_email ?? "",
   };
 }
 
@@ -159,7 +161,8 @@ export async function sendStatusUpdateEmail(registrationId: string) {
 
   const r = reg as unknown as RegistrationWithEvent & { status: RegistrationStatus };
 
-  let message = STATUS_MESSAGE[r.status];
+  const contactEmail = r.events.contact_email ?? "";
+  let message = getStatusMessage(r.status, contactEmail);
   if (r.status === "pending" && r.events.payment_mode === "manual") {
     message = `${message} ${MANUAL_SLA_NOTE}`;
   }
@@ -171,6 +174,7 @@ export async function sendStatusUpdateEmail(registrationId: string) {
     eventDate: r.events.event_date,
     regId: r.id,
     message,
+    contactEmail,
   });
 
   return { ok: true as const };

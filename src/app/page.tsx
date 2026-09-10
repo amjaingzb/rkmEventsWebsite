@@ -94,9 +94,11 @@ export default async function HomePage() {
                   }
                 />
               )}
-              {registrationState === "full-eoi" && <EoiForm />}
+              {registrationState === "full-eoi" && (
+                <EoiForm contactEmail={content.contactEmail} />
+              )}
               {registrationState === "open" && (
-                <RegistrationForm paymentMode={paymentMode} />
+                <RegistrationForm paymentMode={paymentMode} contactEmail={content.contactEmail} />
               )}
             </div>
           </div>

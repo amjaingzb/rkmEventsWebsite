@@ -58,12 +58,20 @@ updated: 2026-09-10
 > public homepage's footer instantly with zero console/server errors, then
 > was reverted and re-confirmed. `npm run build`/`lint` clean throughout.
 >
+> **`CONTACT_EMAIL` constant fully retired (2026-09-10, same session)** —
+> initially left split after step 4 (only Footer read the DB value, 5
+> other places still imported the hardcoded constant, so editing Contact
+> settings silently had no effect on them). Raised and fixed immediately:
+> `getStatusMessage()` replaces the old `STATUS_MESSAGE` map,
+> `sendTicketEmail`/`sendStatusEmail` take `contactEmail` as an input,
+> `issue.ts` threads it from the `events` join, `GET
+> /api/admin/registrations` returns it for the admin WhatsApp deep link,
+> `EoiForm`/`RegistrationForm` take it as a prop, and the confirmation page
+> selects it in its existing query. `src/lib/contact.ts` deleted — nothing
+> imports it anymore. One save in `/admin/content` → Contact now updates
+> every surface that shows it. Build/lint clean, verified live.
+>
 > **Not done, explicitly out of scope for this pass**:
-> - The `CONTACT_EMAIL` constant (`src/lib/contact.ts`) is still used
->   as-is in 5 places outside the homepage Footer (email templates,
->   EoiForm, RegistrationForm, confirmation page) — only the Footer reads
->   the new DB-backed contact settings so far. A separate, larger
->   follow-up to swap it sitewide.
 > - Hero/speaker photo URLs still point at the existing `public/images/`
 >   paths — the Supabase Storage bucket decided on for photo hosting is
 >   separate infra, not yet created.

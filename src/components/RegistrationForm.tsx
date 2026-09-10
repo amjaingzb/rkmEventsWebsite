@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { CONTACT_EMAIL } from "@/lib/contact";
 import { computeAmountInr } from "@/lib/payment/pricing";
 import { MAX_ATTENDEES_PER_SUBMISSION } from "@/lib/registration/limits";
 import FormInput from "./FormInput";
@@ -12,7 +11,13 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 type FieldErrors = Partial<Record<"fullName" | "email" | "phone" | "paymentReference", string>>;
 
-export default function RegistrationForm({ paymentMode }: { paymentMode: string }) {
+export default function RegistrationForm({
+  paymentMode,
+  contactEmail,
+}: {
+  paymentMode: string;
+  contactEmail: string;
+}) {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -72,14 +77,14 @@ export default function RegistrationForm({ paymentMode }: { paymentMode: string 
       if (data.duplicate) {
         setError(
           `You already have a registration (ID ${data.existingRegistrationId}). ` +
-            `Contact us at ${CONTACT_EMAIL} if you need to change it.`
+            `Contact us at ${contactEmail} if you need to change it.`
         );
         return;
       }
       setError(
         data.error
-          ? `${data.error} If this continues, contact us at ${CONTACT_EMAIL}.`
-          : `Something went wrong. Please try again, or contact us at ${CONTACT_EMAIL} if this continues.`
+          ? `${data.error} If this continues, contact us at ${contactEmail}.`
+          : `Something went wrong. Please try again, or contact us at ${contactEmail} if this continues.`
       );
       return;
     }
@@ -95,7 +100,7 @@ export default function RegistrationForm({ paymentMode }: { paymentMode: string 
       if (!initRes.ok || !initData.redirectUrl) {
         setSubmitting(false);
         setError(
-          `Registered, but couldn't start PhonePe checkout. Contact us at ${CONTACT_EMAIL} with registration ID ${data.id}.`
+          `Registered, but couldn't start PhonePe checkout. Contact us at ${contactEmail} with registration ID ${data.id}.`
         );
         return;
       }

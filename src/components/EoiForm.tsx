@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { CONTACT_EMAIL } from "@/lib/contact";
 import { MAX_ATTENDEES_PER_SUBMISSION } from "@/lib/registration/limits";
 import FormInput from "./FormInput";
 
@@ -15,7 +14,7 @@ type FieldErrors = Partial<Record<"fullName" | "email" | "phone", string>>;
  * shown once guaranteed seats are full: same name/email/phone as
  * RegistrationForm, no payment section, always lands `waitlisted`.
  */
-export default function EoiForm() {
+export default function EoiForm({ contactEmail }: { contactEmail: string }) {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -67,8 +66,8 @@ export default function EoiForm() {
       setSubmitting(false);
       setError(
         data.error
-          ? `${data.error} If this continues, contact us at ${CONTACT_EMAIL}.`
-          : `Something went wrong. Please try again, or contact us at ${CONTACT_EMAIL} if this continues.`
+          ? `${data.error} If this continues, contact us at ${contactEmail}.`
+          : `Something went wrong. Please try again, or contact us at ${contactEmail} if this continues.`
       );
       return;
     }
@@ -90,7 +89,7 @@ export default function EoiForm() {
           Thanks — your interest has been recorded. Note: this email/phone
           already has an existing registration (ID {submitted.duplicateOf}),
           so if this was meant to update that one instead, contact us at{" "}
-          {CONTACT_EMAIL}.
+          {contactEmail}.
         </p>
         <button
           onClick={() => router.push(`/confirmation/${submitted.id}`)}

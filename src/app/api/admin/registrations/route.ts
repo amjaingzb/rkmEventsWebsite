@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
 
   const { data: event, error: eventError } = await supabase
     .from("events")
-    .select("id, title, event_date, payment_mode")
+    .select("id, title, event_date, payment_mode, contact_email")
     .eq("slug", EVENT_SLUG)
     .single();
 
