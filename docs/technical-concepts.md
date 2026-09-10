@@ -110,3 +110,29 @@ Nobody will ever send a normal email *to* `send.rkmhalasuru.simplicie.com`, and 
 Neither server ever talks to the other directly — Supabase is the shared source of truth both read/write. That's also why registration/payment testing has worked seamlessly switching between local and Netlify all session: it's always been the same underlying database underneath, regardless of which server happened to handle a given request.
 
 **One-line rule:** a webhook needs a public URL because it's the *internet* (PhonePe's servers) calling in — but once that call lands anywhere and updates the shared database, every other server reading from that same database sees the result, local dev included.
+
+---
+
+## Q: If we let a monk edit the FAQ/agenda directly, won't every site visit have to re-read the database — isn't that expensive on a free tier?
+
+`#caching #supabase #netlify #content`
+
+**Short answer: no — the full design lives in its own doc now,
+[[content-editability-design.md]], because it grew into a real
+architecture discussion. This entry is just a pointer + the one-line
+takeaway.**
+
+The key idea: content gets read from the database only **at the moment
+someone edits it, or once right after** — not on every visitor's page
+load. In between edits, the site serves a cached copy for free (0 DB
+reads), no matter how many people are browsing. This works via Next.js's
+tag-based cache invalidation (`revalidateTag`), confirmed fully supported
+on Netlify and cheap relative to a production deploy (see the linked doc
+for the full cost table and the Netlify docs quoted verbatim). A 5-minute
+safety-net window exists too, but it's not a running timer costing
+anything — it's a lazy check only evaluated if a visitor happens to show
+up during that window.
+
+See [[content-editability-design.md]] for the full architecture, the
+rejected alternative (a `whatChanged` polling flag) and why, the complete
+cost model, and red flags to resolve before implementing.

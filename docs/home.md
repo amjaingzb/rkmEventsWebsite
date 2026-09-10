@@ -26,6 +26,10 @@ updated: 2026-09-08
   duplicate-registration detection, per-submission ticket cap, moving the
   seat-cap claim to verification time, the Open/Full-EOI/Paused public
   states, and the `seat_number` rename
+- [[content-editability-design.md]] — finalized (not-yet-built) design for
+  editing FAQ/Agenda/Speaker/Hero copy without a code deploy per change:
+  DB-backed content, tag-based cache invalidation, cost model, and red
+  flags to check before implementing
 - [[netlify.md]] — hosting: credit system, safe-deploy workflow, restrictions
   to keep in mind
 - [[technical-concepts.md]] — plain-language Q&A log for the project owner's
