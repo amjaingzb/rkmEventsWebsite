@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { MAX_ATTENDEES_PER_SUBMISSION } from "@/lib/registration/limits";
+import { validateFullName, validatePhone } from "@/lib/registration/validation";
 import FormInput from "./FormInput";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -28,10 +29,12 @@ export default function EoiForm({ contactEmail }: { contactEmail: string }) {
     const email = String(form.get("email") ?? "").trim();
     const phone = String(form.get("phone") ?? "").trim();
 
-    if (!fullName) errors.fullName = "Please enter your full name.";
+    const fullNameError = validateFullName(fullName);
+    if (fullNameError) errors.fullName = fullNameError;
     if (!email) errors.email = "Please enter your email.";
     else if (!EMAIL_RE.test(email)) errors.email = "Please enter a valid email address.";
-    if (!phone) errors.phone = "Please enter your phone number.";
+    const phoneError = validatePhone(phone);
+    if (phoneError) errors.phone = phoneError;
 
     return errors;
   }

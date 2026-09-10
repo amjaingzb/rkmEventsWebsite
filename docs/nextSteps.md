@@ -15,18 +15,52 @@ updated: 2026-09-10
 
 ## Next action
 
-> [!warning] Highest priority — deploy to production before tomorrow's demo (2026-09-10)
-> Project owner has a demo tomorrow (2026-09-11) and needs the current code
-> live on the real production site, then tested there, before then. This
-> supersedes everything else in this file until done. Per the deploy-gate
-> note further down and [[netlify.md]], a production deploy
-> (`netlify deploy --build --prod`) costs Netlify credits and was
-> deliberately being held back until local work froze for the demo — that
-> trigger has now arrived. Steps: (1) confirm local `main` is in the state
-> wanted for the demo (all of today's commits: UI redesign, hero/logo/
-> favicon assets, `.next` cache-corruption fix), (2) run the production
-> deploy, (3) smoke-test the live site (registration flow, admin verify,
-> ticket email) before the demo, not just locally.
+> [!warning] Highest priority — demo is today (2026-09-10), leaving in 1-2 hours
+> Backlog triage done this session (11 open BACKLOG.md items + nextSteps
+> to-dos reviewed against actual code, not just doc text). Decided order
+> for the remaining time, most urgent first:
+> 1. ~~**BACKLOG.md item 15** — client-side form validation~~ — **done, this
+>    session.** `src/lib/registration/validation.ts` (new) adds
+>    `validateFullName` (rejects digits) and `validatePhone` (strips an
+>    optional `+91`/`91` prefix, requires exactly 10 digits), wired into
+>    both `RegistrationForm.tsx` and `EoiForm.tsx`. **Not** done for the
+>    admin walk-in form (`AdminManualRegisterForm.tsx`) — skipped for time,
+>    internal-only so lower risk. Verified live via chrome-devtools: a
+>    name with digits and a 5-digit phone are now correctly blocked with
+>    inline errors; a `+91 98765 43210` phone normalizes and submits
+>    correctly. `npm run build` clean. **Caveat**: the first live test run
+>    (before a dev-server restart picked up the change — known
+>    build-while-dev-running stale-cache gotcha) let one bad row through
+>    before the fix was actually live in the browser — see the cleanup
+>    note below.
+> 2. **BACKLOG.md item 17 (hierarchical admin roles) — considered and
+>    explicitly deferred, not attempted today.** Discussed with the project
+>    owner: this touches the auth/authorization boundary
+>    (`requireAdminSession()`, every admin route) and was already flagged
+>    as needing its own design discussion, not a same-day change this close
+>    to a demo. Status unchanged from BACKLOG.md item 17 — still just a
+>    confirmed-additive direction, nothing built.
+> 3. **Local test pass** — not yet done this session, do next.
+> 4. **Production deploy** (`netlify deploy --build --prod`, not a draft)
+>    — do after the local test pass confirms things work. Per the
+>    deploy-gate note further down and [[netlify.md]], this costs Netlify
+>    credits and was deliberately held back until local work froze for the
+>    demo — that trigger has now arrived. Steps: (1) confirm local `main`
+>    is in the state wanted for the demo (today's commits, once made:
+>    validation fix, plus yesterday's UI redesign/hero/logo/favicon
+>    assets, `.next` cache-corruption fix), (2) run the production deploy,
+>    (3) smoke-test the live site (registration flow, admin verify, ticket
+>    email) before the demo, not just locally.
+>
+> **Cleanup needed, not done (blocked by the session's safety classifier,
+> same pattern as before — see "2026-09-09 demo-data cleanup" below)**:
+> two throwaway rows landed in the real `halasuru-sarvapriyananda-2026`
+> event while manually testing the item-15 fix above — "John Doe123" /
+> phone `12345` (created by the pre-fix code, before a dev-server restart)
+> and "Test User Demo" / phone `+91 98765 43210` (post-fix, valid). Both
+> `pending`, no seat claimed, harmless, but should be rejected/deleted
+> before the demo so the admin dashboard doesn't show them to the project
+> owner mid-demo.
 
 > [!note] Content-editability: all 6 implementation-plan steps done
 > > (2026-09-10)

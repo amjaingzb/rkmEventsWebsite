@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { computeAmountInr } from "@/lib/payment/pricing";
 import { MAX_ATTENDEES_PER_SUBMISSION } from "@/lib/registration/limits";
+import { validateFullName, validatePhone } from "@/lib/registration/validation";
 import FormInput from "./FormInput";
 import UpiPaymentInfo from "./UpiPaymentInfo";
 
@@ -34,10 +35,12 @@ export default function RegistrationForm({
     const phone = String(form.get("phone") ?? "").trim();
     const paymentReference = String(form.get("paymentReference") ?? "").trim();
 
-    if (!fullName) errors.fullName = "Please enter your full name.";
+    const fullNameError = validateFullName(fullName);
+    if (fullNameError) errors.fullName = fullNameError;
     if (!email) errors.email = "Please enter your email.";
     else if (!EMAIL_RE.test(email)) errors.email = "Please enter a valid email address.";
-    if (!phone) errors.phone = "Please enter your phone number.";
+    const phoneError = validatePhone(phone);
+    if (phoneError) errors.phone = phoneError;
     if (!isPhonePe && !paymentReference) {
       errors.paymentReference = "Please enter your payment reference / transaction ID.";
     }
