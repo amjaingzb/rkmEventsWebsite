@@ -437,3 +437,27 @@ Not needed for the prototype demo; revisit once the site is past that stage.
     - Same treatment not applied to the admin walk-in form's payment
       note field (`AdminManualRegisterForm.tsx`) — different context
       (cash-in-hand, not a UPI match), left as free text on purpose.
+22. **Admin dashboard tab-switch latency — investigated 2026-09-10,
+    confirmed not a bug at today's row counts, but a real gap for later.**
+    Project owner noticed tab clicks feeling slow on the deployed draft
+    site but fast locally. Diagnosis: every tab click does a fully
+    uncached round trip — `requireAdminSession()` (a real Supabase Auth
+    API call, not a cheap local cookie decode) → a separate `events`
+    lookup → the `registrations` query, all serial
+    (`src/app/api/admin/registrations/route.ts`,
+    `src/components/AdminTable.tsx`'s `load()`). At 3-4 rows this is
+    consistent with Netlify serverless cold starts on the low-traffic
+    `demo--` draft alias, not a data-volume problem — local `next dev`
+    has no cold start, which is why it feels different there running the
+    identical code path.
+    **The real risk found**: there is **no pagination at all** — no
+    `LIMIT`/`range()` on the registrations query, so every tab click
+    fetches and renders the *entire* matching result set. Harmless today,
+    will matter once the event has hundreds+ of real registrations.
+    Also noted, smaller and currently harmless: the `events` row is
+    redundantly re-fetched on every single tab click even though it never
+    changes mid-session, and `load()` has no `AbortController`/race guard
+    for rapid tab switching (an earlier response could resolve after a
+    later one and overwrite it with stale data). Deliberately not fixed
+    now — project owner decided to log rather than rush a fix pre-demo;
+    revisit with real pagination once registration volume grows.

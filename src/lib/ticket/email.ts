@@ -85,6 +85,9 @@ interface StatusEmailInput {
   regId: string;
   message: string;
   contactEmail: string;
+  /** Same headline shown on the confirmation page (getStatusTitle) — kept
+   * as the subject so the page and the email can't say different things. */
+  subject: string;
 }
 
 /**
@@ -121,7 +124,7 @@ export async function sendStatusEmail(input: StatusEmailInput) {
   const { error } = await resend.emails.send({
     from: fromEmail,
     to: input.toEmail,
-    subject: `Update on your registration: ${input.eventTitle}`,
+    subject: `${input.subject}: ${input.eventTitle}`,
     html,
   });
 

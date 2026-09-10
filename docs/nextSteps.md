@@ -15,6 +15,88 @@ updated: 2026-09-10
 
 ## Next action
 
+> [!warning] Admin dashboard action redesign built (2026-09-10) — migration 0014 needs to be run before testing
+> A long collaborative design pass (plan mode, `few-more-points-here-wondrous-candle.md`)
+> reworked the admin dashboard's Verify/Reject/Notify buttons end to end,
+> triggered by a real gap: rejecting someone was a one-way door with no
+> way back, and no automatic notification. Built and committed, but
+> **migration `0014_reinstate_and_reject_reason.sql` has not been run
+> against the live Supabase project yet** — run it in the SQL editor
+> before testing any of this (same pattern as every prior migration this
+> project). What it adds: `reinstated_by`/`reinstated_at`,
+> `rejection_reason`, `registration_mode` columns; a new
+> `reinstate_registration()` RPC; extends `reject_registration()` and
+> `register_attendee()` (both re-created with `drop function if exists`
+> first, since Postgres treats a changed parameter list as a different
+> function — adding a param via plain `create or replace` would have
+> silently left the old signature callable too).
+>
+> **What changed, tab by tab**:
+> - **Pending**: Verify/Reject unchanged for manual-mode rows. Reject now
+>   opens a small inline reason field (not a native prompt — project
+>   owner asked for this to be done properly since the demo moved to
+>   tomorrow) and **auto-sends the rejection email** on click — no more
+>   separate manual "Send email" step to remember. No "Notify again" on
+>   pending (row leaves the tab immediately either way); WhatsApp kept
+>   as the one channel that doesn't decide anything.
+> - **Pending, PhonePe mode**: real gap found — the admin Verify button
+>   never actually checked PhonePe payment status at all
+>   (`manualPaymentModule.verifyPayment()` always returns `verified:
+>   true` by design), and Reject could silently strand a genuine payer
+>   if PhonePe's webhook arrived after the reject. New `registration_mode`
+>   column (stamped per-row at creation, not derived from the event's
+>   current toggle) now gates Verify/Reject/WhatsApp: disabled for 1
+>   hour after submission on PhonePe rows, then enabled as a manual
+>   override/fallback if the automation is genuinely stuck. Guarded both
+>   client-side (`AdminTable.tsx`) and server-side
+>   (`src/lib/registration/phonepeGate.ts`, used by both
+>   `/api/admin/verify` and `/api/admin/reject`) — the server check
+>   fails **open** (allows the action) on any unexpected error, since a
+>   bug in this specific guard is lower-stakes than permanently
+>   stranding an admin action.
+> - **Verified / Waitlisted**: unchanged, confirmed aligned as originally
+>   designed.
+> - **Rejected**: no more separate "Reinstate" button — a single reused
+>   **Verify** button (behind a `window.confirm()`) does reinstate +
+>   claim + ticket in one motion. Converged on this after discussion: by
+>   the time an admin revisits a rejected row, the actual payment check
+>   has almost always already happened out-of-band (registrant called/
+>   WhatsApp'd with proof), so a separate "Reinstate" click followed by a
+>   third "now Verify" click was ceremony, not a second safety check.
+> - **New**: a submission-acknowledgement email now fires automatically
+>   on every registration (`/api/register`, `/api/register/eoi`) — until
+>   today, submitting only ever showed a confirmation *page*, with zero
+>   email until verify/reject/an admin's manual click. Subject line and
+>   the confirmation page's headline now share one source
+>   (`getStatusTitle` in `statusMessages.ts`) so they can't drift apart.
+>
+> **Two things explicitly raised and deferred, high priority, revisit
+> after the demo — not designed or built, just logged**:
+> 1. **The paid-but-waitlisted race.** The capacity buffer
+>    (`computeAutoPause` in `src/lib/registration/capacity.ts`) stops
+>    *new* submissions once verified+pending nears the cap, but doesn't
+>    guarantee the existing pending backlog actually fits the remaining
+>    seats — verification-order effects can still land a genuine payer
+>    on `waitlisted` (flagged today as "⚠ paid — needs resolution" in
+>    the admin table). Confirmed structurally: **this can only happen
+>    near the cap boundary** (the race requires cumulative claims to
+>    threaten exceeding `cap`; with headroom, every pending registration
+>    succeeds automatically) — which may allow a simpler boundary-only
+>    fix later instead of a general refund process. Not tested, not
+>    resolved — needs a real walkthrough of what an admin is actually
+>    supposed to do when they see that flag.
+> 2. **Paused / auto-pause-due-to-backlog.** Confirmed this already
+>    exists (built 2026-09-09, the non-Full-EOI Paused state — admin
+>    manual toggle or the same buffer formula) — project owner had
+>    forgotten it existed and want to revisit, discuss, test, and
+>    resolve properly after the demo.
+>
+> **Still to do before this is usable**: run migration 0014, then a full
+> local smoke test (reject-with-reason → auto-email → reinstate-via-
+> Verify → re-verify; PhonePe gating on/off; submission acknowledgement
+> email on both the paid and EOI paths), then redeploy the `demo` draft
+> alias. Not done yet as of this note.
+
 > [!warning] Demo postponed to tomorrow (2026-09-11) — ~10 hrs of runway left, cutoff 7 PM today (2026-09-10)
 > Originally leaving for the demo within 1-2 hours (see the triage below,
 > done earlier today); project owner confirmed 2026-09-10 the demo moved

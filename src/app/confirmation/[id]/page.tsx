@@ -2,25 +2,16 @@ import Link from "next/link";
 import { createServiceClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import ConfirmationPhonePeReconciler from "@/components/ConfirmationPhonePeReconciler";
+import { getStatusTitle, type RegistrationStatus } from "@/lib/registration/statusMessages";
 
-function statusCopy(contactEmail: string): Record<string, { title: string; body: string }> {
+function statusBody(contactEmail: string): Record<RegistrationStatus, string> {
   return {
-    pending: {
-      title: "Seat reserved — pending verification",
-      body: "We've recorded your payment reference. An organizer will verify it and email your ticket shortly.",
-    },
-    verified: {
-      title: "Confirmed!",
-      body: "Your registration is confirmed. Your ticket (with QR code) has been emailed to you.",
-    },
-    waitlisted: {
-      title: "You're on the waitlist",
-      body: "Guaranteed seats are full. You've been added to the expression-of-interest list — if a larger venue becomes available, we'll reach out to you.",
-    },
-    rejected: {
-      title: "Payment could not be verified",
-      body: `Please contact us at ${contactEmail} with your registration ID below to resolve this.`,
-    },
+    pending:
+      "We've recorded your payment reference. An organizer will verify it and email your ticket shortly.",
+    verified: "Your registration is confirmed. Your ticket (with QR code) has been emailed to you.",
+    waitlisted:
+      "Guaranteed seats are full. You've been added to the expression-of-interest list — if a larger venue becomes available, we'll reach out to you.",
+    rejected: `Please contact us at ${contactEmail} with your registration ID below to resolve this.`,
   };
 }
 
@@ -56,14 +47,14 @@ export default async function ConfirmationPage({
   const contactEmail = eventInfo?.contact_email ?? "";
   const contactPhone = eventInfo?.contact_phone ?? "";
   const contactWhatsappNumber = eventInfo?.contact_whatsapp_number ?? "";
-  const STATUS_COPY = statusCopy(contactEmail);
-  const copy = STATUS_COPY[reg.status] ?? STATUS_COPY.pending;
+  const status = (reg.status as RegistrationStatus) ?? "pending";
+  const body = statusBody(contactEmail)[status] ?? statusBody(contactEmail).pending;
   const isPending = reg.status === "pending";
 
   return (
     <main className="max-w-md mx-auto px-4 py-16 text-center">
-      <h1 className="text-xl font-semibold mb-2">{copy.title}</h1>
-      <p className="text-gray-600 mb-6">{copy.body}</p>
+      <h1 className="text-xl font-semibold mb-2">{getStatusTitle(status)}</h1>
+      <p className="text-gray-600 mb-6">{body}</p>
       <div className="border rounded p-4 text-sm text-left">
         <p>
           <strong>Name:</strong> {reg.full_name}

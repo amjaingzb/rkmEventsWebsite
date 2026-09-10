@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { registerInterest } from "@/lib/registration/register";
+import { sendStatusUpdateEmail } from "@/lib/ticket/issue";
 
 // Kept as a separate route from POST /api/register (rather than an isEoi
 // flag on that handler) since the two contracts differ enough -- no
@@ -18,6 +19,13 @@ export async function POST(req: NextRequest) {
 
   try {
     const result = await registerInterest({ fullName, email, phone, numAttendees });
+
+    try {
+      await sendStatusUpdateEmail(result.id);
+    } catch (err) {
+      console.error("Failed to send registration acknowledgement email:", err);
+    }
+
     return NextResponse.json(result);
   } catch (err) {
     return NextResponse.json({ error: (err as Error).message }, { status: 500 });

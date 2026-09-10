@@ -41,6 +41,7 @@ export async function POST(req: NextRequest) {
       paymentReference: (paymentReference?.trim() || `CASH-${Date.now()}`) as string,
       paymentAmount: paymentAmount ?? null,
       allowDuplicate: allowDuplicate ?? false,
+      registrationMode: "walkin",
     });
   } catch (err) {
     return NextResponse.json({ error: (err as Error).message }, { status: 500 });

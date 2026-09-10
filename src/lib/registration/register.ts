@@ -14,6 +14,10 @@ interface RegisterAttendeeInput {
   paymentAmount?: number | null;
   /** Skip the duplicate check — set by the admin walk-in flow's "register anyway" confirm. */
   allowDuplicate?: boolean;
+  /** Explicit override (the admin walk-in flow always passes "walkin").
+   * When omitted, derived from the event's current payment_mode at
+   * submission time — see registerAttendee below. */
+  registrationMode?: "manual" | "phonepe" | "walkin";
 }
 
 export type RegisterAttendeeResult =
@@ -95,6 +99,8 @@ export async function registerAttendee(
 
   const numAttendees = input.numAttendees ?? 1;
   const paymentAmount = input.paymentAmount ?? computeAmountInr(numAttendees);
+  const registrationMode =
+    input.registrationMode ?? (event.payment_mode === "phonepe_sandbox" ? "phonepe" : "manual");
 
   const { data: reg, error } = await supabase
     .rpc("register_attendee", {
@@ -105,6 +111,7 @@ export async function registerAttendee(
       p_num_attendees: numAttendees,
       p_payment_reference: input.paymentReference ?? null,
       p_payment_amount: paymentAmount,
+      p_registration_mode: registrationMode,
     })
     .single();
 

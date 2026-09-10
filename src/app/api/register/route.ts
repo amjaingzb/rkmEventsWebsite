@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { registerAttendee } from "@/lib/registration/register";
+import { sendStatusUpdateEmail } from "@/lib/ticket/issue";
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
@@ -26,6 +27,18 @@ export async function POST(req: NextRequest) {
         { duplicate: true, existingRegistrationId: result.existingRegistrationId },
         { status: 409 }
       );
+    }
+
+    // Acknowledgement email — best-effort, never fails the registration
+    // itself (the confirmation page is the primary record; this is a
+    // backup in case the registrant closes the tab before seeing it).
+    // Awaited (not fire-and-forget) since a serverless function can be
+    // frozen/killed right after the response is sent, which would silently
+    // drop an un-awaited send.
+    try {
+      await sendStatusUpdateEmail(result.id);
+    } catch (err) {
+      console.error("Failed to send registration acknowledgement email:", err);
     }
 
     return NextResponse.json({ id: result.id, status: result.status });

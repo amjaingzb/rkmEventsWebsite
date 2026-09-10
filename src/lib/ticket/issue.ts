@@ -1,7 +1,7 @@
 import { createServiceClient } from "@/lib/supabase/server";
 import { sendTicketEmail, sendStatusEmail } from "./email";
 import type { PaymentVerificationResult } from "@/lib/payment/types";
-import { getStatusMessage, type RegistrationStatus } from "@/lib/registration/statusMessages";
+import { getStatusMessage, getStatusTitle, type RegistrationStatus } from "@/lib/registration/statusMessages";
 
 const REG_WITH_EVENT_SELECT =
   "*, events(slug, title, event_date, start_time, end_time, venue_name, payment_mode, contact_email)";
@@ -159,10 +159,13 @@ export async function sendStatusUpdateEmail(registrationId: string) {
     return { ok: false as const };
   }
 
-  const r = reg as unknown as RegistrationWithEvent & { status: RegistrationStatus };
+  const r = reg as unknown as RegistrationWithEvent & {
+    status: RegistrationStatus;
+    rejection_reason: string | null;
+  };
 
   const contactEmail = r.events.contact_email ?? "";
-  let message = getStatusMessage(r.status, contactEmail);
+  let message = getStatusMessage(r.status, contactEmail, r.rejection_reason);
   if (r.status === "pending" && r.events.payment_mode === "manual") {
     message = `${message} ${MANUAL_SLA_NOTE}`;
   }
@@ -175,6 +178,7 @@ export async function sendStatusUpdateEmail(registrationId: string) {
     regId: r.id,
     message,
     contactEmail,
+    subject: getStatusTitle(r.status),
   });
 
   return { ok: true as const };
