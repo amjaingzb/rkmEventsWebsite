@@ -381,6 +381,15 @@ Components live under `src/components/static/`; content is currently Lorem
 Ipsum placeholders (see [[BACKLOG.md]] item 12) pending real copy from the
 project owner. Also `/confirmation/[id]`, `/admin/login`, `/admin/dashboard`.
 
+`/summary` — public, no auth, added 2026-09-10. A standalone testers/volunteers-
+facing feature summary (not part of the registration flow) — same content as
+the marketing one-pager in `docs/product-summary.html`, styled inline via a
+scoped `#summary-page` `<style>` block rather than Tailwind, so it renders
+independently of the rest of the site's design system. Meant to be handed to
+volunteers helping test the site, and to Adhyaksha Maharaj, as a grounded
+"what's actually built" reference. Not linked from any nav — reached only by
+direct URL.
+
 ### Public registration states: Open / Full-EOI / Paused
 
 Per [[registration-integrity.md]] Item 6, `src/app/page.tsx` picks one of

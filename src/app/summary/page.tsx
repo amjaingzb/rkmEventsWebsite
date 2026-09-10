@@ -1,0 +1,304 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: "What's Built — Halasuru Registration Platform",
+  description:
+    "A feature summary of the registration platform, for testers and volunteers.",
+};
+
+export default function SummaryPage() {
+  return (
+    <>
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Karla:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap"
+      />
+      <style>{css}</style>
+      <div id="summary-page">
+        <div className="sheet">
+          <div className="cover">
+            <div className="eyebrow">Product Summary — for testers &amp; volunteers</div>
+            <h1>A registration platform built for the Halasuru Math</h1>
+            <p>
+              End-to-end online registration for Swami Sarvapriyananda&rsquo;s visit
+              to Ramakrishna Math Halasuru — from the public event page through to a
+              seat-guaranteed ticket in the registrant&rsquo;s inbox, and an
+              operations dashboard for the volunteers verifying payments. If
+              you&rsquo;re testing the site, this page is your map of what&rsquo;s
+              actually built today — try any of it and share what breaks.
+            </p>
+            <div className="meta">
+              <span><b>Event</b> — 31 Oct 2026, 6:00–7:30 PM</span>
+              <span><b>Guaranteed seats</b> — 500</span>
+              <span><b>Overflow</b> — waitlist, re-invitable</span>
+            </div>
+          </div>
+
+          <div className="stat-row">
+            <div className="stat"><div className="num">500</div><div className="label">seats guaranteed, never oversold — verified under simulated concurrent traffic</div></div>
+            <div className="stat"><div className="num">2</div><div className="label">ways to pay: UPI (live) and an automated PhonePe checkout (sandbox demo)</div></div>
+            <div className="stat"><div className="num">3</div><div className="label">public registration states — Open, Waitlist, Paused — switch live, no redeploy</div></div>
+            <div className="stat"><div className="num">100%</div><div className="label">tickets delivered as signed, QR-coded e-mail — no manual seat allotment</div></div>
+          </div>
+
+          <div className="legend">
+            <span><i className="l1"></i>Live in production</span>
+            <span><i className="l2"></i>Working demo (sandbox)</span>
+            <span><i className="l3"></i>Planned next</span>
+          </div>
+
+          <div className="section">
+            <div className="section-head"><h2>Registration Experience</h2><span className="count">public-facing</span></div>
+            <p className="section-note">The site a registrant actually sees — from first landing on the event page to holding a confirmed seat. Try the full flow at <Link href="/">the homepage</Link>.</p>
+            <div className="flist">
+              <div className="frow">
+                <div><div className="fname">Event page</div><div className="fdesc">Hero, speaker bio, agenda, venue &amp; parking, FAQ — one scrollable page, styled to a saffron/maroon/gold theme.</div></div>
+                <span className="pill live">Live</span>
+              </div>
+              <div className="frow">
+                <div><div className="fname">Mobile-friendly public site</div><div className="fdesc">Landing page, registration form, and confirmation page all confirmed on real phones — please still try your own device.</div></div>
+                <span className="pill live">Live</span>
+              </div>
+              <div className="frow">
+                <div><div className="fname">Registration form with live validation</div><div className="fdesc">Name, phone and payment-reference fields check themselves as you type — not just on submit.</div></div>
+                <span className="pill live">Live</span>
+              </div>
+              <div className="frow">
+                <div><div className="fname">Duplicate-entry protection</div><div className="fdesc">A second signup from the same email or phone is caught and pointed back to the original registration.</div></div>
+                <span className="pill live">Live</span>
+              </div>
+              <div className="frow">
+                <div><div className="fname">Automatic waitlist once seats run out</div><div className="fdesc">The form quietly switches to an &ldquo;Expression of Interest&rdquo; signup — no payment collected — the moment 500 is reached.</div></div>
+                <span className="pill live">Live</span>
+              </div>
+              <div className="frow">
+                <div><div className="fname">Registrations pause on demand</div><div className="fdesc">An admin can pause new signups instantly with a custom message — manually, or automatically as the seat buffer runs low.</div></div>
+                <span className="pill live">Live</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="section">
+            <div className="section-head"><h2>Payments &amp; Seat Guarantee</h2><span className="count">the core promise</span></div>
+            <p className="section-note">The one invariant the whole system is built to protect: exactly 500 seats are ever confirmed, no matter how many people submit at once.</p>
+            <div className="flist">
+              <div className="frow">
+                <div><div className="fname">UPI payment, manually verified</div><div className="fdesc">Registrant pays via UPI QR/deep-link; a volunteer confirms the reference and one click issues the seat.</div></div>
+                <span className="pill live">Live</span>
+              </div>
+              <div className="frow">
+                <div><div className="fname">Race-safe seat allocation</div><div className="fdesc">Seats are claimed by a single atomic database operation at the moment of verification — stress-tested with 20 simultaneous registrations, zero overselling.</div></div>
+                <span className="pill live">Live</span>
+              </div>
+              <div className="frow">
+                <div><div className="fname">Automated checkout via PhonePe</div><div className="fdesc">Pay by any UPI app, card or netbanking; seat is claimed and the ticket sent automatically the moment payment clears — no volunteer needed.</div></div>
+                <span className="pill sandbox">Sandbox demo</span>
+              </div>
+              <div className="frow">
+                <div><div className="fname">Live payment-mode switch</div><div className="fdesc">Admin toggles the whole site between manual-verification and automated-PhonePe mode in one click, no redeploy.</div></div>
+                <span className="pill live">Live</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="section">
+            <div className="section-head"><h2>Tickets &amp; Confirmation</h2><span className="count">what the registrant receives</span></div>
+            <div className="flist">
+              <div className="frow">
+                <div><div className="fname">Signed QR e-ticket by e-mail</div><div className="fdesc">Sent automatically on verification — cryptographically signed so it can&rsquo;t be forged or edited.</div></div>
+                <span className="pill live">Live</span>
+              </div>
+              <div className="frow">
+                <div><div className="fname">Instant submission acknowledgement</div><div className="fdesc">Every registrant gets an e-mail the moment they submit, well before verification — no more silent wait.</div></div>
+                <span className="pill live">Live</span>
+              </div>
+              <div className="frow">
+                <div><div className="fname">Confirmation page</div><div className="fdesc">Shows status, event details and contact info immediately after submitting.</div></div>
+                <span className="pill live">Live</span>
+              </div>
+              <div className="frow">
+                <div><div className="fname">Door check-in / QR scanning app</div><div className="fdesc">Ticket format is already frozen and ready to be scanned — the scanning tool itself is next in line.</div></div>
+                <span className="pill next">Planned</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="section">
+            <div className="section-head"><h2>Admin Operations</h2><span className="count">for the volunteer/organizing team</span></div>
+            <p className="section-note">Testing this area needs an admin login — ask the project owner for a test account rather than using the real one.</p>
+            <div className="flist">
+              <div className="frow">
+                <div><div className="fname">Secure admin login</div><div className="fdesc">Real authenticated access — no shared password, no public exposure of registrant data.</div></div>
+                <span className="pill live">Live</span>
+              </div>
+              <div className="frow">
+                <div><div className="fname">Full registration dashboard</div><div className="fdesc">Verify, reject (with a reason), reinstate, and search across every registration, filterable by status.</div></div>
+                <span className="pill live">Live</span>
+              </div>
+              <div className="frow">
+                <div><div className="fname">Automatic status e-mails</div><div className="fdesc">Verify or reject a registration and the registrant is notified immediately — no separate step to remember.</div></div>
+                <span className="pill live">Live</span>
+              </div>
+              <div className="frow">
+                <div><div className="fname">One-click WhatsApp follow-up</div><div className="fdesc">Pre-filled, status-appropriate message, ready to send from the dashboard.</div></div>
+                <span className="pill live">Live</span>
+              </div>
+              <div className="frow">
+                <div><div className="fname">Walk-in / cash registration</div><div className="fdesc">Admin can register and seat someone on the spot, ticket issued immediately.</div></div>
+                <span className="pill live">Live</span>
+              </div>
+              <div className="frow">
+                <div><div className="fname">CSV export of all registrations</div><div className="fdesc">One-click download for offline reporting or headcount planning.</div></div>
+                <span className="pill live">Live</span>
+              </div>
+              <div className="frow">
+                <div><div className="fname">Capacity &amp; buffer controls</div><div className="fdesc">Seat cap and the &ldquo;about to fill up&rdquo; buffer are both admin-editable, live.</div></div>
+                <span className="pill live">Live</span>
+              </div>
+              <div className="frow">
+                <div><div className="fname">Dashboard on a phone</div><div className="fdesc">Works today, but the layout isn&rsquo;t yet comfortable on a small screen — this is a known gap, feedback welcome.</div></div>
+                <span className="pill next">Planned</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="section">
+            <div className="section-head"><h2>Content &amp; Site Management</h2><span className="count">no-deploy editing</span></div>
+            <div className="flist">
+              <div className="frow">
+                <div><div className="fname">Live content editor</div><div className="fdesc">Hero, agenda, speaker bio, FAQ, venue/parking and contact details are all editable from the admin panel — changes appear on the public site within seconds.</div></div>
+                <span className="pill live">Live</span>
+              </div>
+              <div className="frow">
+                <div><div className="fname">Photo uploads from the dashboard</div><div className="fdesc">Swapping the hero or speaker photo currently still needs a direct file change — a self-serve upload is designed but intentionally not yet opened up.</div></div>
+                <span className="pill next">Planned</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="roadmap">
+            <div className="section-head" style={{ marginBottom: "8px" }}><h2>Where it goes next</h2></div>
+            <div className="rline"><span className="dot"></span><span><b>Door check-in app</b> — scan the ticket QR to mark attendance in real time; the ticket format is already built for it.</span></div>
+            <div className="rline"><span className="dot"></span><span><b>Waitlist re-invite</b> — a one-click way to pull from the waitlist if a larger venue becomes available.</span></div>
+            <div className="rline"><span className="dot"></span><span><b>Mobile-friendly admin dashboard</b> — the same controls, redesigned to work comfortably from a phone.</span></div>
+            <div className="rline"><span className="dot"></span><span><b>Tiered admin access</b> — a lighter-weight role for volunteers who only need to edit site content, not registrant data.</span></div>
+            <div className="rline"><span className="dot"></span><span><b>PhonePe going live</b> — the same automated checkout already working in sandbox, switched on with a real merchant account.</span></div>
+            <div className="rline"><span className="dot"></span><span><b>Reusable for other Math events</b> — the platform is already built so a future event just needs its own venue/date/seat-cap/FAQ configuration, not a rebuild.</span></div>
+          </div>
+
+          <footer>
+            <span>Halasuru Registration Platform — product summary</span>
+            <span>For testers &amp; volunteers</span>
+          </footer>
+        </div>
+      </div>
+    </>
+  );
+}
+
+const css = `
+  #summary-page{
+    --cream:      #FBF6EC;
+    --cream-2:    #F4EBD9;
+    --paper:      #FFFEFB;
+    --ink:        #2E2115;
+    --ink-soft:   #5B4B3B;
+    --maroon:     #7A2A2C;
+    --maroon-deep:#551D1F;
+    --saffron:    #D97C2B;
+    --gold:       #B4881A;
+    --line:       #E3D6BE;
+    --live-bg:    #E6EEDD;
+    --live-fg:    #45632E;
+    --live-dot:   #6E9A48;
+    --sandbox-bg: #FBEACB;
+    --sandbox-fg: #8A5B0B;
+    --sandbox-dot:#C68A1F;
+    --next-bg:    #F3E2DD;
+    --next-fg:    #8C4432;
+    --next-dot:   #B75B41;
+
+    background: var(--cream);
+    color: var(--ink);
+    font-family: 'Karla', ui-sans-serif, system-ui, sans-serif;
+    padding: 0 20px;
+    padding-block: 48px;
+  }
+  #summary-page *{ box-sizing:border-box; }
+  #summary-page .sheet{ max-width: 880px; margin: 0 auto; display: flex; flex-direction: column; gap: 6px; }
+  #summary-page h1, #summary-page h2, #summary-page h3{ font-family:'Fraunces', Georgia, serif; text-wrap: balance; margin: 0; }
+  #summary-page .eyebrow{ font-family:'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--saffron); }
+
+  #summary-page .cover{
+    background: linear-gradient(160deg, var(--maroon) 0%, var(--maroon-deep) 100%);
+    color: var(--cream);
+    border-radius: 18px;
+    padding: 44px clamp(24px,5vw,56px);
+    display:flex; flex-direction:column; gap: 18px;
+    position: relative; overflow: hidden; margin-bottom: 28px;
+  }
+  #summary-page .cover::after{
+    content:""; position:absolute; right:-60px; top:-60px; width:260px; height:260px; border-radius:50%;
+    background: radial-gradient(circle, rgba(217,124,43,0.35), transparent 70%);
+  }
+  #summary-page .cover .eyebrow{ color: #F2C98A; }
+  #summary-page .cover h1{ font-size: clamp(30px, 4.4vw, 44px); font-weight: 600; color: #FFF9EE; line-height: 1.08; max-width: 20ch; }
+  #summary-page .cover p{ max-width: 56ch; font-size: 16px; line-height: 1.6; color: #F1DFC9; margin: 0; }
+  #summary-page .cover .meta{ display:flex; flex-wrap:wrap; gap: 10px 28px; margin-top: 6px; font-size: 13.5px; color: #EFD9B8; }
+  #summary-page .cover .meta b{ color:#FFF9EE; font-weight:600; }
+
+  #summary-page .stat-row{
+    display:grid; grid-template-columns: repeat(auto-fit, minmax(150px,1fr)); gap: 1px;
+    background: var(--line); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; margin: 8px 0 34px;
+  }
+  #summary-page .stat{ background: var(--paper); padding: 18px 20px; display:flex; flex-direction:column; gap:4px; }
+  #summary-page .stat .num{ font-family:'Fraunces', serif; font-weight:600; font-size: 26px; color: var(--maroon); font-variant-numeric: tabular-nums; }
+  #summary-page .stat .label{ font-size: 12.5px; color: var(--ink-soft); line-height:1.35; }
+
+  #summary-page .section{ margin-bottom: 30px; }
+  #summary-page .section-head{ display:flex; align-items:baseline; gap:12px; border-bottom: 2px solid var(--maroon); padding-bottom: 8px; margin-bottom: 14px; }
+  #summary-page .section-head h2{ font-size: 21px; font-weight:600; color: var(--maroon); }
+  #summary-page .section-head .count{ font-family:'IBM Plex Mono', monospace; font-size: 12px; color: var(--ink-soft); }
+  #summary-page .section-note{ font-size: 13.5px; color: var(--ink-soft); margin: -6px 0 14px; max-width: 68ch; line-height: 1.55; }
+  #summary-page .section-note a{ color: var(--maroon); }
+
+  #summary-page .flist{ display:flex; flex-direction:column; border: 1px solid var(--line); border-radius: 12px; overflow:hidden; background: var(--paper); }
+  #summary-page .frow{ display:grid; grid-template-columns: 1.55fr auto; gap: 4px 16px; padding: 13px 18px; align-items:center; border-bottom: 1px solid var(--line); }
+  #summary-page .frow:last-child{ border-bottom:none; }
+  #summary-page .frow:nth-child(even){ background: var(--cream-2); }
+  #summary-page .fname{ font-weight:600; font-size: 14.5px; }
+  #summary-page .fdesc{ grid-column: 1 / 2; font-size: 13px; color: var(--ink-soft); line-height: 1.5; }
+  #summary-page .pill{
+    justify-self:end; display:inline-flex; align-items:center; gap:6px;
+    font-family:'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.03em; text-transform: uppercase;
+    padding: 5px 10px 5px 8px; border-radius: 999px; white-space: nowrap;
+  }
+  #summary-page .pill::before{ content:""; width:6px; height:6px; border-radius:50%; }
+  #summary-page .pill.live{ background:var(--live-bg); color:var(--live-fg); }
+  #summary-page .pill.live::before{ background:var(--live-dot); }
+  #summary-page .pill.sandbox{ background:var(--sandbox-bg); color:var(--sandbox-fg); }
+  #summary-page .pill.sandbox::before{ background:var(--sandbox-dot); }
+  #summary-page .pill.next{ background:var(--next-bg); color:var(--next-fg); }
+  #summary-page .pill.next::before{ background:var(--next-dot); }
+
+  #summary-page .legend{ display:flex; flex-wrap:wrap; gap: 18px; margin: 4px 0 32px; font-size: 12.5px; color: var(--ink-soft); }
+  #summary-page .legend span{ display:inline-flex; align-items:center; gap:7px; }
+  #summary-page .legend i{ width:8px; height:8px; border-radius:50%; display:inline-block; }
+  #summary-page .legend .l1{ background:var(--live-dot); }
+  #summary-page .legend .l2{ background:var(--sandbox-dot); }
+  #summary-page .legend .l3{ background:var(--next-dot); }
+
+  #summary-page .roadmap{ display:flex; flex-direction:column; gap:10px; }
+  #summary-page .rline{ display:grid; grid-template-columns: 20px 1fr; gap: 12px; font-size: 13.5px; line-height:1.55; color: var(--ink-soft); }
+  #summary-page .rline .dot{ width:8px; height:8px; border-radius:50%; background: var(--next-dot); margin-top:6px; }
+  #summary-page .rline b{ color: var(--ink); font-weight:600; }
+
+  #summary-page footer{ margin-top: 10px; padding-top: 18px; border-top: 1px solid var(--line); font-size: 12px; color: var(--ink-soft); display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px; }
+
+  @media (max-width: 560px){
+    #summary-page .frow{ grid-template-columns: 1fr; }
+    #summary-page .pill{ justify-self:start; }
+    #summary-page .stat-row{ grid-template-columns: repeat(2,1fr); }
+  }
+`;

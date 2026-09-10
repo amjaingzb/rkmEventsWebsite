@@ -2,7 +2,7 @@
 tags: [event-registration, next-steps]
 aliases: [next steps, todo, status]
 created: 2026-09-08
-updated: 2026-09-10
+updated: 2026-09-10 (later)
 ---
 
 # Next Steps
@@ -14,6 +14,29 @@ updated: 2026-09-10
 > "Recently completed", update "Next action", and refresh the queue.
 
 ## Next action
+
+> [!note] Grounded feature-summary doc + a `/summary` testers page built (2026-09-10)
+> Project owner wanted a genuinely-accurate (not oversold) feature summary to
+> hand to Adhyaksha Maharaj at the demo, and later to volunteers helping test
+> the site. Built as `docs/product-summary.html` — a self-contained,
+> print-to-PDF-ready one-pager (Fraunces/Karla type, saffron/maroon/gold
+> palette matching the site), grouped by area (Registration, Payments &
+> Seat Guarantee, Tickets, Admin Operations, Content Management) with each
+> row tagged **Live / Sandbox demo / Planned**, plus a short roadmap
+> (door-scanning app, waitlist re-invite, mobile admin dashboard, tiered
+> admin roles, PhonePe going live, and reuse for other Math events).
+> Deliberately **not** linked from [[home.md]] and doesn't mention code
+> paths or BACKLOG/TBD items — it's an output-only doc meant to be handed
+> off as-is, not read as project context.
+>
+> Also published as a Claude Artifact (private link, owner can share/export
+> to PDF from there) and mirrored as a real page on the site itself at
+> **`/summary`** (`src/app/summary/page.tsx`, public, no auth, not linked
+> from any nav — see [[architecture.md]] "Pages") so it can be handed to
+> volunteer testers as a live URL, not just a static file. Both copies kept
+> in sync by hand (same content, not templated from one source) — if the
+> feature list changes again, update both. `npm run build`/`lint` clean.
+> Redeployed to the `demo--` draft alias so `/summary` is live there too.
 
 > [!warning] Admin dashboard action redesign built (2026-09-10) — migration 0014 needs to be run before testing
 > A long collaborative design pass (plan mode, `few-more-points-here-wondrous-candle.md`)
