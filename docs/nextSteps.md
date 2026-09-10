@@ -40,27 +40,60 @@ updated: 2026-09-10
 >    as needing its own design discussion, not a same-day change this close
 >    to a demo. Status unchanged from BACKLOG.md item 17 — still just a
 >    confirmed-additive direction, nothing built.
-> 3. **Local test pass** — not yet done this session, do next.
+> 3. ~~**Local test pass**~~ — **done, this session.** Registration → admin
+>    Verify → ticket email confirmed end to end via chrome-devtools against
+>    the real Supabase project ("Smoke Test Demo Run", Reg. No. 8, verified
+>    9/10/2026 3:02:34 AM, `ticket_sent_at` stamped, zero errors in the dev
+>    server log). Duplicate detection also incidentally re-confirmed (a
+>    resubmission attempt against the already-seeded "Ruchi Jain" identity
+>    was correctly blocked with a 409). **A real bug was found and fixed in
+>    the process** — see the item-15 entry above: `normalizePhone()` was
+>    stripping a bare `91` prefix from *any* phone starting with it, so a
+>    genuinely valid 10-digit number like `9123456789` (common — lots of
+>    real Indian mobile numbers start with 91) got miscounted as 8 digits
+>    and rejected. Fixed to only strip `91` when it's part of a 12-digit
+>    country-code+number string, or behind a literal `+91`. Would have been
+>    an embarrassing false-rejection live at the demo if this hadn't been
+>    caught first. **Not yet done**: admin walk-in registration, PhonePe
+>    sandbox mode, and the EoiForm's own submit path weren't separately
+>    smoke-tested this session (only RegistrationForm's manual-payment
+>    path) — low risk since they share the same validation helper and RPC,
+>    but worth knowing if something surfaces at the demo.
 > 4. **Production deploy** (`netlify deploy --build --prod`, not a draft)
->    — do after the local test pass confirms things work. Per the
->    deploy-gate note further down and [[netlify.md]], this costs Netlify
->    credits and was deliberately held back until local work froze for the
->    demo — that trigger has now arrived. Steps: (1) confirm local `main`
->    is in the state wanted for the demo (today's commits, once made:
->    validation fix, plus yesterday's UI redesign/hero/logo/favicon
->    assets, `.next` cache-corruption fix), (2) run the production deploy,
->    (3) smoke-test the live site (registration flow, admin verify, ticket
->    email) before the demo, not just locally.
+>    — **project owner will trigger this explicitly** after doing their own
+>    testing pass (own computer, mobile) on top of the local pass above;
+>    Claude should not deploy proactively (per [[netlify.md]] and standing
+>    instruction). Once asked: (1) confirm local `main` has everything
+>    wanted for the demo (today's two commits — validation + the phone-bug
+>    fix — plus yesterday's UI redesign/hero/logo/favicon assets, `.next`
+>    cache-corruption fix), (2) run the production deploy, (3) re-run a
+>    sanity pass against the live site (project owner's ask) before the
+>    demo, not just locally.
 >
-> **Cleanup needed, not done (blocked by the session's safety classifier,
-> same pattern as before — see "2026-09-09 demo-data cleanup" below)**:
-> two throwaway rows landed in the real `halasuru-sarvapriyananda-2026`
-> event while manually testing the item-15 fix above — "John Doe123" /
-> phone `12345` (created by the pre-fix code, before a dev-server restart)
-> and "Test User Demo" / phone `+91 98765 43210` (post-fix, valid). Both
-> `pending`, no seat claimed, harmless, but should be rejected/deleted
-> before the demo so the admin dashboard doesn't show them to the project
-> owner mid-demo.
+> **Cleanup needed before the demo, not done (blocked by the session's
+> safety classifier — destructive live-data edit — same pattern as
+> "2026-09-09 demo-data cleanup" below; flagged to the project owner
+> rather than forced through)**: several throwaway `pending` rows are
+> sitting in the real `halasuru-sarvapriyananda-2026` event's admin
+> dashboard and should be rejected/deleted before the project owner shows
+> the dashboard at the demo:
+> - **From this session**: "John Doe123" / phone `12345` (pre-fix test,
+>   still `pending`), "Test User Demo" / phone `+91 98765 43210` (still
+>   `pending`), and **"Smoke Test Demo Run" / phone `9012345678`** — this
+>   one is `verified` with a real ticket email sent to
+>   `amjain.gzb+smoketest@gmail.com`, Reg. No. 8, so removing it will also
+>   need `seats_taken` decremented (or use the reject flow, which does
+>   this atomically for `pending` rows — a `verified` row needs the
+>   separate un-invite path noted as not-yet-built elsewhere in this doc,
+>   so may need a direct Supabase edit instead).
+> - **Pre-existing, not from this session** — found while checking the
+>   dashboard, previously undocumented: "Migration Check Dup" (pending,
+>   `migration-check-eoi@example.com`), "Migration Check Open" (verified,
+>   Reg. No. 7), "Ruchi Jain Ticket-Check" (both a pending and a verified
+>   copy, `ruchisai197518+ticketcheck@gmail.com` variants), and
+>   "Tester-PhonePe" (verified, Reg. No. 6) — look like leftovers from
+>   earlier migration/ticket-email testing that were never swept up by the
+>   2026-09-09 demo-data reset. Same cleanup applies.
 
 > [!note] Content-editability: all 6 implementation-plan steps done
 > > (2026-09-10)
