@@ -91,11 +91,39 @@ updated: 2026-09-10
 >    forgotten it existed and want to revisit, discuss, test, and
 >    resolve properly after the demo.
 >
-> **Still to do before this is usable**: run migration 0014, then a full
-> local smoke test (reject-with-reason → auto-email → reinstate-via-
-> Verify → re-verify; PhonePe gating on/off; submission acknowledgement
-> email on both the paid and EOI paths), then redeploy the `demo` draft
-> alias. Not done yet as of this note.
+> **Done, same session**: migration 0014 applied (project owner ran it),
+> full local smoke test passed via chrome-devtools — reject-with-reason
+> → auto rejection email (verified no errors in server log) → reused
+> Verify button reinstate+claim+ticket (confirmed `reinstated_by`/
+> `reinstated_at` set, `rejected_by`/`rejected_at`/`rejection_reason`
+> preserved as history, `events.seats_taken` incremented exactly once,
+> Reg. No. 2 assigned) → cancel path (dismissed confirm, confirmed zero
+> network call fired) → reject with a **blank** reason (confirmed no
+> "Reason:" line shown, optional as designed). PhonePe gating verified
+> both client- and server-side: submitted a real PhonePe-mode
+> registration (`registration_mode` correctly stamped `phonepe`,
+> real PhonePe UAT sandbox checkout redirect confirmed working), direct
+> API calls to `/api/admin/verify` and `/api/admin/reject` both
+> correctly returned `409` while gated; backdated the test row's
+> `created_at` by 2 hours to simulate the window elapsing, confirmed
+> both the UI (Verify/Reject/WhatsApp re-enabled) and the server (`200`
+> on direct API calls) correctly opened up as the manual-override
+> fallback. Submission acknowledgement email confirmed on the manual/
+> paid path (no errors in server log); the EOI path shares the identical
+> `sendStatusUpdateEmail` call so wasn't separately live-tested. `npm run
+> build`/`lint` clean throughout, dev server restarted after each build
+> (same stale-`.next` gotcha as always), `demo` draft alias redeployed
+> with all of this.
+>
+> **Cleanup needed before the demo** (harmless test/dev clutter left in
+> the real event from this session's testing — same pattern as prior
+> sessions, not done here): a rejected "a" row (blank reason, was
+> pending row `ee4e81b4-...`), a rejected "PhonePe Gate Test" row, an
+> "abcd" pending row still sitting there, and the two verified rows from
+> earlier reject-reinstate testing ("Ruchi Sai" Reg. No. 1, "Reject
+> Reason Test" Reg. No. 2). Payment mode was switched to `phonepe_sandbox`
+> mid-testing and switched back to `manual` before finishing — confirm
+> it's still in the mode you want before the demo.
 
 > [!warning] Demo postponed to tomorrow (2026-09-11) — ~10 hrs of runway left, cutoff 7 PM today (2026-09-10)
 > Originally leaving for the demo within 1-2 hours (see the triage below,
