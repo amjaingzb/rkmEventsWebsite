@@ -553,6 +553,33 @@ Full rationale and the complete deferred-items list: [[BACKLOG.md]].
 
 ## Recently completed
 
+- **2026-09-10 (fixed 5 bugs from the first manual-test round, see
+  `delme-clipboard/manualtestFeedback/testing_notes.md`).**
+  1. `getStatusTitle`/`getStatusMessage` (statusMessages.ts) no longer say
+     "Seat reserved" at pending time — now "Registration received —
+     processing", since the seat claim doesn't happen until verification
+     (see the seat-cap note above). Also fixed the rejected-status message
+     repeating the contact email (the sent email's footer already has it).
+  2. `validateFullName` (validation.ts) now rejects symbols (was only
+     checking for digits) — a name like `wrong-name@/` was getting through.
+     Enforced server-side in both `/api/register` and `/api/register/eoi`
+     now too, not just the client form (those routes trusted client input
+     entirely before).
+  3. PhonePe sandbox failure/expiry now auto-rejects via
+     `applyTerminalPhonePeFailure()` (phonepe.ts) — both the webhook and
+     the `/api/phonepe/status` reconciliation route call it when the order
+     state isn't COMPLETED or PENDING. Before this, a failed/expired
+     PhonePe payment sat in `pending` for the full 1-hour manual-override
+     window while still showing the registrant a success page and sending
+     a confirmation email.
+  4. "Seats full" EOI/waitlist copy reworded per feedback (EoiForm.tsx,
+     confirmation page).
+  5. Plain "WhatsApp" text links replaced with the actual WhatsApp glyph
+     (new `src/components/WhatsAppIcon.tsx`, used in AdminTable, Footer,
+     and the confirmation page).
+  Deferred to [[BACKLOG.md]] per the tester's own notes: EOI→capacity
+  re-invite flow, email/WhatsApp templating.
+
 - **2026-09-09 (implemented all of registration-integrity.md — duplicate
   detection, per-submission cap, seat_number rename, verification-time
   seat-cap claim, capacity buffer, Open/Full-EOI/Paused states).** Landed

@@ -461,3 +461,17 @@ Not needed for the prototype demo; revisit once the site is past that stage.
     later one and overwrite it with stale data). Deliberately not fixed
     now — project owner decided to log rather than rush a fix pre-demo;
     revisit with real pagination once registration volume grows.
+23. **Email/WhatsApp templating system, and an EOI-specific "notify" action
+    — deferred 2026-09-10 by the project owner during the first manual-test
+    round** (see `delme-clipboard/manualtestFeedback/testing_notes.md`,
+    bug_1789043026 and bug_1789044255 screen_13). Two related gaps:
+    - All outbound email/WhatsApp copy is still inline strings
+      (`src/lib/registration/statusMessages.ts`, `src/lib/ticket/email.ts`)
+      rather than an editable template system — action item only for now,
+      requirements to be refined later.
+    - For a `waitlisted` (EOI) registration, admin "Send email"/WhatsApp
+      currently sends the same generic waitlist-status message
+      (`getStatusMessage`) used everywhere else. The project owner wants
+      a distinct action here — actively prompting the registrant to pay
+      or get in touch — once the EOI→capacity re-invite flow (item 5
+      above) is actually designed; don't build this in isolation first.
