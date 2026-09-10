@@ -28,19 +28,27 @@ updated: 2026-09-10
 > deploy, (3) smoke-test the live site (registration flow, admin verify,
 > ticket email) before the demo, not just locally.
 
-> [!note] Content-editability design finalized, not yet implemented
+> [!note] Content-editability: inventory pass done, shape design not started
 > > (2026-09-10)
-> Full architecture discussion moved to its own doc:
-> [[content-editability-design.md]] — DB-backed FAQ/Agenda/Speaker/Hero
-> content, tag-based cache invalidation (`revalidateTag`, confirmed
+> Full architecture discussion in [[content-editability-design.md]] — DB-
+> backed content, tag-based cache invalidation (`revalidateTag`, confirmed
 > supported on Netlify and cheap relative to a production deploy), the
 > rejected `whatChanged` polling-flag alternative and why, the full cost
 > model, and red flags to resolve before starting (notably: a direct
 > Supabase table-editor edit does **not** auto-trigger revalidation — needs
-> a decision before relying on that for last-minute demo fixes). Also has
-> the 5-6 step implementation plan (inventory → shape design → backfill →
-> move fetch server-side → wire caching → decide the edit front door).
-> Nothing built yet — read that doc first before picking this up again.
+> a decision before relying on that for last-minute demo fixes).
+> **Step 1 (inventory) is now done**, worked through collaboratively with
+> the project owner — see that doc's "Inventory pass" section for the full
+> list and rationale. Short version: Hero, Agenda, Speaker bio, FAQ, Venue
+> & Parking, and a new shared Contact settings area (email/phone/WhatsApp,
+> replacing the `CONTACT_EMAIL` constant everywhere it's used) go DB-backed;
+> Footer and Navbar stay hardcoded as components (their data reuses the DB
+> fields above, but the components themselves don't move); hero/speaker
+> photos move to Supabase Storage (a DB path under `public/images/` alone
+> wouldn't remove the deploy requirement for a genuinely new photo). Steps
+> 2-6 (shape design → backfill → move fetch server-side → wire caching →
+> decide the edit front door) not started — explicitly not a demo blocker,
+> no rush. Read that doc before picking this back up.
 
 > [!note] Rounded favicon — done, switched to a different logo (2026-09-10)
 > The Halasuru/Ulsoor-style shield badge previously in `icon.png`/

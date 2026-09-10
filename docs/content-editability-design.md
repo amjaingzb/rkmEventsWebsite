@@ -227,12 +227,68 @@ a refetch of the others.
    pre-demo crunch (given red flag 1's caveat), treat (b) as post-demo,
    only-if-editing-traffic-warrants-it work.
 
-## Implementation plan (once approved — not started)
+## Inventory pass — done (2026-09-10)
 
-1. **Inventory pass** — decide which content areas are actually volatile
-   (FAQ, Agenda, Speaker bio, Hero copy are the current candidates) vs.
-   stable enough to leave hardcoded. Do this together with the project
-   owner, not unilaterally.
+> [!note] Decided together with the project owner
+> Went through `src/components/static/*.tsx` file by file (plus
+> `src/app/layout.tsx` metadata) and sorted every content area found.
+
+**DB-backed (volatile):**
+
+1. **Hero** (`Hero.tsx`) — reuses `events.title`/`event_date`/
+   `start_time`/`end_time`/`venue_name` for the title/date/time/venue
+   chips; new storage needed for the hero photo URL and the CTA copy.
+2. **Agenda** (`AgendaSection.tsx`) — new storage, no existing column fits
+   a list of time-slot rows.
+3. **Speaker bio** (`SpeakerSection.tsx`) — reuses `events.speaker` for
+   the name; new storage for the highlight bullets, full-bio paragraphs,
+   and speaker photo URL.
+4. **FAQ** (`FaqSection.tsx`) — reuses `events.faq_json`, but its shape
+   needs to grow from a flat list to match the 3-category grouping
+   actually in use on the page today.
+5. **Venue & Parking** (`VenueParkingSection.tsx`) — reuses
+   `events.venue_name`/`venue_address`/`parking_info`; new storage for
+   the Google Maps embed link.
+6. **Contact settings** (new area, not in `src/components/static/`) —
+   email, phone, and a WhatsApp **number only** (the app builds the
+   `wa.me` link the same way the existing per-registrant deep links
+   already do — a full free-text URL was rejected as editable into
+   something broken). Replaces the `CONTACT_EMAIL` constant
+   (`src/lib/contact.ts`) everywhere it's currently used: the footer, the
+   rejected-status email/WhatsApp copy, the confirmation page, and the
+   registration form's error fallback. This was raised by the project
+   owner mid-review — the footer today shows only an email, and should
+   also show phone/WhatsApp; rather than add those as footer-only fields
+   (which would leave `CONTACT_EMAIL` itself still hardcoded and create a
+   second, driftable copy of the email), all three became one shared
+   settings row consumed everywhere contact info appears.
+
+**Photo hosting decision (raised during the pass):** a DB column holding
+just a path under `public/images/` wouldn't actually remove the need for
+a deploy when someone wants a genuinely *new* photo (not just re-pointing
+at an already-bundled file) — that file still has to land in the repo.
+Decided: hero and speaker photos move to a **Supabase Storage bucket**,
+with the DB column holding the resulting public URL, so a photo swap has
+zero deploy cost, matching every other item on this list. This adds a
+bucket + upload path to the shape-design step below; not yet designed.
+
+**Left hardcoded (stable):**
+
+- **Footer** (`Footer.tsx`) — structure only. Its address line reuses
+  `events.venue_address`; its contact line reads the new contact
+  settings above. The component itself doesn't move to the DB.
+- **Navbar** (`Navbar.tsx`) — nav labels/links/logo. Deliberately kept
+  out of scope: its `href`s are anchor-coupled to the actual section
+  `id`s at compile time, so a DB-edited link could silently break
+  scroll-spy with no build-time check to catch it.
+- **Page `<title>`/meta `description`** (`src/app/layout.tsx`) —
+  duplicates Hero's title/date text. Low value to make editable (mostly
+  invisible except browser tabs/search snippets), flagged but not
+  included.
+
+## Implementation plan
+
+1. ~~**Inventory pass**~~ — **done, see above (2026-09-10).**
 2. **Shape design per area** — structured tables/JSON columns matching each
    area's real shape (reuse `events.faq_json`/`parking_info`, already
    unused in `supabase/seed.sql`, where they fit) rather than one generic
