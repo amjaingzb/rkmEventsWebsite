@@ -28,12 +28,14 @@ Update this whenever something is skipped for time — don't let it get lost.
 >   manual UI pass is still open, see [[nextSteps.md]] "Next action".
 > - **npm audit: 1 moderate + 1 high advisory** (item 14), fix requires a
 >   breaking Next 16 upgrade.
-> - **Footer contact is a personal placeholder Gmail** (`amjain.gzb@gmail.com`,
->   `src/lib/contact.ts`), not a real org contact — fine for demo/dev, swap
->   before real attendees rely on it for payment disputes. As of 2026-09-09
->   this is a `NEXT_PUBLIC_APP_MODE`-gated pick (`LIVE_CONTACT_EMAIL`
->   constant), not a bare hardcoded string — see [[dev-accounts.md]] and
->   [[architecture.md]] "Environment mode".
+> - **Contact info is a personal placeholder Gmail/phone**
+>   (`amjain.gzb@gmail.com` / `9731007760`), not a real org contact — fine
+>   for demo/dev, swap before real attendees rely on it for payment
+>   disputes. As of 2026-09-10 this is DB-backed
+>   (`events.contact_email`/`contact_phone`/`contact_whatsapp_number`),
+>   editable live via `/admin/content` → Contact, no code change or
+>   redeploy needed — see [[dev-accounts.md]] and
+>   [[content-editability-design.md]].
 
 > [!note] Should fix before wider rollout, not necessarily before a demo
 > RLS policies (item 1), admin-verify concurrency untested (item 3), no

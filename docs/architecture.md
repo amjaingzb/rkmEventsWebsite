@@ -229,16 +229,9 @@ rewrite above, not as a separate pass.
 toggle, resolved once in `src/lib/appMode.ts` (`APP_MODE`, `isLive`,
 `isDevelopment`) — not a runtime feature flag, and unrelated to
 `events.payment_mode` below, which stays a legitimate runtime, per-event,
-admin-toggleable DB flag. It's `NEXT_PUBLIC_`-prefixed (safe: it only ever
-holds the mode name, never a secret) so it resolves correctly in both
-server code and the one client component that needs it
-(`RegistrationForm.tsx`, via `CONTACT_EMAIL`).
+admin-toggleable DB flag.
 
 What it controls today:
-- **`CONTACT_EMAIL`** (`src/lib/contact.ts`) — picks between
-  `DEV_CONTACT_EMAIL` and `LIVE_CONTACT_EMAIL`. Both are still the same
-  placeholder personal inbox for now (see [[dev-accounts.md]]) — going live
-  for real means updating `LIVE_CONTACT_EMAIL` to a real org address.
 - **PhonePe credentials** (`src/lib/payment/phonepe.ts`) — in development
   mode, the credential getters always return the hardcoded sandbox
   defaults regardless of what `PHONEPE_*` env vars happen to be set, so a
@@ -262,6 +255,15 @@ uniformly to every deploy context, `NEXT_PUBLIC_APP_MODE` is set per
 context (`netlify env:set ... --context production` for the true
 production deploy, left at the `development` default everywhere else) —
 see [[netlify.md]].
+
+> [!note] Contact email is no longer part of this toggle (2026-09-10)
+> The old `CONTACT_EMAIL` constant (`src/lib/contact.ts`, picked between
+> `DEV_CONTACT_EMAIL`/`LIVE_CONTACT_EMAIL` via this same mode) is gone.
+> Contact email/phone/WhatsApp are now DB-backed (`events.contact_email`
+> etc.), editable live via `/admin/content`, with no dev/live distinction
+> at all — see [[content-editability-design.md]]. Going live for real now
+> means editing the value in that admin page, not touching a constant or
+> this toggle.
 
 ### Payment mode switch
 
