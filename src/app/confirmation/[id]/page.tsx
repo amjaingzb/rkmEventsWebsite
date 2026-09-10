@@ -1,7 +1,6 @@
+import Link from "next/link";
 import { createServiceClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
-import { computeAmountInr } from "@/lib/payment/pricing";
-import UpiPaymentInfo from "@/components/UpiPaymentInfo";
 import ConfirmationPhonePeReconciler from "@/components/ConfirmationPhonePeReconciler";
 
 function statusCopy(contactEmail: string): Record<string, { title: string; body: string }> {
@@ -35,17 +34,28 @@ export default async function ConfirmationPage({
 
   const { data: reg } = await supabase
     .from("registrations")
-    .select("id, full_name, status, num_attendees, events(payment_mode, contact_email)")
+    .select(
+      "id, full_name, status, events(payment_mode, contact_email, contact_phone, contact_whatsapp_number)"
+    )
     .eq("id", id)
     .single();
 
   if (!reg) notFound();
 
   const eventInfo = (
-    reg as unknown as { events: { payment_mode: string; contact_email: string | null } | null }
+    reg as unknown as {
+      events: {
+        payment_mode: string;
+        contact_email: string | null;
+        contact_phone: string | null;
+        contact_whatsapp_number: string | null;
+      } | null;
+    }
   ).events;
   const paymentMode = eventInfo?.payment_mode ?? "manual";
   const contactEmail = eventInfo?.contact_email ?? "";
+  const contactPhone = eventInfo?.contact_phone ?? "";
+  const contactWhatsappNumber = eventInfo?.contact_whatsapp_number ?? "";
   const STATUS_COPY = statusCopy(contactEmail);
   const copy = STATUS_COPY[reg.status] ?? STATUS_COPY.pending;
   const isPending = reg.status === "pending";
@@ -64,18 +74,42 @@ export default async function ConfirmationPage({
       </div>
 
       {isPending && paymentMode !== "phonepe_sandbox" && (
-        <div className="mt-6 text-left">
-          <p className="text-sm text-gray-500 mb-3">
-            Manual verification can take up to 5 days. If you haven&apos;t
-            heard back by then, contact us at {contactEmail} with your
-            payment proof.
-          </p>
-          <UpiPaymentInfo amountInr={computeAmountInr(reg.num_attendees)} />
-        </div>
+        <p className="mt-6 text-sm text-gray-500 text-left">
+          Manual verification can take up to 5 days. If you haven&apos;t
+          heard back by then, contact us with your payment proof.
+        </p>
       )}
       {isPending && paymentMode === "phonepe_sandbox" && (
         <ConfirmationPhonePeReconciler registrationId={reg.id} />
       )}
+
+      <div className="mt-6 pt-6 border-t text-sm text-gray-500 flex flex-col items-center gap-3">
+        <p className="flex flex-wrap justify-center gap-x-4 gap-y-1">
+          {contactEmail && (
+            <a href={`mailto:${contactEmail}`} className="hover:text-gray-800 transition">
+              {contactEmail}
+            </a>
+          )}
+          {contactPhone && (
+            <a href={`tel:+91${contactPhone}`} className="hover:text-gray-800 transition">
+              {contactPhone}
+            </a>
+          )}
+          {contactWhatsappNumber && (
+            <a
+              href={`https://wa.me/91${contactWhatsappNumber}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-gray-800 transition"
+            >
+              WhatsApp
+            </a>
+          )}
+        </p>
+        <Link href="/" className="text-maroon hover:underline font-medium">
+          ← Back to homepage
+        </Link>
+      </div>
     </main>
   );
 }
