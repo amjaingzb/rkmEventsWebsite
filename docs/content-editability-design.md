@@ -289,15 +289,30 @@ bucket + upload path to the shape-design step below; not yet designed.
 ## Implementation plan
 
 1. ~~**Inventory pass**~~ — **done, see above (2026-09-10).**
-2. **Shape design per area** — structured tables/JSON columns matching each
-   area's real shape (reuse `events.faq_json`/`parking_info`, already
-   unused in `supabase/seed.sql`, where they fit) rather than one generic
-   `string_key`/`content_value` table — chosen specifically because it
-   maps better to a future CSV-per-section workflow than a flat KV table
-   would.
-3. **One-time backfill** — migrate the current hardcoded JSX content for
-   each chosen area into its DB row(s), so nothing regresses visually on
-   day one.
+2. ~~**Shape design per area**~~ — **done (2026-09-10)**, see
+   `supabase/migrations/0012_content_editability.sql`: new columns
+   `hero_photo_url`/`hero_cta_text`/`hero_badge_text`, `agenda_json`
+   (`[{time, title}]`), `speaker_json`
+   (`{highlights, fullBio, photoUrl}`), `faq_json` reshaped to
+   `[{category, items: [{q, a}]}]`, `venue_maps_embed_url`, `parking_info`
+   changed `text`→`jsonb` (`[{label?, text}]`), and `contact_email`/
+   `contact_phone`/`contact_whatsapp_number` (the new shared Contact
+   settings area, replacing `CONTACT_EMAIL`). All new columns on the
+   existing `events` row — no new tables, per red flag 5 (multi-tenancy
+   stays minimal). Hero/speaker photos are `text` URL columns only, not
+   image storage — see the Photo hosting decision above.
+3. ~~**One-time backfill**~~ — **done (2026-09-10)**, in the same
+   migration: the real current copy from `src/components/static/*.tsx`
+   backfilled into the `halasuru-sarvapriyananda-2026` row verbatim, so
+   nothing regresses once the fetch moves server-side (step 4). Contact
+   phone/WhatsApp (`9731007760`, project owner-provided — didn't exist
+   anywhere in the codebase before this) backfilled for both fields.
+   **Not yet applied to the live Supabase project** — needs to be run in
+   the Supabase SQL editor, same as every other pending migration tracked
+   in [[nextSteps.md]]. `hero_photo_url`/`speaker_json.photoUrl` still
+   point at the existing `public/images/` paths as an interim value — the
+   actual Supabase Storage bucket for photos (red flag/decision above)
+   is separate infra, not yet created; swap those URLs once it exists.
 4. **Move the fetch server-side** — lift each area's read into `page.tsx`
    (already a server component doing this for `events`), pass down as
    props into the existing client components (address red flag 3).
