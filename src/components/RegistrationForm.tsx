@@ -48,6 +48,36 @@ export default function RegistrationForm({
     return errors;
   }
 
+  function validateField(name: keyof FieldErrors, value: string) {
+    let message: string | undefined;
+    if (name === "fullName") message = validateFullName(value.trim());
+    else if (name === "email") {
+      const trimmed = value.trim();
+      if (!trimmed) message = "Please enter your email.";
+      else if (!EMAIL_RE.test(trimmed)) message = "Please enter a valid email address.";
+    } else if (name === "phone") message = validatePhone(value);
+    else if (name === "paymentReference" && !isPhonePe && !value.trim()) {
+      message = "Please enter your payment reference / transaction ID.";
+    }
+
+    setFieldErrors((prev) => {
+      const next = { ...prev };
+      if (message) next[name] = message;
+      else delete next[name];
+      return next;
+    });
+  }
+
+  function handleFieldBlur(e: React.FocusEvent<HTMLInputElement>) {
+    const name = e.target.name as keyof FieldErrors;
+    validateField(name, e.target.value);
+  }
+
+  function handleFieldChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const name = e.target.name as keyof FieldErrors;
+    if (fieldErrors[name]) validateField(name, e.target.value);
+  }
+
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
@@ -122,17 +152,23 @@ export default function RegistrationForm({
         label="Full name"
         name="fullName"
         error={fieldErrors.fullName}
+        onBlur={handleFieldBlur}
+        onChange={handleFieldChange}
       />
       <FormInput
         type="email"
         label="Email"
         name="email"
         error={fieldErrors.email}
+        onBlur={handleFieldBlur}
+        onChange={handleFieldChange}
       />
       <FormInput
         label="Phone"
         name="phone"
         error={fieldErrors.phone}
+        onBlur={handleFieldBlur}
+        onChange={handleFieldChange}
       />
       <div>
         <label htmlFor="numAttendees" className="block text-sm font-medium text-ink mb-1">
@@ -169,6 +205,8 @@ export default function RegistrationForm({
               label="Payment reference / transaction ID"
               name="paymentReference"
               error={fieldErrors.paymentReference}
+              onBlur={handleFieldBlur}
+              onChange={handleFieldChange}
             />
             <p className="text-xs text-ink/50 mt-1">
               Your seat will show as <em>pending</em> until an organizer

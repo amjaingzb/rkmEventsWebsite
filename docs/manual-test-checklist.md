@@ -6,7 +6,7 @@ created: 2026-09-10
 
 # Manual Test Checklist (pre-demo, 2026-09-10)
 
-> [!note] Purpose
+> [![note](note.md)] Purpose
 > Short, demo-day checklist — not exhaustive regression coverage. See
 > [[BACKLOG.md]] for known gaps (e.g. no automated test suite besides
 > [[setup.md]]'s concurrency load test).
