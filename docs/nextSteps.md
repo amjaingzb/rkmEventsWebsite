@@ -15,10 +15,50 @@ updated: 2026-09-10
 
 ## Next action
 
-> [!warning] Highest priority — demo is today (2026-09-10), leaving in 1-2 hours
-> Backlog triage done this session (11 open BACKLOG.md items + nextSteps
-> to-dos reviewed against actual code, not just doc text). Decided order
-> for the remaining time, most urgent first:
+> [!warning] Demo postponed to tomorrow (2026-09-11) — ~10 hrs of runway left, cutoff 7 PM today (2026-09-10)
+> Originally leaving for the demo within 1-2 hours (see the triage below,
+> done earlier today); project owner confirmed 2026-09-10 the demo moved
+> to tomorrow, giving roughly 10 more hours today to keep polishing before
+> a 7 PM cutoff. Use this window for further manual-testing feedback passes
+> (a short checklist is at [[manual-test-checklist.md]]) and any additional
+> fixes that surface — same standing rule applies: **no production deploy
+> without the project owner's explicit go-ahead**, keep working against
+> the draft URL (`https://demo--rkm-halasuru-registration.netlify.app`,
+> alias `demo`, redeployed after each fix so it always reflects local
+> `main`).
+>
+> **Fixes landed since the original triage, from live manual-testing
+> feedback (screenshots via `delme-clipboard/manualtestFeedback/`)**:
+> - On-blur/on-change field validation (name/email/phone/payment
+>   reference) — previously only validated on submit, which on mobile
+>   looked like the Register button wasn't responding; see the item-15
+>   entry below for the full validation history.
+> - Confirmation page: dropped the redundant UPI payment QR (registrant
+>   had already submitted a payment reference by that point), added a
+>   "Back to homepage" link, and now shows full contact info
+>   (email/phone/WhatsApp, all linked) instead of just an unlinked email.
+> - Payment reference field now explicitly asks for the **last 4 digits**
+>   of the UPI Ref. No./UTR/RRN (not the app's alphanumeric Transaction
+>   ID) — a real, recurring pain point in manual-mode verification at the
+>   Math. Fuller fix (server-side enforcement, per-UPI-app guidance) logged
+>   as [[BACKLOG.md]] item 21.
+> - Admin table: added a "Reg. ID (registrant-facing)" column — a
+>   registrant reading their confirmation page's ID over a phone call had
+>   no way to be located in the dashboard, since the existing "Reg. No."
+>   column is a different field (`registration_number`, blank until
+>   verified — confirmed still genuinely useful as a free headcount/order
+>   reference, kept as-is, not renamed to "Seat No." — see
+>   [[BACKLOG.md]] item 20 for why `seat_number` was deliberately renamed
+>   away from in the first place, there's no assigned seating).
+> - The real Supabase event data was fully wiped via
+>   `select reset_event_registrations('halasuru-sarvapriyananda-2026');`
+>   (run by the project owner directly in the SQL editor) — everything in
+>   the registrations table right now is fresh test data from today's
+>   testing pass, not the 2026-09-09 seeded demo rows. **Re-seed the 3
+>   clean demo rows (or decide to leave it empty) before the actual demo**
+>   — not yet done.
+>
+> Original same-day triage, still relevant for what's already decided:
 > 1. ~~**BACKLOG.md item 15** — client-side form validation~~ — **done, this
 >    session.** `src/lib/registration/validation.ts` (new) adds
 >    `validateFullName` (rejects digits) and `validatePhone` (strips an
