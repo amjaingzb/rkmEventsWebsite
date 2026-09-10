@@ -1,3 +1,5 @@
+import WhatsAppIcon from "@/components/WhatsAppIcon";
+
 type FooterProps = {
   contactEmail: string;
   contactPhone: string;
@@ -24,8 +26,9 @@ export default function Footer({
             href={`https://wa.me/91${contactWhatsappNumber}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="hover:text-cream transition"
+            className="hover:text-cream transition inline-flex items-center gap-1.5"
           >
+            <WhatsAppIcon />
             WhatsApp
           </a>
         </p>

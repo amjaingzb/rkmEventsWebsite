@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
  * Mounted only when a PhonePe-mode registration is still `pending` on load
  * — covers the race where the browser's redirect back from PhonePe lands
  * before the S2S webhook does. Calls the status-reconciliation route once
- * and refreshes the page if it flips to verified.
+ * and refreshes the page if it resolves (verified, waitlisted, or rejected).
  */
 export default function ConfirmationPhonePeReconciler({
   registrationId,
@@ -20,7 +20,7 @@ export default function ConfirmationPhonePeReconciler({
     fetch(`/api/phonepe/status?registrationId=${registrationId}`)
       .then((res) => res.json())
       .then((data) => {
-        if (data.status === "verified") {
+        if (data.status !== "pending") {
           router.refresh();
         }
       })

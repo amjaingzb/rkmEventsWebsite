@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import AdminManualRegisterForm from "./AdminManualRegisterForm";
+import WhatsAppIcon from "./WhatsAppIcon";
 import { getStatusMessage, type RegistrationStatus } from "@/lib/registration/statusMessages";
 import { normalizePhone } from "@/lib/phone";
 
@@ -338,12 +339,14 @@ export default function AdminTable() {
                             href={whatsappLink(r, event)}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-green-700 border border-green-300 px-3 py-1 rounded"
+                            className="text-green-700 border border-green-300 px-3 py-1 rounded inline-flex items-center gap-1.5"
                           >
+                            <WhatsAppIcon />
                             WhatsApp
                           </a>
                         ) : (
-                          <span className="text-green-700/40 border border-green-300/40 px-3 py-1 rounded cursor-not-allowed">
+                          <span className="text-green-700/40 border border-green-300/40 px-3 py-1 rounded cursor-not-allowed inline-flex items-center gap-1.5">
+                            <WhatsAppIcon />
                             WhatsApp
                           </span>
                         )}

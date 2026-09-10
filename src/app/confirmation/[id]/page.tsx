@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createServiceClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import ConfirmationPhonePeReconciler from "@/components/ConfirmationPhonePeReconciler";
+import WhatsAppIcon from "@/components/WhatsAppIcon";
 import { getStatusTitle, type RegistrationStatus } from "@/lib/registration/statusMessages";
 
 function statusBody(contactEmail: string): Record<RegistrationStatus, string> {
@@ -10,7 +11,7 @@ function statusBody(contactEmail: string): Record<RegistrationStatus, string> {
       "We've recorded your payment reference. An organizer will verify it and email your ticket shortly.",
     verified: "Your registration is confirmed. Your ticket (with QR code) has been emailed to you.",
     waitlisted:
-      "Guaranteed seats are full. You've been added to the expression-of-interest list — if a larger venue becomes available, we'll reach out to you.",
+      "Seats are full right now. You've been added to the waitlist — we'll reach out if a seat opens up or a bigger venue is arranged.",
     rejected: `Please contact us at ${contactEmail} with your registration ID below to resolve this.`,
   };
 }
@@ -91,8 +92,9 @@ export default async function ConfirmationPage({
               href={`https://wa.me/91${contactWhatsappNumber}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="hover:text-gray-800 transition"
+              className="hover:text-gray-800 transition inline-flex items-center gap-1.5"
             >
+              <WhatsAppIcon />
               WhatsApp
             </a>
           )}

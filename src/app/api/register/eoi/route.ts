@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { registerInterest } from "@/lib/registration/register";
 import { sendStatusUpdateEmail } from "@/lib/ticket/issue";
+import { validateFullName } from "@/lib/registration/validation";
 
 // Kept as a separate route from POST /api/register (rather than an isEoi
 // flag on that handler) since the two contracts differ enough -- no
@@ -15,6 +16,11 @@ export async function POST(req: NextRequest) {
       { error: "fullName, email, and phone are required" },
       { status: 400 }
     );
+  }
+
+  const fullNameError = validateFullName(fullName);
+  if (fullNameError) {
+    return NextResponse.json({ error: fullNameError }, { status: 400 });
   }
 
   try {

@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
-import { checkPhonePeStatus, applyConfirmedPhonePeSuccess } from "@/lib/payment/phonepe";
+import {
+  checkPhonePeStatus,
+  applyConfirmedPhonePeSuccess,
+  applyTerminalPhonePeFailure,
+} from "@/lib/payment/phonepe";
 
 // Reconciliation fallback for when the browser's redirect back from PhonePe
 // lands before the S2S webhook does. Also doubles as the local-dev testing
@@ -30,7 +34,14 @@ export async function GET(req: NextRequest) {
   const payload = await checkPhonePeStatus(reg.phonepe_merchant_txn_id);
   const result = await applyConfirmedPhonePeSuccess(reg, payload);
 
+  if (result.applied) {
+    return NextResponse.json({
+      status: result.waitlisted ? "waitlisted" : "verified",
+    });
+  }
+
+  const failureResult = await applyTerminalPhonePeFailure(reg, payload);
   return NextResponse.json({
-    status: result.applied ? (result.waitlisted ? "waitlisted" : "verified") : reg.status,
+    status: failureResult.applied ? "rejected" : reg.status,
   });
 }

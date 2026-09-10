@@ -134,8 +134,8 @@ export default function EoiForm({ contactEmail }: { contactEmail: string }) {
   return (
     <form onSubmit={handleSubmit} className="space-y-4" noValidate>
       <p className="text-sm text-ink/60">
-        Guaranteed seats are full — leave your info and we&apos;ll reach out
-        if seats open up or a bigger venue is arranged.
+        Seats are full right now — leave your info and we&apos;ll reach out
+        if a seat opens up or a bigger venue is arranged.
       </p>
       <FormInput
         label="Full name"

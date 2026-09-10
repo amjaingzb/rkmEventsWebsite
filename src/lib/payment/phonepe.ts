@@ -1,7 +1,7 @@
 import { createHash } from "crypto";
 import { isDevelopment } from "@/lib/appMode";
 import { createServiceClient } from "@/lib/supabase/server";
-import { markVerifiedAndIssueTicket } from "@/lib/ticket/issue";
+import { markVerifiedAndIssueTicket, sendStatusUpdateEmail } from "@/lib/ticket/issue";
 import { computeAmountInr } from "./pricing";
 
 /**
@@ -249,6 +249,14 @@ function isPhonePeSuccess(orderState: PhonePeOrderState): boolean {
   return orderState.state === "COMPLETED";
 }
 
+/** Anything that isn't COMPLETED and isn't still in flight (PENDING) is
+ * terminal-failed — covers "FAILED" and "EXPIRED" (and any other terminal
+ * string PhonePe might send) without needing to enumerate every one, since
+ * the only non-terminal state PhonePe documents is PENDING. */
+function isPhonePeTerminalFailure(orderState: PhonePeOrderState): boolean {
+  return orderState.state !== "COMPLETED" && orderState.state !== "PENDING";
+}
+
 interface RegistrationForPhonePe {
   id: string;
   num_attendees: number;
@@ -297,4 +305,45 @@ export async function applyConfirmedPhonePeSuccess(
   });
 
   return { applied: true, waitlisted: outcome.waitlisted };
+}
+
+/**
+ * Counterpart to applyConfirmedPhonePeSuccess for the terminal-failure case
+ * (state FAILED/EXPIRED/etc.) — without this, a failed or expired PhonePe
+ * payment just left the registration sitting in `pending` until the
+ * 1-hour manual-override gate (phonepeGate.ts) opened, still showing the
+ * registrant a "reserved, pending verification" success screen and email.
+ * Auto-rejects via the same reject_registration RPC the admin Reject button
+ * uses (p_rejected_by null marks it system-triggered, not an admin action),
+ * then sends the normal rejection email through the unchanged
+ * sendStatusUpdateEmail seam. Only ever called on a still-`pending` row —
+ * reject_registration itself no-ops (returns null) if the row already moved
+ * on, so a webhook race against a manual action can't double-apply.
+ */
+export async function applyTerminalPhonePeFailure(
+  reg: RegistrationForPhonePe,
+  orderState: PhonePeOrderState
+): Promise<{ applied: boolean; reason?: string }> {
+  if (!isPhonePeTerminalFailure(orderState)) {
+    return { applied: false, reason: `not a terminal failure (state=${orderState.state})` };
+  }
+
+  const supabase = createServiceClient();
+  const { data, error } = await supabase.rpc("reject_registration", {
+    p_registration_id: reg.id,
+    p_rejected_by: null,
+    p_rejection_reason: `PhonePe payment ${orderState.state.toLowerCase()}`,
+  });
+
+  if (error || !data) {
+    return { applied: false, reason: error?.message ?? "registration not pending" };
+  }
+
+  try {
+    await sendStatusUpdateEmail(reg.id);
+  } catch (err) {
+    console.error("Failed to send PhonePe auto-rejection email:", err);
+  }
+
+  return { applied: true };
 }

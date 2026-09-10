@@ -4,6 +4,7 @@ import {
   verifyPhonePeWebhookSignature,
   decodePhonePeWebhookBody,
   applyConfirmedPhonePeSuccess,
+  applyTerminalPhonePeFailure,
 } from "@/lib/payment/phonepe";
 
 // PhonePe's dashboard appears to probe the webhook URL with a plain GET
@@ -53,14 +54,22 @@ export async function POST(req: NextRequest) {
   }
 
   const result = await applyConfirmedPhonePeSuccess(reg, payload);
-  if (!result.applied) {
-    console.error("PhonePe webhook: not applied —", result.reason);
-  } else if (result.waitlisted) {
-    console.error(
-      "PhonePe webhook: payment confirmed but capacity filled at verification — " +
-        "registration waitlisted with payment on file, needs manual resolution",
-      reg.id
-    );
+  if (result.applied) {
+    if (result.waitlisted) {
+      console.error(
+        "PhonePe webhook: payment confirmed but capacity filled at verification — " +
+          "registration waitlisted with payment on file, needs manual resolution",
+        reg.id
+      );
+    }
+    return NextResponse.json({ ok: true });
+  }
+
+  console.error("PhonePe webhook: not applied —", result.reason);
+
+  const failureResult = await applyTerminalPhonePeFailure(reg, payload);
+  if (!failureResult.applied) {
+    console.error("PhonePe webhook: auto-reject not applied —", failureResult.reason);
   }
 
   return NextResponse.json({ ok: true });

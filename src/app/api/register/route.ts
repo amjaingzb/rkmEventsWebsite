@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { registerAttendee } from "@/lib/registration/register";
 import { sendStatusUpdateEmail } from "@/lib/ticket/issue";
+import { validateFullName } from "@/lib/registration/validation";
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
@@ -11,6 +12,11 @@ export async function POST(req: NextRequest) {
       { error: "fullName, email, and phone are required" },
       { status: 400 }
     );
+  }
+
+  const fullNameError = validateFullName(fullName);
+  if (fullNameError) {
+    return NextResponse.json({ error: fullNameError }, { status: 400 });
   }
 
   try {
