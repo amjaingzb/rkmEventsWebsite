@@ -347,14 +347,30 @@ bucket + upload path to the shape-design step below; not yet designed.
    whole reason this area was split out per red flag/discussion above) is
    a distinct, larger change spanning API routes and client components,
    not folded into this pass.
-5. **Wire caching** — `unstable_cache` + one tag per content area; call
-   `revalidateTag(<area>)` from whatever the chosen edit path turns out to
-   be (address red flag 1 explicitly here, don't defer it).
+5. ~~**Wire caching**~~ — **done (2026-09-10)**. `getEventContent` now
+   does 6 independently `unstable_cache`-wrapped reads (one per area, each
+   selecting only that area's columns), tagged `content:<area>:<slug>` via
+   the new `contentTag()`/`CONTENT_AREAS` exports, with the 5-minute
+   backstop `revalidate` from the design doc — not the primary mechanism.
+   New `POST /api/admin/revalidate-content` (admin-session-gated, same
+   pattern as the other `/api/admin/*` routes) takes `{area}` and calls
+   `revalidateTag`, addressing red flag 1: a direct Supabase table-editor
+   edit can now be followed by one authenticated call to see it live,
+   instead of waiting on the backstop. **Not wired to any UI** — that's
+   step 6's decision (a dashboard button vs. calling it directly), not
+   bundled in here. `npm run build`/`lint` clean; verified live (dev
+   server) that the homepage still renders every DB-backed area correctly
+   and that the new endpoint 401s without an admin session. **Not yet
+   verified**: an actual end-to-end edit → `revalidateTag` call →
+   homepage-updates round trip with a real admin session (needs either a
+   browser login or someone to hand-test after step 6 picks a front door).
 6. **Decide and build the actual edit front door** — direct Supabase table
    edits (fast, zero build) vs. a monk-facing admin content tab (more
    build effort, removes the project owner from the editing loop
    permanently) — a deliberate, separate decision per red flag 6, not
-   bundled into steps 1-5.
+   bundled into steps 1-5. Should also decide whether/how
+   `POST /api/admin/revalidate-content` gets a UI button here, since step 5
+   only built the endpoint, not a way to trigger it without curl/Postman.
 
 ## Related docs
 

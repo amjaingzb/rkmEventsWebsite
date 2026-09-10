@@ -28,7 +28,7 @@ updated: 2026-09-10
 > deploy, (3) smoke-test the live site (registration flow, admin verify,
 > ticket email) before the demo, not just locally.
 
-> [!note] Content-editability: fetch moved server-side, caching not yet wired
+> [!note] Content-editability: caching wired, edit front door not decided
 > > (2026-09-10)
 > Full architecture discussion in [[content-editability-design.md]] — DB-
 > backed content, tag-based cache invalidation (`revalidateTag`, confirmed
@@ -63,8 +63,17 @@ updated: 2026-09-10
 > (`src/lib/contact.ts`) is still used as-is in 5 other places outside the
 > homepage Footer (email templates, EoiForm, RegistrationForm, confirmation
 > page) — finishing that swap sitewide is a separate, larger follow-up.
-> Steps 5-6 (wire caching → decide the edit front door) not started —
-> explicitly not a demo blocker, no rush.
+> **Step 5 (wire caching) now done too**: `getEventContent` does 6
+> independently `unstable_cache`-tagged reads (`content:<area>:<slug>`),
+> and a new admin-gated `POST /api/admin/revalidate-content` calls
+> `revalidateTag` for one area — addresses red flag 1 (a direct Supabase
+> table edit can now be followed by one authenticated call instead of
+> waiting on the 5-minute backstop). Not wired to any UI button yet — that
+> and picking the actual edit front door are both step 6, not started.
+> Also not yet verified: a real end-to-end edit → revalidate → homepage-
+> updates check with an actual admin session (only the 401-when-
+> unauthenticated behavior has been confirmed so far). Not a demo
+> blocker, no rush.
 > Read that doc before picking this back up.
 
 > [!note] Rounded favicon — done, switched to a different logo (2026-09-10)
