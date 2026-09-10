@@ -8,7 +8,25 @@ function Chip({ children }: { children: React.ReactNode }) {
   );
 }
 
-export default function Hero() {
+type HeroProps = {
+  title: string;
+  badgeText: string;
+  dateLabel: string;
+  timeLabel: string;
+  venueLabel: string;
+  ctaText: string;
+  photoUrl: string;
+};
+
+export default function Hero({
+  title,
+  badgeText,
+  dateLabel,
+  timeLabel,
+  venueLabel,
+  ctaText,
+  photoUrl,
+}: HeroProps) {
   return (
     <section
       id="home"
@@ -27,11 +45,11 @@ export default function Hero() {
       <div className="relative max-w-6xl mx-auto px-4 py-16 md:py-24 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
         <div className="text-center lg:text-left">
           <span className="inline-block text-xs font-semibold tracking-widest uppercase text-saffron-dark bg-saffron/10 border border-saffron/30 rounded-full px-3 py-1 mb-5">
-            Public Discourse
+            {badgeText}
           </span>
 
           <h1 className="font-display text-4xl sm:text-5xl font-semibold text-maroon mb-5 leading-tight">
-            Swami Sarvapriyananda at Ramakrishna Math Halasuru
+            {title}
           </h1>
 
           <div className="flex flex-wrap justify-center lg:justify-start gap-2.5 mb-8">
@@ -40,21 +58,21 @@ export default function Hero() {
                 <rect x="3" y="4" width="18" height="18" rx="2" />
                 <path d="M16 2v4M8 2v4M3 10h18" strokeLinecap="round" />
               </svg>
-              31 October 2026
+              {dateLabel}
             </Chip>
             <Chip>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                 <circle cx="12" cy="12" r="9" />
                 <path d="M12 7v5l3 3" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
-              6:00 PM – 7:30 PM
+              {timeLabel}
             </Chip>
             <Chip>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                 <path d="M12 21s7-7.2 7-12a7 7 0 10-14 0c0 4.8 7 12 7 12z" strokeLinejoin="round" />
                 <circle cx="12" cy="9" r="2.5" />
               </svg>
-              Halasuru, Bangalore
+              {venueLabel}
             </Chip>
           </div>
 
@@ -62,13 +80,13 @@ export default function Hero() {
             href="#register"
             className="inline-block bg-maroon text-white px-8 py-3 rounded-full font-medium hover:bg-maroon-dark transition shadow-sm"
           >
-            Register Now
+            {ctaText}
           </a>
         </div>
 
         <div className="relative w-full aspect-[4/3] rounded-2xl shadow-xl overflow-hidden border border-gold/30 bg-white/50">
           <Image
-            src="/images/hero-matha-photo.jpg"
+            src={photoUrl}
             alt="Ramakrishna Math, Halasuru"
             fill
             sizes="(max-width: 1024px) 100vw, 576px"

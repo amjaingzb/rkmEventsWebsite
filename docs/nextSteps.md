@@ -28,7 +28,7 @@ updated: 2026-09-10
 > deploy, (3) smoke-test the live site (registration flow, admin verify,
 > ticket email) before the demo, not just locally.
 
-> [!note] Content-editability: inventory pass done, shape design not started
+> [!note] Content-editability: fetch moved server-side, caching not yet wired
 > > (2026-09-10)
 > Full architecture discussion in [[content-editability-design.md]] — DB-
 > backed content, tag-based cache invalidation (`revalidateTag`, confirmed
@@ -37,7 +37,8 @@ updated: 2026-09-10
 > model, and red flags to resolve before starting (notably: a direct
 > Supabase table-editor edit does **not** auto-trigger revalidation — needs
 > a decision before relying on that for last-minute demo fixes).
-> **Steps 1-3 (inventory → shape design → backfill) are now done**, worked
+> **Steps 1-4 (inventory → shape design → backfill → move fetch
+> server-side) are now done**, worked
 > through collaboratively with the project owner — see that doc's
 > "Inventory pass" and "Implementation plan" sections for the full detail.
 > Short version: Hero, Agenda, Speaker bio, FAQ, Venue & Parking, and a new
@@ -52,8 +53,18 @@ updated: 2026-09-10
 > exactly. Hero/speaker photos
 > still point at their existing `public/images/` paths as an interim value;
 > the actual Supabase Storage bucket for photos is separate infra, not yet
-> created. Steps 4-6 (move fetch server-side → wire caching → decide the
-> edit front door) not started — explicitly not a demo blocker, no rush.
+> created. `src/app/page.tsx` now fetches all this via new
+> `src/lib/content/getEventContent.ts` and passes it as props into
+> Hero/Agenda/Speaker/Venue/FAQ/Footer — `0013_hero_display_labels.sql`
+> (also applied and verified live) added separate free-text labels for
+> Hero's date/time/venue chips after reusing `venue_name` directly turned
+> out to visibly change the chip text. `npm run build`/`lint` clean,
+> verified live via the dev server. **Not done yet**: `CONTACT_EMAIL`
+> (`src/lib/contact.ts`) is still used as-is in 5 other places outside the
+> homepage Footer (email templates, EoiForm, RegistrationForm, confirmation
+> page) — finishing that swap sitewide is a separate, larger follow-up.
+> Steps 5-6 (wire caching → decide the edit front door) not started —
+> explicitly not a demo blocker, no rush.
 > Read that doc before picking this back up.
 
 > [!note] Rounded favicon — done, switched to a different logo (2026-09-10)

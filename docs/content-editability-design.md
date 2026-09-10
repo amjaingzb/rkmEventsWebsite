@@ -316,9 +316,37 @@ bucket + upload path to the shape-design step below; not yet designed.
    point at the existing `public/images/` paths as an interim value — the
    actual Supabase Storage bucket for photos (red flag/decision above)
    is separate infra, not yet created; swap those URLs once it exists.
-4. **Move the fetch server-side** — lift each area's read into `page.tsx`
-   (already a server component doing this for `events`), pass down as
-   props into the existing client components (address red flag 3).
+4. ~~**Move the fetch server-side**~~ — **done (2026-09-10)**. New
+   `src/lib/content/getEventContent.ts` (a separate query from the
+   always-fresh capacity/payment-mode one already in `page.tsx` — this one
+   is the eventual home for step 5's per-area caching, not added yet) maps
+   the DB row into a typed `EventContent`, fetched once in `page.tsx` and
+   passed down as props into Hero/AgendaSection/SpeakerSection/
+   VenueParkingSection/FaqSection/Footer — addresses red flag 3.
+   Hero's date/time/venue chips turned out to need their own free-text
+   display labels (`hero_date_label`/`hero_time_label`/
+   `hero_venue_label`, added in `0013_hero_display_labels.sql`) rather than
+   being derived from `event_date`/`start_time`/`end_time`/`venue_name` —
+   reusing `venue_name` directly would have visibly changed the chip text
+   ("Halasuru, Bangalore" → "Ramakrishna Math Halasuru", read as repetitive
+   next to the page title), a call made with the project owner mid-build.
+   Footer's address line stayed hardcoded per the project owner's choice
+   (now "© 2026 Sri Ramakrishna Math, Halasuru", a copyright line rather
+   than the short address it showed before) — only its contact line
+   (email/phone/WhatsApp, live `mailto:`/`tel:`/`wa.me` links) reads the
+   new DB-backed Contact settings. `npm run build` and `npm run lint`
+   clean; verified live against the real Supabase project via the dev
+   server — homepage renders all DB-backed copy correctly, no console/
+   server errors.
+   **Not done yet, scoped as a separate follow-up**: the `CONTACT_EMAIL`
+   constant (`src/lib/contact.ts`) is still used as-is in 5 other places
+   (`statusMessages.ts`, `ticket/email.ts`, `EoiForm.tsx`,
+   `RegistrationForm.tsx`, the confirmation page) — only the homepage
+   Footer reads the new DB-backed contact settings so far. Finishing the
+   swap sitewide (so `contact_email` truly has one source of truth, the
+   whole reason this area was split out per red flag/discussion above) is
+   a distinct, larger change spanning API routes and client components,
+   not folded into this pass.
 5. **Wire caching** — `unstable_cache` + one tag per content area; call
    `revalidateTag(<area>)` from whatever the chosen edit path turns out to
    be (address red flag 1 explicitly here, don't defer it).

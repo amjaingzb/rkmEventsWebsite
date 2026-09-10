@@ -11,6 +11,7 @@ import PausedNotice from "@/components/PausedNotice";
 import Ornament from "@/components/static/Ornament";
 import { createServiceClient } from "@/lib/supabase/server";
 import { getCapacitySnapshot, computeAutoPause, isFull } from "@/lib/registration/capacity";
+import { getEventContent } from "@/lib/content/getEventContent";
 
 const EVENT_SLUG = process.env.EVENT_SLUG ?? "halasuru-sarvapriyananda-2026";
 
@@ -36,6 +37,8 @@ export default async function HomePage() {
   // registrations (POST /api/admin/manual-register) never render this
   // page, so they bypass all three states by construction, per the doc's
   // caveat 5.
+  const content = await getEventContent(supabase, EVENT_SLUG);
+
   const snapshot = event ? await getCapacitySnapshot(supabase, event.id) : null;
   const manualPause = event ? !event.is_registration_open : false;
   const autoPause = snapshot ? computeAutoPause(snapshot) : false;
@@ -47,15 +50,35 @@ export default async function HomePage() {
       ? "full-eoi"
       : "open";
 
+  if (!content) {
+    // Single-tenant app (CLAUDE.md) — the one seeded event row should
+    // always exist. Surfacing plainly rather than rendering a page with
+    // sections silently missing their copy.
+    throw new Error(`No events row found for slug "${EVENT_SLUG}"`);
+  }
+
   return (
     <>
       <Navbar />
       <main>
-        <Hero />
-        <AgendaSection />
-        <SpeakerSection />
-        <VenueParkingSection />
-        <FaqSection />
+        <Hero
+          title={content.title}
+          badgeText={content.heroBadgeText}
+          dateLabel={content.heroDateLabel}
+          timeLabel={content.heroTimeLabel}
+          venueLabel={content.heroVenueLabel}
+          ctaText={content.heroCtaText}
+          photoUrl={content.heroPhotoUrl}
+        />
+        <AgendaSection items={content.agenda} />
+        <SpeakerSection name={content.speaker} {...content.speakerContent} />
+        <VenueParkingSection
+          venueName={content.venueName}
+          venueAddress={content.venueAddress}
+          mapsEmbedUrl={content.venueMapsEmbedUrl}
+          parkingInfo={content.parkingInfo}
+        />
+        <FaqSection categories={content.faq} />
         <section id="register" className="bg-maroon/5 border-t border-gold/30 scroll-mt-16">
           <div className="max-w-2xl mx-auto px-4 py-16 md:py-24">
             <h2 className="font-display text-3xl font-semibold text-maroon text-center mb-2">
@@ -78,7 +101,11 @@ export default async function HomePage() {
             </div>
           </div>
         </section>
-        <Footer />
+        <Footer
+          contactEmail={content.contactEmail}
+          contactPhone={content.contactPhone}
+          contactWhatsappNumber={content.contactWhatsappNumber}
+        />
       </main>
     </>
   );
