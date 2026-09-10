@@ -14,9 +14,21 @@ const TABS: { area: ContentArea; label: string }[] = [
 ];
 
 const inputClass = "w-full border rounded px-2 py-1.5 text-sm";
+const disabledInputClass = `${inputClass} bg-gray-100 text-gray-500 cursor-not-allowed`;
 const labelClass = "block text-sm font-medium text-gray-700 mb-1";
 const sectionClass = "border rounded-lg p-3 space-y-2 bg-gray-50";
 const smallBtn = "text-xs px-2 py-1 rounded border border-gray-300 bg-white hover:bg-gray-100";
+
+// Hero/speaker photos are still plain-text URL columns, not real image
+// storage (no upload UI yet — see docs/BACKLOG.md item 24). Editable here,
+// a volunteer would assume either "a path under public/images" or "a full
+// URL" self-serves a new photo; neither actually does (the first needs a
+// code deploy, the second needs the image already hosted elsewhere).
+// Disabled rather than left editable-but-misleading until the real upload
+// flow is built — change either photo via a direct Supabase table edit for
+// now.
+const PHOTO_URL_DISABLED_NOTE =
+  "Editing disabled for now — changing this photo needs a direct database edit. See docs/BACKLOG.md item 24.";
 
 async function saveArea(area: ContentArea, data: Record<string, unknown>) {
   const res = await fetch("/api/admin/content", {
@@ -84,7 +96,8 @@ function HeroTab({ initial }: { initial: RawContentRow }) {
   const [time, setTime] = useState(initial.hero_time_label ?? "");
   const [venue, setVenue] = useState(initial.hero_venue_label ?? "");
   const [cta, setCta] = useState(initial.hero_cta_text ?? "");
-  const [photo, setPhoto] = useState(initial.hero_photo_url ?? "");
+  // Not user-editable (see PHOTO_URL_DISABLED_NOTE above) — no setter needed.
+  const photo = initial.hero_photo_url ?? "";
   const { saving, error, saved, run } = useAreaSave("hero");
 
   return (
@@ -116,8 +129,11 @@ function HeroTab({ initial }: { initial: RawContentRow }) {
         <input className={inputClass} value={cta} onChange={(e) => setCta(e.target.value)} />
       </label>
       <label className={labelClass}>
-        Hero photo URL (path under public/images, or a full URL)
-        <input className={inputClass} value={photo} onChange={(e) => setPhoto(e.target.value)} />
+        Hero photo URL
+        <input className={disabledInputClass} value={photo} disabled readOnly />
+        <span className="block text-xs text-gray-500 font-normal mt-1">
+          {PHOTO_URL_DISABLED_NOTE}
+        </span>
       </label>
       <SaveBar
         saving={saving}
@@ -233,7 +249,8 @@ function ListEditor({
 
 function SpeakerTab({ initial }: { initial: RawContentRow }) {
   const [name, setName] = useState(initial.speaker);
-  const [photo, setPhoto] = useState(initial.speaker_json?.photoUrl ?? "");
+  // Not user-editable (see PHOTO_URL_DISABLED_NOTE above) — no setter needed.
+  const photo = initial.speaker_json?.photoUrl ?? "";
   const [highlights, setHighlights] = useState(initial.speaker_json?.highlights ?? []);
   const [fullBio, setFullBio] = useState(initial.speaker_json?.fullBio ?? []);
   const { saving, error, saved, run } = useAreaSave("speaker");
@@ -246,7 +263,10 @@ function SpeakerTab({ initial }: { initial: RawContentRow }) {
       </label>
       <label className={labelClass}>
         Photo URL
-        <input className={inputClass} value={photo} onChange={(e) => setPhoto(e.target.value)} />
+        <input className={disabledInputClass} value={photo} disabled readOnly />
+        <span className="block text-xs text-gray-500 font-normal mt-1">
+          {PHOTO_URL_DISABLED_NOTE}
+        </span>
       </label>
       <div>
         <p className={labelClass}>Highlight bullets</p>

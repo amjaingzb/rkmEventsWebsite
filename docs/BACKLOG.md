@@ -475,3 +475,22 @@ Not needed for the prototype demo; revisit once the site is past that stage.
       a distinct action here — actively prompting the registrant to pay
       or get in touch — once the EOI→capacity re-invite flow (item 5
       above) is actually designed; don't build this in isolation first.
+24. **Hero/speaker photo upload — deferred 2026-09-10, disabled rather than
+    built.** Full context: [[content-editability-design.md]] "Photo hosting
+    decision" section. Short version: `hero_photo_url`/`speaker_json.photoUrl`
+    are still plain text URL columns, not real image storage. A design for
+    a Supabase Storage bucket + upload UI was decided back on 2026-09-08 but
+    never designed/built. Raised again 2026-09-10 because the admin
+    "Hero photo URL" field's label ("path under `public/images`, or a full
+    URL") implied volunteers could self-serve a new photo — neither option
+    actually works for them: a `public/images/` path requires a code deploy
+    for a genuinely new file, and a full URL requires them to have already
+    hosted the image somewhere else first.
+    **Explicitly not building the upload UI yet** — the project owner's
+    call, since the Supabase Storage bucket would live under their own
+    account/billing, and opening it to volunteer uploads without any
+    abuse guardrails (file size/type limits, quotas) is a real risk before
+    those exist. For now, both photo-URL fields are disabled
+    (`AdminContentEditor.tsx`) rather than left editable-but-misleading —
+    changing either photo currently requires a direct Supabase table edit
+    (by the project owner) until this is actually built.
