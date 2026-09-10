@@ -308,15 +308,42 @@ Update this whenever something is skipped for time — don't let it get lost.
 
 Not needed for the prototype demo; revisit once the site is past that stage.
 
-15. **Client-side form validation** — `RegistrationForm.tsx` (and the admin
-    walk-in equivalent) currently has no input-shape validation beyond HTML
-    `required`/`type="email"`. Add, scoped to India-only (no international
-    numbers/payments per project scope): full name rejects digits, phone
-    requires exactly 10 digits (optionally auto-stripping a `+91`/`91`
-    prefix rather than accepting arbitrary country codes). Server-side
-    `register_attendee` stays the source of truth either way — this is purely
-    UX (catch the mistake before submit, don't rely on client validation for
-    correctness).
+15. **Client-side form validation — done for RegistrationForm/EoiForm
+    (2026-09-10).** `src/lib/registration/validation.ts` added
+    `validateFullName` (rejects digits) and `validatePhone` (strips a `+91`
+    prefix, or a bare `91` prefix only when it's part of a 12-digit
+    country-code+number string, then requires exactly 10 digits). Wired
+    into `RegistrationForm.tsx` and `EoiForm.tsx`; server-side
+    `register_attendee` remains the real gate either way. **Not done**:
+    the admin walk-in form (`AdminManualRegisterForm.tsx`) — skipped for
+    time ahead of the 2026-09-10 demo, internal-only so lower risk. A real
+    bug was caught and fixed while testing this: the phone normalizer
+    originally stripped a bare `91` prefix unconditionally, which
+    corrupted genuinely valid 10-digit numbers starting with `91` (e.g.
+    `9123456789`, common for Indian mobiles) down to 8 digits and
+    incorrectly rejected them. See item 19 below for the follow-on UX gap
+    this surfaced.
+19. **Phone input UX gap — raised 2026-09-10, needs design thought before
+    building.** The phone field on `RegistrationForm.tsx`/`EoiForm.tsx` is
+    a blank text box with no placeholder, no format hint, and no visible
+    country-code affordance — a user has to guess what to type, and item
+    15's `normalizePhone()` accepts several different shapes (`91XXXXXXXXXX`
+    only at exactly 12 digits, `+91XXXXXXXXXX`, or a plain 10-digit number)
+    silently, with no feedback about what was understood. Project owner's
+    direction: default a **separate, adjacent country-code field** to
+    `+91` (user can change it if they ever need to, though the rest of the
+    system is India-only per scope), and once the phone field loses focus,
+    **rewrite the box's own value to the cleaned/normalized number** so
+    the user sees exactly what was captured, not just what they typed.
+    Two things need resolving before implementing, per the project owner:
+    (a) confirm what shape `register_attendee`/the `registrations.phone`
+    column actually expects/stores today (bare 10 digits? with country
+    code? — normalize client and server to agree), and (b) work out the
+    on-blur reformat behavior in detail (what happens on invalid input,
+    whether the raw vs. cleaned value should both be visible, etc.).
+    Deliberately not designed further yet — explicitly flagged by the
+    project owner as "requires thinking later," not to be picked up
+    same-day.
 17. **Hierarchical admin roles** — raised 2026-09-10 while discussing
     [[content-editability-design.md]] step 6 (the edit front door). Today
     there is exactly one admin role: any Supabase Auth user who can log in
