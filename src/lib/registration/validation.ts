@@ -1,8 +1,13 @@
 const NAME_HAS_DIGIT_RE = /\d/;
 
-/** Strips an optional +91/91 prefix and returns the remaining digits. */
+/** Strips a +91 prefix, or a bare 91 prefix only when it's part of a
+ * 12-digit country-code+number string — a plain 10-digit number that
+ * happens to start with "91" (e.g. 9123456789) must be left alone. */
 export function normalizePhone(raw: string): string {
-  return raw.trim().replace(/[\s-]/g, "").replace(/^(\+?91)/, "");
+  const cleaned = raw.trim().replace(/[\s-]/g, "");
+  if (cleaned.startsWith("+91")) return cleaned.slice(3);
+  if (cleaned.startsWith("91") && cleaned.length === 12) return cleaned.slice(2);
+  return cleaned;
 }
 
 export function validateFullName(fullName: string): string | undefined {
