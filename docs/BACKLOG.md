@@ -495,7 +495,8 @@ Not needed for the prototype demo; revisit once the site is past that stage.
     changing either photo currently requires a direct Supabase table edit
     (by the project owner) until this is actually built.
 25. **Admin dashboard is unusable on a narrow/mobile screen — raised
-    2026-09-10, picked up 2026-09-12.** Project owner tried
+    2026-09-10, built 2026-09-12 (see below), pending review/merge.**
+    Project owner tried
     the admin dashboard on a phone (separately from the public site, which
     they confirmed renders well on mobile already) and found it "horrible"
     — a real worry since whichever monk actually verifies registrations at
@@ -520,8 +521,24 @@ Not needed for the prototype demo; revisit once the site is past that stage.
     table.
     **Scope decided 2026-09-12**: design for exactly two breakpoints, no
     intermediate tablet-specific layout — the existing desktop/monitor
-    table view (unchanged) and a new mobile card-per-row view. Being built
-    on a separate branch.
+    table view (unchanged) and a new mobile card-per-row view.
+    **Built 2026-09-12, branch `admin-dashboard-mobile-redesign`, not yet
+    merged.** `AdminTable.tsx`'s Verify/Reject/reject-reason/Notify/
+    WhatsApp action cluster and the status-detail (waitlisted-paid
+    warning, rejection reason) were extracted into shared components so
+    the desktop table and the new mobile card view can't drift on what
+    actions a status allows. Desktop view is pixel-unchanged (hidden below
+    `md`); mobile gets a card per registration (hidden `md` and up) with
+    full-width tap targets and `tel:`/`mailto:` links instead of plain
+    text. Also fixed a related mobile bug found while testing this: the
+    dashboard page's own header row (Capacity settings/Payment
+    mode/Site content/Log out, `admin/dashboard/page.tsx`) was an
+    un-wrapped `flex justify-between` that caused horizontal page overflow
+    at phone width — switched to `flex-col` below `md` with the button
+    group wrapping. Verified both breakpoints (1440×900 and 390×844,
+    including the inline reject-reason flow) via chrome-devtools; `npm run
+    build`/`lint` clean. Awaiting project owner review before merging to
+    `main`.
 26. **`registration_mode` race condition when `payment_mode` is toggled
     mid-submission — found via real mobile testing 2026-09-10, not fixed.**
     Confirmed mechanism by reading `registerAttendee()`
