@@ -2,7 +2,7 @@
 tags: [event-registration, next-steps]
 aliases: [next steps, todo, status]
 created: 2026-09-08
-updated: 2026-09-10 (later)
+updated: 2026-09-12 (later)
 ---
 
 # Next Steps
@@ -14,6 +14,34 @@ updated: 2026-09-10 (later)
 > "Recently completed", update "Next action", and refresh the queue.
 
 ## Next action
+
+> [!note] Demo (2026-09-11) went very well — post-demo follow-ups (2026-09-12)
+> Adhyaksha Maharaj was "very highly appreciative." Two things came out of
+> the debrief, both purely brainstorming/logging so far, no code changed:
+> - **Admin password rotated** (project owner did this directly in the
+>   Supabase dashboard — no code/deploy involved, see [[dev-accounts.md]]
+>   "Admin dashboard login") since the old shared login had gone to several
+>   people during demo prep.
+> - Discussed the risk that `/admin/content` writes are unversioned
+>   (overwrite-only, no rollback, and the project is staying on Supabase's
+>   free tier so there's no point-in-time DB recovery to fall back on
+>   either) — agreed direction is a `content_history` audit/rollback table,
+>   logged as [[BACKLOG.md]] item 27, to be designed as its own feature
+>   later, not started.
+> - Adhyaksha Maharaj is excited about reusing this site for similar
+>   events, and may ask for a second event to be stood up even before this
+>   one happens — logged as [[BACKLOG.md]] item 28, pure TBD, no direction
+>   chosen (a floated cheap option is duplicating the whole
+>   site/repo per event rather than building real multi-tenant UI).
+>   **Deliberately deferred further, same day**: project owner will ask
+>   Maharaj to hold off on a second event until after the 31 Oct 2026 event
+>   is done, to keep pressure off this decision for now — not to be picked
+>   up before then.
+> - **[[BACKLOG.md]] item 25 (admin dashboard mobile redesign) picked up
+>   next**, on a separate branch. Scope decided: exactly two breakpoints,
+>   no intermediate tablet layout — the existing desktop/monitor table
+>   view stays as-is, plus a new mobile card-per-row view below the
+>   breakpoint.
 
 > [!note] Grounded feature-summary doc + a `/summary` testers page built (2026-09-10)
 > Project owner wanted a genuinely-accurate (not oversold) feature summary to

@@ -495,7 +495,7 @@ Not needed for the prototype demo; revisit once the site is past that stage.
     changing either photo currently requires a direct Supabase table edit
     (by the project owner) until this is actually built.
 25. **Admin dashboard is unusable on a narrow/mobile screen — raised
-    2026-09-10, not fixed, deliberately deferred.** Project owner tried
+    2026-09-10, picked up 2026-09-12.** Project owner tried
     the admin dashboard on a phone (separately from the public site, which
     they confirmed renders well on mobile already) and found it "horrible"
     — a real worry since whichever monk actually verifies registrations at
@@ -518,6 +518,10 @@ Not needed for the prototype demo; revisit once the site is past that stage.
     now-tightened Actions-column buttons (see 2026-09-10 AdminTable.tsx
     Verify/Reject/WhatsApp sizing pass) in whatever layout replaces the
     table.
+    **Scope decided 2026-09-12**: design for exactly two breakpoints, no
+    intermediate tablet-specific layout — the existing desktop/monitor
+    table view (unchanged) and a new mobile card-per-row view. Being built
+    on a separate branch.
 26. **`registration_mode` race condition when `payment_mode` is toggled
     mid-submission — found via real mobile testing 2026-09-10, not fixed.**
     Confirmed mechanism by reading `registerAttendee()`
@@ -549,3 +553,33 @@ Not needed for the prototype demo; revisit once the site is past that stage.
     (e.g. reject the submission outright if it disagrees with what the
     client's page believed, forcing a reload instead of silently
     mis-tagging the row).
+27. **Content-edit audit/version history — raised 2026-09-12, not designed
+    yet.** Since [[content-editability-design.md]] shipped, `/admin/content`
+    writes directly overwrite the live `events` row (Hero/Agenda/Speaker/
+    FAQ/Venue/Contact columns) with no history — one bad edit, or a
+    malicious one now that the admin login had been shared with several
+    people before the post-demo password rotation, permanently loses the
+    previous value with no rollback path and no free-tier Supabase backup
+    to fall back on (project owner confirmed staying on the free tier, so
+    point-in-time recovery isn't an option here). Agreed direction, to be
+    designed as its own feature: a `content_history` table that snapshots
+    the old value (plus who/when) on every write to those columns in the
+    same `PATCH /api/admin/content` transaction, giving both an audit trail
+    and a manual rollback (admin picks a prior snapshot, it gets written
+    back). Not scoped or built — just logged.
+28. **Reusing this codebase for other Math events — raised 2026-09-12,
+    TBD. Deliberately deferred further, 2026-09-12 (same day)**: project
+    owner's plan is to ask Adhyaksha Maharaj to hold off on a second event
+    until after the 31 Oct 2026 event is done, specifically to keep
+    pressure off this decision while the critical event is still ahead.
+    Not to be picked up before then regardless of how the discussion with
+    Maharaj goes. Adhyaksha Maharaj was visibly excited at the 2026-09-11
+    demo about reusing this site for similar events, and may ask for a
+    second event to be stood up even before this one happens. The `events`
+    table already carries per-event config (see root `CLAUDE.md`
+    "Multi-tenancy is intentionally minimal") but there's no admin UI or
+    tooling for running more than one event — today it's one seeded row
+    selected by the `EVENT_SLUG` env var. A cheap short-term fix floated
+    (not decided, to be discussed later): duplicate the whole site/repo
+    per event rather than building real multi-tenant UI. No direction
+    chosen yet — just logged as TBD.
