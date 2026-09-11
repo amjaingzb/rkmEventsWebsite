@@ -31,9 +31,9 @@ export default async function AdminDashboardPage() {
 
   return (
     <main className="max-w-6xl mx-auto px-4 py-12">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6">
         <h1 className="text-xl font-semibold">Registrations</h1>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-3 md:gap-4">
           {event && snapshot && (
             <AdminCapacitySettings
               initialSettings={{
