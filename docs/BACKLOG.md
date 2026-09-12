@@ -60,9 +60,31 @@ Update this whenever something is skipped for time — don't let it get lost.
    call any of them directly, just untested since nothing in the app does.
    Defense-in-depth only: no live exposure existed before this either (all
    data access already goes through the service-role key from server-side
-   API routes — see [[technical-concepts.md]]). The three post-apply checks
-   in [[nextSteps.md]] (public registration, admin dashboard, direct anon-key
-   rejection) should still be confirmed to close this item out fully.
+   API routes — see [[technical-concepts.md]]).
+
+   **Real outage caused and fixed same day, 2026-09-12.** Applying 0015
+   broke live public registration: `register_attendee` had never been
+   explicitly granted to `service_role` in any prior migration (it relied
+   entirely on the default `PUBLIC` execute grant every `create function`
+   gets), which 0015's blanket public-grant revoke removed without
+   replacing — every real registration attempt (`register.ts` calls
+   `register_attendee` via the service-role client) started failing with
+   `permission denied for function register_attendee`. `service_role`'s RLS
+   bypass (`bypassrls`) only exempts it from row-level security, not
+   object-level grants — a distinct privilege system, easy to conflate.
+   Caught within minutes by driving the real registration form in a
+   browser (not just curl'd anon-key checks) before declaring this item
+   done, which is exactly why that check existed. Fixed by
+   `supabase/migrations/0016_fix_register_attendee_service_role_grant.sql`
+   (`grant execute on function register_attendee(...) to service_role`),
+   applied live immediately. All three post-apply checks then confirmed
+   working end-to-end: public registration (browser, reached real PhonePe
+   sandbox checkout), admin dashboard (Verify action driven live against a
+   disposable test registration, correctly claimed a seat and transitioned
+   to `verified`), and direct anon-key table/RPC access (curl, all
+   rejected). No other admin-only RPC had this gap — each of those already
+   carried its own explicit `grant ... to service_role` from the migration
+   that introduced it.
 2. **Duplicate submissions — done (2026-09-09).** Implemented per
    [[registration-integrity.md]] (duplicate detection against pending/
    verified rows, per-submission cap of 4, and the seat-cap-claim-timing

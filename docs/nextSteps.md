@@ -650,9 +650,22 @@ Full rationale and the complete deferred-items list: [[BACKLOG.md]].
   `reset_event_registrations`). Defense-in-depth, not a live fix: nothing in
   the app calls Supabase directly with the anon key except the
   `/admin/login` auth handshake. **Applied to the live Supabase project via
-  the SQL editor, 2026-09-12.** Post-apply checks (public registration still
-  works, admin dashboard still works, a direct anon-key table read/write is
-  rejected) still to be confirmed.
+  the SQL editor, 2026-09-12.**
+
+  **Broke live registration for a few minutes, same day — caught and fixed
+  immediately.** 0015's blanket revoke of `register_attendee`'s default
+  `PUBLIC` execute grant removed access that had never been separately
+  granted to `service_role` (unlike every other admin RPC, which already
+  had its own explicit grant) — real registrations started failing with
+  `permission denied for function register_attendee`. Fixed by
+  `supabase/migrations/0016_fix_register_attendee_service_role_grant.sql`,
+  applied live right after. All three post-apply checks then confirmed:
+  public registration (driven live in a browser, reached real PhonePe
+  sandbox checkout), admin dashboard (Verify action driven live, correctly
+  claimed a seat and transitioned a test row to `verified`), and direct
+  anon-key table/RPC access (curl — `SELECT`/`UPDATE`/`reject_registration`
+  all rejected with `permission denied`, `register_attendee` still
+  succeeds). See [[BACKLOG.md]] item 1 for the full writeup.
 
 - **2026-09-10 (disabled the Hero/Speaker "photo URL" fields in the admin
   content editor).** Follow-up from the manual-test round below: the
