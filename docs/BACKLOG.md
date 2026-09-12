@@ -45,12 +45,24 @@ Update this whenever something is skipped for time — don't let it get lost.
 > [!warning] Not yet done for Phase A launch
 > Items 1–3 below are the highest-risk gaps if this goes live before Phase B.
 
-1. **Row-Level Security (RLS)** — `events`/`registrations` currently have no
-   RLS policies; all access goes through the service-role key from server-side
-   API routes only (never exposed to the browser), so there's no direct public
-   exposure today, but RLS should still be added as defense-in-depth before
-   wider rollout: anon role restricted to executing `register_attendee` only,
-   admin role gated by an authenticated check. See plan Phase B.
+1. **Row-Level Security (RLS) — migration written and applied to the live
+   Supabase project, 2026-09-12.** `supabase/migrations/0015_rls_policies.sql`
+   enables RLS on `events`/`registrations`, revokes all direct table access
+   from `anon` (its only door in stays `register_attendee`, a `SECURITY
+   DEFINER` function that bypasses RLS by design), adds an `authenticated
+   full access` policy on both tables (any logged-in admin — single-role
+   model, see item 17), and closes a real pre-existing gap found while
+   writing this: every other admin-only RPC (`claim_and_verify_registration`,
+   `reject_registration`, `reinstate_registration`,
+   `event_capacity_snapshot`, `reset_event_registrations`) still carried its
+   default `PUBLIC` execute grant from `create function`, which the earlier
+   `grant ... to service_role` statements never revoked — anon could already
+   call any of them directly, just untested since nothing in the app does.
+   Defense-in-depth only: no live exposure existed before this either (all
+   data access already goes through the service-role key from server-side
+   API routes — see [[technical-concepts.md]]). The three post-apply checks
+   in [[nextSteps.md]] (public registration, admin dashboard, direct anon-key
+   rejection) should still be confirmed to close this item out fully.
 2. **Duplicate submissions — done (2026-09-09).** Implemented per
    [[registration-integrity.md]] (duplicate detection against pending/
    verified rows, per-submission cap of 4, and the seat-cap-claim-timing

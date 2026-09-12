@@ -625,10 +625,9 @@ page, registration form error) reads from that one constant. See
 
 1. Once the admin dashboard is scoped and built, start the rest of Phase B
    per [[architecture.md]]:
-   - RLS policies (`supabase/migrations/0002_rls.sql`, not yet written —
-     note: RLS is already *enabled* with no policies on `events`/
-     `registrations` as of 2026-09-08, see "Recently completed", so `anon`
-     has zero access today; this item is about writing the actual policies)
+   - ~~RLS policies~~ — **written and applied 2026-09-12**,
+     `supabase/migrations/0015_rls_policies.sql` — see "Recently completed"
+     and [[BACKLOG.md]] item 1.
    - Rejection + seat-release flow (`api/admin/reject`)
    - Waitlist re-invite tooling (separate from the general CSV export above)
    - PhonePe sandbox demo (isolated, not linked into the real flow)
@@ -636,6 +635,24 @@ page, registration form error) reads from that one constant. See
 Full rationale and the complete deferred-items list: [[BACKLOG.md]].
 
 ## Recently completed
+
+- **2026-09-12 (RLS policies written, [[BACKLOG.md]] item 1, on `main` —
+  kept separate from the not-yet-reviewed `admin-dashboard-mobile-redesign`
+  branch).** `supabase/migrations/0015_rls_policies.sql`: enables RLS on
+  `events`/`registrations`, revokes all direct table grants from `anon`
+  (its only remaining door in is `register_attendee`, a `SECURITY DEFINER`
+  function that bypasses RLS), adds an `authenticated full access` policy
+  on both tables for the logged-in-admin case, and revokes the default
+  `PUBLIC` execute grant — never actually revoked by any prior migration's
+  `grant ... to service_role` — from every other admin-only RPC
+  (`claim_and_verify_registration`, `reject_registration`,
+  `reinstate_registration`, `event_capacity_snapshot`,
+  `reset_event_registrations`). Defense-in-depth, not a live fix: nothing in
+  the app calls Supabase directly with the anon key except the
+  `/admin/login` auth handshake. **Applied to the live Supabase project via
+  the SQL editor, 2026-09-12.** Post-apply checks (public registration still
+  works, admin dashboard still works, a direct anon-key table read/write is
+  rejected) still to be confirmed.
 
 - **2026-09-10 (disabled the Hero/Speaker "photo URL" fields in the admin
   content editor).** Follow-up from the manual-test round below: the
