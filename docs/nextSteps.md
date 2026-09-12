@@ -37,14 +37,16 @@ updated: 2026-09-12 (later)
 >   Maharaj to hold off on a second event until after the 31 Oct 2026 event
 >   is done, to keep pressure off this decision for now — not to be picked
 >   up before then.
-> - **[[BACKLOG.md]] item 25 (admin dashboard mobile redesign) built,
->   branch `admin-dashboard-mobile-redesign`, not yet merged to `main`.**
+> - **[[BACKLOG.md]] item 25 (admin dashboard mobile redesign) built and
+>   merged to `main` 2026-09-12** after a code review (presentation-only
+>   change, both layouts share the same components/data, no logic risk).
 >   Two breakpoints only, as scoped: desktop table pixel-unchanged, new
 >   mobile card-per-row view added. Also fixed a horizontal-overflow bug
 >   in the dashboard page's own header row, found while testing this.
 >   `npm run build`/`lint` clean, both breakpoints verified live via
->   chrome-devtools. **Next step: project owner reviews the branch, then
->   merge.**
+>   chrome-devtools. **Next step: project owner verifies actual mobile
+>   rendering/feel via a Netlify draft deploy** (couldn't be checked from
+>   local dev alone).
 
 > [!note] Grounded feature-summary doc + a `/summary` testers page built (2026-09-10)
 > Project owner wanted a genuinely-accurate (not oversold) feature summary to

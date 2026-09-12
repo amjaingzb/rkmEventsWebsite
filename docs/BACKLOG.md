@@ -529,7 +529,8 @@ Not needed for the prototype demo; revisit once the site is past that stage.
     changing either photo currently requires a direct Supabase table edit
     (by the project owner) until this is actually built.
 25. **Admin dashboard is unusable on a narrow/mobile screen — raised
-    2026-09-10, built 2026-09-12 (see below), pending review/merge.**
+    2026-09-10, built and merged 2026-09-12 (see below), pending visual
+    verification on an actual phone via draft deploy.**
     Project owner tried
     the admin dashboard on a phone (separately from the public site, which
     they confirmed renders well on mobile already) and found it "horrible"
@@ -556,8 +557,10 @@ Not needed for the prototype demo; revisit once the site is past that stage.
     **Scope decided 2026-09-12**: design for exactly two breakpoints, no
     intermediate tablet-specific layout — the existing desktop/monitor
     table view (unchanged) and a new mobile card-per-row view.
-    **Built 2026-09-12, branch `admin-dashboard-mobile-redesign`, not yet
-    merged.** `AdminTable.tsx`'s Verify/Reject/reject-reason/Notify/
+    **Built 2026-09-12, branch `admin-dashboard-mobile-redesign`, merged to
+    `main` 2026-09-12** after a code review found it low-risk (presentation
+    only — no logic touched, both layouts driven by the same shared
+    components and row data). `AdminTable.tsx`'s Verify/Reject/reject-reason/Notify/
     WhatsApp action cluster and the status-detail (waitlisted-paid
     warning, rejection reason) were extracted into shared components so
     the desktop table and the new mobile card view can't drift on what
@@ -571,8 +574,10 @@ Not needed for the prototype demo; revisit once the site is past that stage.
     at phone width — switched to `flex-col` below `md` with the button
     group wrapping. Verified both breakpoints (1440×900 and 390×844,
     including the inline reject-reason flow) via chrome-devtools; `npm run
-    build`/`lint` clean. Awaiting project owner review before merging to
-    `main`.
+    build`/`lint` clean. Not yet checked on a real phone — project owner
+    couldn't verify from local dev, so a Netlify draft deploy is the
+    next step to confirm actual rendering/touch-target feel before
+    considering this fully closed.
 26. **`registration_mode` race condition when `payment_mode` is toggled
     mid-submission — found via real mobile testing 2026-09-10, not fixed.**
     Confirmed mechanism by reading `registerAttendee()`

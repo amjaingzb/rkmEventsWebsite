@@ -27,7 +27,7 @@ function buildWhatsAppLink() {
 // Bump this to the current commit whenever you actually edit this page's
 // feature copy/status pills — it's how a reader can tell whether the
 // descriptions below are stale relative to the deployed build shown below.
-const CONTENT_REVIEWED_COMMIT = "1de8434";
+const CONTENT_REVIEWED_COMMIT = "ece1613";
 
 const DEPLOY_CONTEXT = process.env.CONTEXT ?? "local";
 
@@ -206,8 +206,8 @@ export default function SummaryPage() {
                 <span className="pill live">Live</span>
               </div>
               <div className="frow">
-                <div><div className="fname">Dashboard on a phone</div><div className="fdesc">Works today, but the layout isn&rsquo;t yet comfortable on a small screen — this is a known gap, feedback welcome.</div></div>
-                <span className="pill next">Planned</span>
+                <div><div className="fname">Dashboard on a phone</div><div className="fdesc">Redesigned as a card-per-registration layout below desktop width — same controls, comfortable tap targets on a small screen.</div></div>
+                <span className="pill live">Live</span>
               </div>
             </div>
           </div>
@@ -230,7 +230,6 @@ export default function SummaryPage() {
             <div className="section-head" style={{ marginBottom: "8px" }}><h2>Where it goes next</h2></div>
             <div className="rline"><span className="dot"></span><span><b>Door check-in app</b> — scan the ticket QR to mark attendance in real time; the ticket format is already built for it.</span></div>
             <div className="rline"><span className="dot"></span><span><b>Waitlist re-invite</b> — a one-click way to pull from the waitlist if a larger venue becomes available.</span></div>
-            <div className="rline"><span className="dot"></span><span><b>Mobile-friendly admin dashboard</b> — the same controls, redesigned to work comfortably from a phone.</span></div>
             <div className="rline"><span className="dot"></span><span><b>Tiered admin access</b> — a lighter-weight role for volunteers who only need to edit site content, not registrant data.</span></div>
             <div className="rline"><span className="dot"></span><span><b>PhonePe going live</b> — the same automated checkout already working in sandbox, switched on with a real merchant account.</span></div>
             <div className="rline"><span className="dot"></span><span><b>Reusable for other Math events</b> — the platform is already built so a future event just needs its own venue/date/seat-cap/FAQ configuration, not a rebuild.</span></div>
