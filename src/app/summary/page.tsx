@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import buildInfo from "@/lib/build-info.json";
 
 export const metadata: Metadata = {
   title: "What's Built — Halasuru Registration Platform",
@@ -7,7 +8,39 @@ export const metadata: Metadata = {
     "A feature summary of the registration platform, for testers and volunteers.",
 };
 
+// Fixed prefix so incoming WhatsApp messages can be filtered/searched for
+// later (e.g. a saved WhatsApp search), regardless of what the tester
+// writes. Each link also carries a per-load epoch so two submissions are
+// distinguishable even if the message text itself is identical.
+const FEEDBACK_TAG_PREFIX = "RKMH_EVTS_WSF";
+
+function buildWhatsAppLink() {
+  const epoch = Math.floor(Date.now() / 1000);
+  return (
+    "https://wa.me/919731007760?text=" +
+    encodeURIComponent(
+      `[${FEEDBACK_TAG_PREFIX}_${epoch}] [build ${buildInfo.commit}] Feedback: `
+    )
+  );
+}
+
+// Bump this to the current commit whenever you actually edit this page's
+// feature copy/status pills — it's how a reader can tell whether the
+// descriptions below are stale relative to the deployed build shown below.
+const CONTENT_REVIEWED_COMMIT = "1de8434";
+
+const DEPLOY_CONTEXT = process.env.CONTEXT ?? "local";
+
+function WhatsAppIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg viewBox="0 0 32 32" width={size} height={size} fill="currentColor" aria-hidden="true">
+      <path d="M16.004 2.667c-7.363 0-13.333 5.97-13.333 13.333 0 2.352.615 4.646 1.784 6.666L2.667 29.333l6.84-1.756a13.27 13.27 0 0 0 6.497 1.756h.006c7.362 0 13.333-5.97 13.333-13.333s-5.97-13.333-13.339-13.333Zm0 24.4a11.02 11.02 0 0 1-5.62-1.539l-.403-.24-4.06 1.043 1.084-3.958-.263-.407a11.03 11.03 0 0 1-1.7-5.876c0-6.101 4.965-11.067 11.068-11.067 2.957 0 5.736 1.153 7.827 3.245a10.99 10.99 0 0 1 3.24 7.828c0 6.102-4.966 11.067-11.073 11.067v.004Zm6.07-8.287c-.332-.166-1.967-.971-2.272-1.082-.305-.111-.527-.166-.75.166-.222.333-.86 1.082-1.055 1.305-.194.222-.388.25-.72.083-.332-.167-1.402-.517-2.671-1.649-.988-.881-1.655-1.97-1.849-2.303-.194-.333-.02-.513.146-.679.15-.15.333-.389.5-.583.166-.194.222-.333.332-.556.111-.222.056-.417-.028-.583-.083-.166-.75-1.808-1.028-2.475-.27-.65-.545-.562-.75-.572l-.638-.011c-.222 0-.583.083-.888.417-.305.333-1.166 1.14-1.166 2.78 0 1.64 1.194 3.225 1.36 3.447.166.222 2.351 3.589 5.695 5.034.796.344 1.417.55 1.901.703.799.254 1.526.218 2.101.132.641-.096 1.967-.804 2.244-1.582.278-.777.278-1.443.194-1.582-.083-.14-.305-.222-.638-.389Z" />
+    </svg>
+  );
+}
+
 export default function SummaryPage() {
+  const whatsappLink = buildWhatsAppLink();
   return (
     <>
       <link
@@ -16,6 +49,17 @@ export default function SummaryPage() {
       />
       <style>{css}</style>
       <div id="summary-page">
+        <a
+          href={whatsappLink}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="feedback-fab"
+        >
+          <span className="feedback-fab-icon">
+            <WhatsAppIcon size={19} />
+          </span>
+          Send feedback
+        </a>
         <div className="sheet">
           <div className="cover">
             <div className="eyebrow">Product Summary — for testers &amp; volunteers</div>
@@ -26,7 +70,12 @@ export default function SummaryPage() {
               seat-guaranteed ticket in the registrant&rsquo;s inbox, and an
               operations dashboard for the volunteers verifying payments. If
               you&rsquo;re testing the site, this page is your map of what&rsquo;s
-              actually built today — try any of it and share what breaks.
+              actually built today — try any of it and share what breaks on{" "}
+              <a href={whatsappLink} target="_blank" rel="noopener noreferrer" className="wa-inline-link">
+                <WhatsAppIcon size={14} />
+                WhatsApp
+              </a>
+              .
             </p>
             <div className="meta">
               <span><b>Event</b> — 31 Oct 2026, 6:00–7:30 PM</span>
@@ -191,6 +240,19 @@ export default function SummaryPage() {
             <span>Halasuru Registration Platform — product summary</span>
             <span>For testers &amp; volunteers</span>
           </footer>
+          <div className="build-badge">
+            Build {buildInfo.commit}
+            {buildInfo.commitDate
+              ? ` · ${new Date(buildInfo.commitDate).toLocaleString("en-IN", {
+                  dateStyle: "medium",
+                  timeStyle: "short",
+                })}`
+              : ""}
+            {" · "}
+            {DEPLOY_CONTEXT}
+            {" · content reviewed as of "}
+            {CONTENT_REVIEWED_COMMIT}
+          </div>
         </div>
       </div>
     </>
@@ -247,6 +309,26 @@ const css = `
   #summary-page .cover p{ max-width: 56ch; font-size: 16px; line-height: 1.6; color: #F1DFC9; margin: 0; }
   #summary-page .cover .meta{ display:flex; flex-wrap:wrap; gap: 10px 28px; margin-top: 6px; font-size: 13.5px; color: #EFD9B8; }
   #summary-page .cover .meta b{ color:#FFF9EE; font-weight:600; }
+  #summary-page .cover p a{ color: #FBE3B0; text-decoration: underline; }
+
+  #summary-page .feedback-fab{
+    position: fixed; right: 20px; bottom: 20px; z-index: 50;
+    display:flex; align-items:center; gap:10px;
+    background: #25D366; color:#fff; text-decoration:none;
+    font-family:'Karla', ui-sans-serif, system-ui, sans-serif; font-weight:600; font-size: 14px;
+    padding: 10px 18px 10px 10px; border-radius: 999px; box-shadow: 0 6px 18px rgba(0,0,0,0.22);
+  }
+  #summary-page .feedback-fab:hover{ background:#1EBE5A; }
+  #summary-page .feedback-fab-icon{
+    display:flex; align-items:center; justify-content:center;
+    width: 30px; height: 30px; border-radius: 50%;
+    background:#fff; color:#25D366; flex-shrink:0;
+  }
+
+  #summary-page .wa-inline-link{
+    display:inline-flex; align-items:center; gap:5px; color: var(--maroon);
+  }
+  #summary-page .cover p .wa-inline-link{ color:#FBE3B0; }
 
   #summary-page .stat-row{
     display:grid; grid-template-columns: repeat(auto-fit, minmax(150px,1fr)); gap: 1px;
@@ -295,6 +377,7 @@ const css = `
   #summary-page .rline b{ color: var(--ink); font-weight:600; }
 
   #summary-page footer{ margin-top: 10px; padding-top: 18px; border-top: 1px solid var(--line); font-size: 12px; color: var(--ink-soft); display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px; }
+  #summary-page .build-badge{ margin-top: 6px; font-family:'IBM Plex Mono', ui-monospace, monospace; font-size: 10.5px; color: var(--ink-soft); opacity: 0.7; word-break: break-word; }
 
   @media (max-width: 560px){
     #summary-page .frow{ grid-template-columns: 1fr; }

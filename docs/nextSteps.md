@@ -636,6 +636,46 @@ Full rationale and the complete deferred-items list: [[BACKLOG.md]].
 
 ## Recently completed
 
+- **2026-09-12 (WhatsApp feedback channel + build-info badge added to
+  `/summary`).** Project owner wanted a way for testers/volunteers to send
+  feedback (bugs/suggestions) directly from `/summary`, but a full
+  Supabase-backed feedback table + storage bucket + admin UI was judged
+  overkill for the actual audience (2-3 people) — went with the lightest
+  option instead:
+  - A fixed bottom-right "Send feedback" button plus an inline
+    "share what breaks on WhatsApp" link in the intro copy, both opening
+    `wa.me/919731007760` with a pre-filled message
+    (`src/app/summary/page.tsx`). Both render the same `WhatsAppIcon`
+    helper component (white icon in a white circular badge on the FAB so
+    it's visible against the WhatsApp-green background).
+  - Prefill text carries two machine-parseable markers so the project
+    owner can later search/automate on them: a fixed prefix
+    `RKMH_EVTS_WSF_<epoch>` (unique per page load) and `[build <sha>]`
+    (the commit the page was actually served from) — e.g.
+    `[RKMH_EVTS_WSF_1789205983] [build 1de8434] Feedback: `.
+  - New `scripts/generate-build-info.js` runs on every `predev`/`prebuild`
+    (via new `package.json` scripts), writing `src/lib/build-info.json`
+    (gitignored, regenerated every run) with the current commit sha/date.
+    `/summary`'s footer renders a `Build <sha> · <date> · <context>` badge
+    from it (`process.env.CONTEXT` gives Netlify's `production`/
+    `deploy-preview`/`branch-deploy`, falls back to `"local"`) — lets
+    anyone compare a live deploy's badge against `git log` to confirm
+    which commit it's actually running.
+  - A manual `CONTENT_REVIEWED_COMMIT` constant in the same file, bumped
+    by hand only when the page's descriptive copy is actually edited — the
+    gap between it and the auto build badge is the visible signal that
+    `/summary`'s prose may be stale relative to the deployed code. Root
+    `CLAUDE.md`'s docs-currency rule was extended to explicitly name this
+    page alongside `docs/`.
+  - Logged **[[BACKLOG.md]] item 29**: Telegram as a second feedback
+    channel later (free bot automation), explicitly "extremely deferred."
+  - `npm run build` clean; verified live via the chrome-devtools sidecar
+    (button/icon/prefill text/badge all confirmed rendering correctly) —
+    an earlier "icon not showing" report turned out to be a stale
+    webpack HMR artifact from live-editing during the dev session, not a
+    real bug; a dev-server restart cleared it. Not deployed — draft/prod
+    deploys remain owner-triggered only.
+
 - **2026-09-12 (RLS policies written, [[BACKLOG.md]] item 1, on `main` —
   kept separate from the not-yet-reviewed `admin-dashboard-mobile-redesign`
   branch).** `supabase/migrations/0015_rls_policies.sql`: enables RLS on

@@ -617,3 +617,15 @@ Not needed for the prototype demo; revisit once the site is past that stage.
     (not decided, to be discussed later): duplicate the whole site/repo
     per event rather than building real multi-tenant UI. No direction
     chosen yet — just logged as TBD.
+29. **Telegram as a second `/summary` feedback channel — raised
+    2026-09-12, extremely deferred.** `/summary` currently only offers a
+    WhatsApp link (`wa.me/919731007760`, tagged `RKMH_EVTS_WSF_<epoch>`,
+    see `src/app/summary/page.tsx`) for testers/volunteers to send bug
+    reports/suggestions — chosen over a DB-backed form because the
+    audience is only 2-3 people (project owner's call, 2026-09-12).
+    Project owner wants to add Telegram as an option later specifically
+    because Telegram bots support free automation (e.g. a bot could
+    auto-tag/log/forward incoming feedback messages) in a way WhatsApp's
+    free tier doesn't. No design or urgency yet — explicitly flagged as
+    "extremely deferred," well behind every other item on this list; only
+    revisit if/when the WhatsApp-only approach stops being enough.

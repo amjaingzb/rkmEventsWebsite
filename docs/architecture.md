@@ -390,6 +390,17 @@ volunteers helping test the site, and to Adhyaksha Maharaj, as a grounded
 "what's actually built" reference. Not linked from any nav — reached only by
 direct URL.
 
+Since 2026-09-12 it also carries a WhatsApp feedback link (fixed button +
+inline text link, `wa.me/919731007760`, pre-filled with a `RKMH_EVTS_WSF_
+<epoch>` tag and `[build <sha>]`) and a footer build-info badge sourced from
+`src/lib/build-info.json` — generated fresh on every `predev`/`prebuild` by
+`scripts/generate-build-info.js` (git commit sha/date; gitignored, not
+committed). A manual `CONTENT_REVIEWED_COMMIT` constant in the same file is
+bumped by hand whenever the page's copy is actually edited, so the gap
+between it and the auto badge signals whether the descriptive content might
+be stale relative to the deployed commit. See [[BACKLOG.md]] item 29 for the
+deferred Telegram-channel idea.
+
 ### Public registration states: Open / Full-EOI / Paused
 
 Per [[registration-integrity.md]] Item 6, `src/app/page.tsx` picks one of

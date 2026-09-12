@@ -16,3 +16,6 @@ supabase/.temp/
 
 # Local Netlify folder
 .netlify
+
+# Generated at build/dev time by scripts/generate-build-info.js
+src/lib/build-info.json
