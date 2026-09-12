@@ -2,7 +2,7 @@
 tags: [reference, concepts, qna]
 aliases: [concepts, technical concepts, glossary]
 created: 2026-09-08
-updated: 2026-09-08
+updated: 2026-09-12
 ---
 
 # Technical Concepts (Q&A)
@@ -136,3 +136,67 @@ up during that window.
 See [[content-editability-design.md]] for the full architecture, the
 rejected alternative (a `whatChanged` polling flag) and why, the complete
 cost model, and red flags to resolve before implementing.
+
+---
+
+## Q: We have two Supabase keys, RLS is "on" with zero rules, and the anon key is visible in the browser's page source — isn't that already a blunder?
+
+`#supabase` `#rls` `#security` `#anon-key` `#service-role-key` `#architecture`
+
+**No — but it's a fair thing to be suspicious of, and the two keys need to be understood separately.**
+
+**The two keys Supabase hands you, and what protects each one:**
+- **Secret / "service role" key** — the master key. Used only by our server code (API routes). It **bypasses RLS entirely**, always has full access, and has no policy-based safety net at all. Its *only* protection is that it must never reach a browser — never a `NEXT_PUBLIC_*` env var, never shipped in client JS. If this one ever leaked, every row of every table is instantly readable/writable, full stop.
+- **Public / "anon" key** — designed to be safe to expose publicly. It's *supposed* to be constrained entirely by Row-Level Security (RLS) policies written on each table. This app's `/admin/login` page does use it directly in the browser (that's how Supabase Auth's sign-in form works) — normal and expected, not a leak. It shows up in page source because it's meant to.
+
+**Why "RLS enabled, zero policies" is safe today, not a blunder:** in Postgres/Supabase, enabling RLS with no policies written defaults to **deny-all** for that role. It's a locked door with no key issued — not an open door. So right now, if anything tried to use the anon key to read/write `registrations` or `events` directly, it would be rejected. Nothing in this app currently issues such a request (the only anon-key usage is the Auth login handshake, a separate subsystem from the data tables).
+
+**So what's the actual risk, if not "already broken"?** It's a *latent gap*, not a live one — one future mistake away from becoming exploitable, with nothing currently in place to catch that mistake. Concrete ways this could flip from safe to broken:
+1. **A permissive policy gets added under pressure.** Someone building a new feature (e.g. "let a registrant view their own ticket") wires it up with the anon key straight from the browser, hits a permission error, and "fixes" it with `CREATE POLICY ... USING (true)` — which means "anyone can read any row." Ships, works, demo's fine — and now every registrant's name/email/phone is one browser dev-tools `fetch()` away from anyone.
+2. **Copy-pasted tutorial code.** Supabase's own quickstarts commonly show `supabase.from('table').select('*')` called directly from client-side React (see below — that's the intended Supabase pitch). If that pattern gets pasted into this codebase without noticing this app's convention is "always go through the service-role API route," and a permissive policy exists (or someone assumes "RLS is on" means "it's handled"), it silently leaks instead of failing loudly.
+3. **A dashboard fat-finger.** Someone toggles a "enable anon read access" helper in the Supabase web UI while debugging something unrelated — now that one click is the entire security model for that table.
+
+**The fix (already spec'd, see [[../BACKLOG.md]] Item 1):** write explicit, narrow RLS policies now, while everyone understands what they should be — anon restricted to executing `register_attendee` only (nothing else), admin gated by a real authenticated-session check — so there's a clear, reviewed contract in place *before* any of the above scenarios has a chance to happen, rather than relying on "nobody's asked it to do anything yet" as the only line of defense.
+
+**One-line rule:** the anon key being visible is fine and intentional — the danger is a future *policy* being written wrong, not the key being "found." The secret key has no such story; it's protected by never leaving the server, full stop.
+
+---
+
+## Q: What are the two ways a browser can get data into/out of Supabase — and which one does this app use?
+
+`#architecture` `#supabase` `#serverless` `#rls`
+
+**Pattern A — via our own API route (what this app does today):**
+```
+Browser  →  Next.js API route (our server)  →  Supabase (using the secret key)
+```
+The browser never talks to Supabase directly. It calls our own backend, which uses the service-role key (never exposed to the browser) to do the actual database work and returns just the result. All permission logic (is this an admin? is a seat available?) lives in our own TypeScript, fully under our control.
+
+**Pattern B — browser talks to Supabase directly (the "anon key + RLS" pitch):**
+```
+Browser  →  Supabase directly (using the anon key)
+```
+No API route at all — client-side JS calls Supabase's API straight from the browser tab (e.g. `supabase.from('registrations').select('*')` running inside a user's page). This is Supabase's (and Firebase's) headline feature — skip writing a backend, get security entirely from RLS/security-rules policies. Most Supabase tutorials are written this way because it's the fastest path to a demo.
+
+This app is 100% Pattern A. The RLS discussion above matters because the danger isn't "we're doing Pattern B insecurely" — it's "something might introduce a bit of Pattern B later (a shortcut, a tutorial snippet) without anyone registering that doing so hands control over to whatever RLS policies exist at that moment."
+
+---
+
+## Q: The site's hosted on Netlify with no server we provision — isn't this architecture "serverless," like a Firebase-backed mobile app with no backend at all?
+
+`#architecture` `#serverless` `#netlify` `#hosting`
+
+**"Serverless" is being used to mean two unrelated things here — both your intuitions are correct, they're just answering different questions.**
+
+**"Serverless" the compute model (what Netlify actually gives us):** this is about *how code runs*, not about client/server/db shape. It means no long-running process we provision and manage (no EC2 box, no Apache always listening) — our API route code packages as a function that spins up on-demand per request and disappears. Netlify hosts this app this way: our API routes *are* still server-side compute sitting between the browser and Supabase — they're just billed and run "on demand" rather than as a server we keep running 24/7.
+
+**"Serverless" the architecture pattern (a Firebase-backed mobile game):** this is about whether a server-side layer exists in the request path *at all*. A mobile client talking straight to Firebase, with Firebase's security rules as the only gatekeeper, has no middle tier whatsoever — that's Pattern B above. There's no compute to run "on demand" in that path; the client is the only thing executing logic, and the database vendor's rules are the entire security boundary.
+
+**Where the terms collide:** "serverless" became popular largely *through* the Pattern-B pitch (Firebase, then Supabase copied it) — "no backend to write, just rules!" — so people use "serverless" for both "no backend at all" and "backend that runs as on-demand functions" interchangeably. They're independent axes:
+
+| | Has a middle-tier server | No middle tier |
+|---|---|---|
+| **Always-on compute** | Apache/EC2 backend | (n/a) |
+| **On-demand compute** | **This app** — Next.js API routes on Netlify | A Firebase-backed mobile game |
+
+This app picked "server tier, but on-demand" — it never provisioned a traditional always-on server, but it does have a server tier (our API routes), unlike the fully server-less Firebase game.
