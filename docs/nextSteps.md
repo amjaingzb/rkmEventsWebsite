@@ -44,9 +44,9 @@ updated: 2026-09-12 (later)
 >   mobile card-per-row view added. Also fixed a horizontal-overflow bug
 >   in the dashboard page's own header row, found while testing this.
 >   `npm run build`/`lint` clean, both breakpoints verified live via
->   chrome-devtools. **Next step: project owner verifies actual mobile
->   rendering/feel via a Netlify draft deploy** (couldn't be checked from
->   local dev alone).
+>   chrome-devtools, and the project owner confirmed the real mobile
+>   rendering/feel on their phone via a Netlify draft deploy
+>   (`demo--` alias). Feature branch deleted post-merge. **Closed.**
 
 > [!note] Grounded feature-summary doc + a `/summary` testers page built (2026-09-10)
 > Project owner wanted a genuinely-accurate (not oversold) feature summary to

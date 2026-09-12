@@ -529,8 +529,8 @@ Not needed for the prototype demo; revisit once the site is past that stage.
     changing either photo currently requires a direct Supabase table edit
     (by the project owner) until this is actually built.
 25. **Admin dashboard is unusable on a narrow/mobile screen — raised
-    2026-09-10, built and merged 2026-09-12 (see below), pending visual
-    verification on an actual phone via draft deploy.**
+    2026-09-10, built and merged 2026-09-12, verified on a real phone via
+    draft deploy the same day. Closed.**
     Project owner tried
     the admin dashboard on a phone (separately from the public site, which
     they confirmed renders well on mobile already) and found it "horrible"
@@ -574,10 +574,11 @@ Not needed for the prototype demo; revisit once the site is past that stage.
     at phone width — switched to `flex-col` below `md` with the button
     group wrapping. Verified both breakpoints (1440×900 and 390×844,
     including the inline reject-reason flow) via chrome-devtools; `npm run
-    build`/`lint` clean. Not yet checked on a real phone — project owner
-    couldn't verify from local dev, so a Netlify draft deploy is the
-    next step to confirm actual rendering/touch-target feel before
-    considering this fully closed.
+    build`/`lint` clean. Project owner then verified the actual mobile
+    rendering/touch-target feel on a real phone via the
+    `demo--rkm-halasuru-registration.netlify.app` draft deploy and
+    confirmed it looks right. Branch `admin-dashboard-mobile-redesign`
+    deleted post-merge (fully merged into `main`, nothing left on it).
 26. **`registration_mode` race condition when `payment_mode` is toggled
     mid-submission — found via real mobile testing 2026-09-10, not fixed.**
     Confirmed mechanism by reading `registerAttendee()`
